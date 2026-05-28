@@ -627,28 +627,36 @@ childSelfRouter.get('/daily-log', async (req, res) => {
       item.sub_step_count = subStepCountMap[item.activity_template_id] || 0;
     }
 
-    // Batch-load child/parent ratings for all items (avoids N+1 /rating calls from child UI)
+    // Batch-load child/parent ratings for all items (avoids N+1 /rating calls from child UI).
+    // Must never fail the daily-log response — child dashboard depends on this endpoint.
     const ratings = {};
-    const itemIds = sortedItems.map((i) => i.id);
+    const itemIds = sortedItems.map((i) => i.id).filter(Boolean);
     if (itemIds.length > 0) {
-      const ratingsResult = await db.query(
-        `SELECT daily_log_item_id,
-                MAX(CASE WHEN user_type = 'child' THEN score END)::int AS child_score,
-                MAX(CASE WHEN user_type = 'child' THEN comment END) AS child_comment,
-                MAX(CASE WHEN user_type = 'parent' THEN score END)::int AS parent_score,
-                MAX(CASE WHEN user_type = 'parent' THEN comment END) AS parent_comment
-         FROM rating
-         WHERE daily_log_item_id = ANY($1::uuid[])
-         GROUP BY daily_log_item_id`,
-        [itemIds]
-      );
-      for (const row of ratingsResult.rows) {
-        ratings[row.daily_log_item_id] = {
-          child_score: row.child_score,
-          child_comment: row.child_comment,
-          parent_score: row.parent_score,
-          parent_comment: row.parent_comment,
-        };
+      try {
+        const ratingsResult = await db.query(
+          `SELECT u.item_id AS daily_log_item_id,
+                  r_child.score AS child_score,
+                  r_child.comment AS child_comment,
+                  r_parent.score AS parent_score,
+                  r_parent.comment AS parent_comment
+           FROM unnest($1::uuid[]) AS u(item_id)
+           LEFT JOIN rating r_child
+             ON r_child.daily_log_item_id = u.item_id AND r_child.user_type = 'child'
+           LEFT JOIN rating r_parent
+             ON r_parent.daily_log_item_id = u.item_id AND r_parent.user_type = 'parent'`,
+          [itemIds]
+        );
+        for (const row of ratingsResult.rows) {
+          if (row.child_score == null && row.parent_score == null) continue;
+          ratings[row.daily_log_item_id] = {
+            child_score: row.child_score,
+            child_comment: row.child_comment,
+            parent_score: row.parent_score,
+            parent_comment: row.parent_comment,
+          };
+        }
+      } catch (ratingsErr) {
+        console.error('[DAILY-LOG-CHILD] Ratings batch load failed (non-fatal):', ratingsErr.message);
       }
     }
 

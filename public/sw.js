@@ -1,5 +1,6 @@
 /**
- * Min Stjärndag — Service Worker v130
+ * Min Stjärndag — Service Worker v131
+ * v131: Hotfix — child daily-log ratings batch must not 500 the endpoint; safer loadDay error handling.
  * v130: Child dashboard — mood rating no longer gated by dev kanslo_tracking flag;
  *       serialize check-offs + coalesce loadDay to fix errors when tapping multiple tasks;
  *       batch ratings in GET /api/me/daily-log (fewer parallel API calls).
@@ -116,7 +117,7 @@
  */
 
 /* Wave 2: Offline reading — schema + belöningar vises offline i barnvy */
-const CACHE_NAME = 'stjarndag-v130';
+const CACHE_NAME = 'stjarndag-v131';
 // v127: DB-migration för IAP-beredskap — is_lifetime_free, rc_customer_id, subscription_status DEFAULT 'none'
 // v126: App Store-förberedelse — /terms route, privacy.html Apple ID + APNs sections
 // v125: App Store-ready — terms.html, privacy.html Apple ID + APNs token sections

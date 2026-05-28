@@ -27,7 +27,6 @@ let colorCoding = true; // toggled by parent — color-codes cards by activity t
 let _toggleChain = Promise.resolve();
 let _loadDayInFlight = null;
 let _loadDayPending = null;
-let _loadDayGeneration = 0;
 let _ratingQueue = [];
 
 // ── Offline helpers ─────────────────────────────────────────────────────────
@@ -2243,7 +2242,6 @@ async function loadDay(dateStr, showLoader = true) {
 }
 
 async function loadDayInternal(dateStr, showLoader = true) {
-  const loadGen = ++_loadDayGeneration;
   currentDate = dateStr;
   // Clear sub-step caches when loading a new day (expand state preserved via subStepExpanded)
   subStepCache = {};
@@ -2259,7 +2257,6 @@ async function loadDayInternal(dateStr, showLoader = true) {
       ? OfflineStore.getDailyLog(me?.id, dateStr)
       : Promise.resolve(null));
     if (skeletonTimer) skeletonTimer.stop();
-    if (loadGen !== _loadDayGeneration) return;
     if (cached) {
       renderActivities(cached, null);
       showOfflineBanner('📶 Offline — visar sparat schema');
@@ -2291,7 +2288,6 @@ async function loadDayInternal(dateStr, showLoader = true) {
       Auth.api('/api/me/goal').catch(() => null),
     ]);
     if (skeletonTimer) skeletonTimer.stop();
-    if (loadGen !== _loadDayGeneration) return;
 
     // ── Cache data for offline use ─────────────────────────────
     if (window.OfflineStore && me?.id) {
@@ -2303,12 +2299,11 @@ async function loadDayInternal(dateStr, showLoader = true) {
     hideOfflineBanner();
 
     const items = data.items || [];
-    if (data.ratings && typeof data.ratings === 'object') {
+    if (data.ratings && typeof data.ratings === 'object' && !Array.isArray(data.ratings)) {
       itemRatings = { ...data.ratings };
     } else {
       await loadRatingsForItems(items.map(i => i.id));
     }
-    if (loadGen !== _loadDayGeneration) return;
     // Store flags from API
     allowChildReorder = !!data.allow_child_reorder;
     showNowNext = data.show_now_next !== false; // default true if not present
@@ -2325,17 +2320,23 @@ async function loadDayInternal(dateStr, showLoader = true) {
     updateGoalBar(goalData);
   } catch (err) {
     if (skeletonTimer) skeletonTimer.stop();
-    if (loadGen !== _loadDayGeneration) return;
     console.error('Load day error:', err);
     // Fallback to IndexedDB cache on API failure
     const cached = await (window.OfflineStore
       ? OfflineStore.getDailyLog(me?.id, dateStr)
       : Promise.resolve(null));
-    if (loadGen !== _loadDayGeneration) return;
     if (cached) {
       renderActivities(cached, null);
       showOfflineBanner('📶 Offline — visar sparat schema');
-    } else if (window.Skeleton) {
+      return;
+    }
+    // Background refresh failed but schedule is already visible — keep current UI
+    const hasVisibleSchedule =
+      container && container.querySelector('.activity-card, .now-card');
+    if (!showLoader && hasVisibleSchedule) {
+      return;
+    }
+    if (window.Skeleton) {
       window.Skeleton.showChildScheduleError(container, dateStr);
     } else {
       showOfflineErrorState(container, dateStr);
