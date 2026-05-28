@@ -18,10 +18,9 @@ const { requireFeature } = require('../middleware/feature-gate');
 const { validate } = require('../middleware/validate');
 const {
   OnboardingChildSchema,
-  OnboardingScheduleSchema,
   OnboardingRewardSchema,
 } = require('../lib/schemas');
-const { getOrGenerateDailyLog, syncDailyLogWithSchedule } = require('../lib/daily-log-generator');
+const { syncDailyLogWithSchedule } = require('../lib/daily-log-generator');
 
 const router = express.Router();
 router.use(requireParent);
@@ -369,7 +368,6 @@ router.post('/schedule', async (req, res) => {
       try {
         const childInfo = await db.query('SELECT timezone FROM child WHERE id = $1', [child_id]);
         const tz = childInfo.rows[0]?.timezone || 'Europe/Stockholm';
-        const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: tz });
         const todayDow = new Date().toLocaleDateString('en-US', { timeZone: tz, weekday: 'short' });
         const dowMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
         await syncDailyLogWithSchedule(child_id, dowMap[todayDow]);

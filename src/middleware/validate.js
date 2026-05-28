@@ -7,8 +7,6 @@
  * Rollback: set env var, redeploy — no code change needed.
  */
 
-const { ZodError } = require('zod');
-
 const VALIDATION_ENABLED = process.env.VALIDATION_ENABLED !== 'false';
 
 /**

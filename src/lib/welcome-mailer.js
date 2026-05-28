@@ -260,4 +260,4 @@ function buildTrialEmailHtml({ greeting, upgradeUrl, subject }) {
 </html>`;
 }
 
-module.exports = { sendWelcomeEmail };
+module.exports = { sendWelcomeEmail, sendTrialWelcomeEmail };

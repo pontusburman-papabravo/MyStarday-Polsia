@@ -15,15 +15,6 @@ const { z } = require('zod');
 /** UUID param — used for most :id params */
 const uuid = z.string().uuid({ message: 'Ogiltigt ID-format' });
 
-/** UUID param that can also be a named route segment */
-const uuidParam = z.object({ id: uuid });
-
-/** Safe text: non-empty, reasonable max length */
-const shortText = z.string().min(1, 'Fältet får inte vara tomt').max(200, 'Texten är för lång');
-
-/** Optional text field — can be empty or missing */
-const optionalText = z.string().max(500, 'Texten är för lång').optional();
-
 /** Emoji field — any short string (frontend picks from emoji picker, any unicode accepted) */
 const emoji = z.string().max(10, 'Emoji-värde för långt').optional();
 

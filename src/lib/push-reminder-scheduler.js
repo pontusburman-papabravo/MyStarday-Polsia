@@ -45,47 +45,6 @@ function isQuietHours() {
 }
 
 /**
- * Get a parent's notification preferences, merged with defaults.
- */
-async function getParentPrefs(parentId) {
-  const result = await db.query(
-    `SELECT push_preferences FROM parent WHERE id = $1`,
-    [parentId]
-  );
-  const raw = result.rows[0]?.push_preferences || {};
-  return {
-    enabled: raw.enabled !== false, // default true
-    schedule_reminder: raw.schedule_reminder !== false,
-    inactivity_nudge:   raw.inactivity_nudge   !== false,
-    star_milestone:     raw.star_milestone     !== false,
-    backfill_reminder:  raw.backfill_reminder  !== false,
-    quiet_start:        raw.quiet_start ?? QUIET_START_HOUR,
-    quiet_end:          raw.quiet_end   ?? QUIET_END_HOUR,
-    per_child:          raw.per_child  || {},
-    reminder_lead_minutes: raw.reminder_lead_minutes ?? 10,
-  };
-}
-
-/**
- * Check if notifications are enabled for a specific child (per_child overrides).
- */
-function isChildNotificationEnabled(prefs, childId, type) {
-  const childPrefs = prefs.per_child?.[childId];
-  if (childPrefs && typeof childPrefs === 'object') {
-    if (childPrefs[type] === false) return false;
-    if (childPrefs[type] === true)  return true;
-  }
-  // Fall back to global toggle
-  const globalToggle = {
-    schedule_reminder: prefs.schedule_reminder,
-    inactivity_nudge:  prefs.inactivity_nudge,
-    star_milestone:    prefs.star_milestone,
-    backfill_reminder: prefs.backfill_reminder,
-  };
-  return globalToggle[type] !== false;
-}
-
-/**
  * Main job — called every 5 minutes.
  */
 async function runPushReminderJob() {
@@ -174,7 +133,6 @@ async function sendScheduleReminders(year, month, day, currentTimeMin) {
     const windowStart = leadMin - 5; // e.g. 5 min before lead time
     const windowEnd   = leadMin + 5; // e.g. 5 min after lead time
 
-    const nowPlusLead = currentTimeMin + leadMin;
     const nowPlusLeadStart = Math.max(0, windowStart);
     const nowPlusLeadEnd   = Math.min(1440, windowEnd);
 

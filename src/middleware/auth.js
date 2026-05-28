@@ -43,7 +43,7 @@ function requireAuth(req, res, next) {
   try {
     req.user = verifyToken(token);
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ error: 'Ogiltig eller utgången token' });
   }
 }

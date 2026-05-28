@@ -4,17 +4,13 @@ const db = require('../lib/db');
 const { requireParent } = require('../middleware/auth');
 const { requireNotPedagogOnly, requirePrimaryParent } = require('../middleware/authz');
 const { syncAccountType, getChildrenForParent } = require('../../db/parent-access');
-const { sendEmail, sendInviteEmail } = require('../lib/email');
+const { sendInviteEmail } = require('../lib/email');
 const { hashPassword } = require('../lib/hash');
-const config = require('../lib/config');
-const { validate, validateParams } = require('../middleware/validate');
+const { validate } = require('../middleware/validate');
 const { inviteLimiter } = require('../middleware/rateLimiter');
 const {
   UpdateFamilySchema,
   UpdateFamilyMemberSchema,
-  InviteMemberSchema,
-  AcceptInviteSchema,
-  UUIDParam,
 } = require('../lib/schemas');
 const { getLocalDateStr, getOrGenerateDailyLog } = require('../lib/daily-log-generator');
 
@@ -1061,7 +1057,7 @@ router.get('/dashboard-stats', requireNotPedagogOnly, async (req, res) => {
     for (const row of pendingResult.rows) pendingMap[row.child_id] = parseInt(row.count, 10);
 
     // Pending goal change requests per child
-    let pendingGoalMap = {};
+    const pendingGoalMap = {};
     try {
       const pendingGoalResult = await db.query(
         `SELECT crgcr.child_id, COUNT(*) AS count
@@ -1159,7 +1155,7 @@ router.get('/dashboard-stats', requireNotPedagogOnly, async (req, res) => {
 
     // Build response
     // Manual star grants per child
-    let manualMap = {};
+    const manualMap = {};
     try {
       const manualResult = await db.query(
         `SELECT child_id, COALESCE(SUM(star_count), 0) AS manual

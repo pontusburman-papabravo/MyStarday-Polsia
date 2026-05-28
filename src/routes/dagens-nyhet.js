@@ -33,7 +33,7 @@ const {
   getNyhetById,
   updateNyhet,
 } = require('../../db/dagens-nyhet');
-const { sendNewsletterForNyhet, sendNewsletterToRecipients } = require('../lib/newsletter-mailer');
+const { sendNewsletterToRecipients } = require('../lib/newsletter-mailer');
 const { sendPushBroadcast } = require('../lib/push-notifications');
 const { isFacebookConfigured, getFacebookPageToken, postNyhetToFacebook } = require('../lib/facebook');
 
@@ -125,7 +125,7 @@ router.post('/', requireAdmin, async (req, res) => {
     // If published immediately (not scheduled), send newsletter email to subscribers
     // Del 2: email is now sent MANUALLY via POST /api/dagens-nyhet/:id/send-newsletter
     // (recipient selection modal in admin UI). Remove automatic send.
-    let emailResult = { sent: 0, failed: 0, skipped: true };
+    // Email sent manually via POST /:id/send-newsletter (see admin UI)
 
     // If Facebook cross-post was requested AND published immediately (not scheduled), post now
     let facebookResult = { posted: false, postId: null, warning: null };
@@ -551,7 +551,7 @@ router.post('/:id/send-newsletter', requireAdmin, requireFeature('nyhetsbrev'), 
       failed: result.failed,
       email_sent_count: result.sent,
       email_sent_at: result.sent > 0 ? new Date().toISOString() : null,
-      email_failed: failed,
+      email_failed: result.failed > 0,
       message: result.sent > 0
         ? `Nyhetsbrev skickat till ${result.sent} mottagare`
         : 'Inga e-postmeddelanden skickades (inga aktiva prenumeranter bland de valda)',
