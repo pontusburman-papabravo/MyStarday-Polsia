@@ -843,8 +843,11 @@ async function loadTrialBanner() {
     // Hide all payment UI unless PAYMENT_ENABLED is true on the server
     if (!data.payment_enabled) { banner.style.display = 'none'; return; }
 
-    // Only show for trial families
-    if (data.subscription_status !== 'trial') { banner.style.display = 'none'; return; }
+    // Only show while trial_ends_at is still in the future (status may be 'none' post-IAP)
+    if (data.trial_days_remaining == null || data.trial_days_remaining <= 0) {
+      banner.style.display = 'none';
+      return;
+    }
     if (data.is_beta && new Date() <= BETA_FREEZE) { banner.style.display = 'none'; return; }
 
     const days = data.trial_days_remaining;

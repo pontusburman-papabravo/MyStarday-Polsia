@@ -17,17 +17,20 @@ const BETA_FREEZE_DATE = new Date('2027-06-30T23:59:59Z');
 function requireActiveSubscription(req, res, next) {
   if (!req.user?.family_id) return next();
   db.query(
-    `SELECT subscription_status, trial_ends_at
+    `SELECT subscription_status, trial_ends_at, is_lifetime_free
      FROM family WHERE id = $1`,
     [req.user.family_id]
   ).then(({ rows }) => {
     if (rows.length === 0) return res.status(401).json({ error: 'Familj hittades inte' });
-    const { subscription_status, trial_ends_at } = rows[0];
+    const { subscription_status, trial_ends_at, is_lifetime_free } = rows[0];
+
+    if (is_lifetime_free) return next();
 
     // Beta families are free until 2027-06-30
     if (subscription_status === 'beta' && new Date() <= BETA_FREEZE_DATE) return next();
-    if (subscription_status === 'active') return next();
-    if (subscription_status === 'trial' && trial_ends_at && new Date(trial_ends_at) > new Date()) return next();
+    if (subscription_status === 'active' || subscription_status === 'grace_period') return next();
+    // Trial window: trial_ends_at is source of truth (status may be 'none' post-IAP migration)
+    if (trial_ends_at && new Date(trial_ends_at) > new Date()) return next();
 
     return res.status(402).json({ error: 'subscription_required', upgrade_url: '/upgrade' });
   }).catch(err => {

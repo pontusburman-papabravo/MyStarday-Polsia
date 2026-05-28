@@ -419,7 +419,12 @@
               password: password.value,
             }),
           });
+        } catch (error) {
+          showError('registerError', error.message || 'Något gick fel. Vänligen försök igen.');
+          return;
+        }
 
+        try {
           // Auto-login and redirect to onboarding for new parents
           const loginData = await Auth.api('/api/auth/login', {
             method: 'POST',
@@ -434,7 +439,12 @@
           if (window.Pixel) window.Pixel.lead();
           Auth.redirectToDashboard(); // goes to /onboarding for new accounts
         } catch (error) {
-          showError('registerError', error.message || 'Något gick fel. Vänligen försök igen.');
+          // Account may already exist — guide user to login instead of a generic failure
+          const loginMsg = error.status === 401
+            ? 'Kontot skapades, men inloggningen misslyckades. Kontrollera lösenordet och logga in manuellt.'
+            : (error.message || 'Kontot kan ha skapats. Försök logga in manuellt.');
+          showError('registerError', loginMsg);
+          if (loginLink) loginLink.classList.remove('hidden');
         } finally {
           setLoading(submitBtn, false);
         }
