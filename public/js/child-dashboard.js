@@ -23,6 +23,13 @@ let visualTimer = true; // toggled by parent — Time Timer in now-card
 let hideClock = false; // toggled by parent — hides digital time labels on cards
 let colorCoding = true; // toggled by parent — color-codes cards by activity type
 
+// Serialize check-offs and coalesce day reloads to avoid races when tapping quickly
+let _toggleChain = Promise.resolve();
+let _loadDayInFlight = null;
+let _loadDayPending = null;
+let _loadDayGeneration = 0;
+let _ratingQueue = [];
+
 // ── Offline helpers ─────────────────────────────────────────────────────────
 
 let _offlineBanner = null;
@@ -1926,6 +1933,13 @@ function toggleNextInSection(sectionKey, event) {
 // ── Toggle item & show rating ──────────────────────────
 
 async function toggleItem(itemId, isCurrentlyDone) {
+  _toggleChain = _toggleChain
+    .then(() => _toggleItemImpl(itemId, isCurrentlyDone))
+    .catch((err) => console.error('Toggle chain error:', err));
+  return _toggleChain;
+}
+
+async function _toggleItemImpl(itemId, isCurrentlyDone) {
   // ── Auto-complete sub-steps when completing the main activity ──
   // Clicking the main activity (e.g. "Klä på sig") should mark ALL sub-steps done.
   // Fetch sub-steps from API if not yet cached (child may never have expanded this activity).
@@ -2082,6 +2096,15 @@ window.addEventListener('offlineQueue:synced', (e) => {
 // ── Rating modal ───────────────────────────────────────
 
 function openRatingModal(itemId, icon, name) {
+  const modal = document.getElementById('ratingModal');
+  if (ratingItemId && modal && !modal.classList.contains('hidden')) {
+    _ratingQueue.push({ itemId, icon, name });
+    return;
+  }
+  _showRatingModal(itemId, icon, name);
+}
+
+function _showRatingModal(itemId, icon, name) {
   ratingItemId = itemId;
   ratingItemIcon = icon;
   ratingItemName = name;
@@ -2172,6 +2195,10 @@ function morphFace(score) {
 function dismissRating() {
   document.getElementById('ratingModal').classList.add('hidden');
   ratingItemId = null;
+  const next = _ratingQueue.shift();
+  if (next) {
+    setTimeout(() => _showRatingModal(next.itemId, next.icon, next.name), 200);
+  }
 }
 
 async function submitRating() {
@@ -2200,6 +2227,23 @@ async function submitRating() {
 // ── Load day ───────────────────────────────────────────
 
 async function loadDay(dateStr, showLoader = true) {
+  if (_loadDayInFlight) {
+    _loadDayPending = { dateStr, showLoader };
+    return _loadDayInFlight;
+  }
+  _loadDayInFlight = loadDayInternal(dateStr, showLoader).finally(() => {
+    _loadDayInFlight = null;
+    const pending = _loadDayPending;
+    _loadDayPending = null;
+    if (pending) {
+      loadDay(pending.dateStr, pending.showLoader);
+    }
+  });
+  return _loadDayInFlight;
+}
+
+async function loadDayInternal(dateStr, showLoader = true) {
+  const loadGen = ++_loadDayGeneration;
   currentDate = dateStr;
   // Clear sub-step caches when loading a new day (expand state preserved via subStepExpanded)
   subStepCache = {};
@@ -2215,6 +2259,7 @@ async function loadDay(dateStr, showLoader = true) {
       ? OfflineStore.getDailyLog(me?.id, dateStr)
       : Promise.resolve(null));
     if (skeletonTimer) skeletonTimer.stop();
+    if (loadGen !== _loadDayGeneration) return;
     if (cached) {
       renderActivities(cached, null);
       showOfflineBanner('📶 Offline — visar sparat schema');
@@ -2246,6 +2291,7 @@ async function loadDay(dateStr, showLoader = true) {
       Auth.api('/api/me/goal').catch(() => null),
     ]);
     if (skeletonTimer) skeletonTimer.stop();
+    if (loadGen !== _loadDayGeneration) return;
 
     // ── Cache data for offline use ─────────────────────────────
     if (window.OfflineStore && me?.id) {
@@ -2256,9 +2302,13 @@ async function loadDay(dateStr, showLoader = true) {
 
     hideOfflineBanner();
 
-    // Load ratings for all items
     const items = data.items || [];
-    await loadRatingsForItems(items.map(i => i.id));
+    if (data.ratings && typeof data.ratings === 'object') {
+      itemRatings = { ...data.ratings };
+    } else {
+      await loadRatingsForItems(items.map(i => i.id));
+    }
+    if (loadGen !== _loadDayGeneration) return;
     // Store flags from API
     allowChildReorder = !!data.allow_child_reorder;
     showNowNext = data.show_now_next !== false; // default true if not present
@@ -2275,11 +2325,13 @@ async function loadDay(dateStr, showLoader = true) {
     updateGoalBar(goalData);
   } catch (err) {
     if (skeletonTimer) skeletonTimer.stop();
+    if (loadGen !== _loadDayGeneration) return;
     console.error('Load day error:', err);
     // Fallback to IndexedDB cache on API failure
     const cached = await (window.OfflineStore
       ? OfflineStore.getDailyLog(me?.id, dateStr)
       : Promise.resolve(null));
+    if (loadGen !== _loadDayGeneration) return;
     if (cached) {
       renderActivities(cached, null);
       showOfflineBanner('📶 Offline — visar sparat schema');
@@ -2433,18 +2485,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
-    // Feature gate: hide mood rating if emotion_tracking is not available
-    try {
-      const featRes = await fetch('/api/features', { credentials: 'include' });
-      if (featRes.ok) {
-        const feats = await featRes.json();
-        const slugs = feats.map(f => f.slug);
-        if (!slugs.includes('emotion_tracking')) {
-          showMoodRating = false;
-        }
-      }
-    } catch { /* fail open */ }
-
     me = await Auth.api('/api/auth/me');
     // Cache child profile for offline access
     if (me && window.OfflineStore) {

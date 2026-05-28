@@ -1,5 +1,8 @@
 /**
- * Min Stjärndag — Service Worker v129
+ * Min Stjärndag — Service Worker v130
+ * v130: Child dashboard — mood rating no longer gated by dev kanslo_tracking flag;
+ *       serialize check-offs + coalesce loadDay to fix errors when tapping multiple tasks;
+ *       batch ratings in GET /api/me/daily-log (fewer parallel API calls).
  * v129: Release prep — lifetime free för topp 200 familjer.
  *       Auth.js: SELECT COUNT(*) → is_lifetime_free in same transaction.
  *       Familien #1–200: is_lifetime_free=true, Inga prenumerationskrav.
@@ -113,7 +116,7 @@
  */
 
 /* Wave 2: Offline reading — schema + belöningar vises offline i barnvy */
-const CACHE_NAME = 'stjarndag-v128';
+const CACHE_NAME = 'stjarndag-v130';
 // v127: DB-migration för IAP-beredskap — is_lifetime_free, rc_customer_id, subscription_status DEFAULT 'none'
 // v126: App Store-förberedelse — /terms route, privacy.html Apple ID + APNs sections
 // v125: App Store-ready — terms.html, privacy.html Apple ID + APNs token sections
