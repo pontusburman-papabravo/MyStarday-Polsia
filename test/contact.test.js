@@ -12,26 +12,29 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const { injectMockDb } = require('./helpers/setup.js');
 
-test('contact router has exactly one POST handler on /', () => {
+test('public router has exactly one POST handler on /contact', () => {
   const mock = injectMockDb();
 
   try {
-    // Clear any cached version to ensure clean load
-    const contactPath = require.resolve(path.join(__dirname, '../src/routes/contact'));
-    delete require.cache[contactPath];
+    const publicPath = require.resolve(path.join(__dirname, '../src/routes/public'));
+    delete require.cache[publicPath];
 
-    const router = require(contactPath);
+    const router = require(publicPath);
 
-    // Express router stores its stack as an array of Layer objects
-    const postLayers = router.stack
-      ? router.stack.filter(layer => layer.route && layer.route.methods && layer.route.methods.post)
+    const postContactLayers = router.stack
+      ? router.stack.filter(
+          layer => layer.route
+            && layer.route.methods
+            && layer.route.methods.post
+            && layer.route.path === '/contact'
+        )
       : [];
 
-    assert.equal(postLayers.length, 1, `Expected exactly 1 POST handler, got ${postLayers.length}`);
-
-    // Verify the path is '/' (root of the contact router)
-    const routePaths = postLayers.map(l => l.route.path);
-    assert.deepEqual(routePaths, ['/'], `POST handler should be on '/', got ${JSON.stringify(routePaths)}`);
+    assert.equal(
+      postContactLayers.length,
+      1,
+      `Expected exactly 1 POST /contact handler, got ${postContactLayers.length}`
+    );
   } finally {
     mock.restore();
   }
@@ -41,10 +44,7 @@ test('contact route validates required fields', async () => {
   const mock = injectMockDb();
 
   try {
-    const contactPath = require.resolve(path.join(__dirname, '../src/routes/contact'));
-    delete require.cache[contactPath];
-
-    // Simulate route logic: name/email/message are required
+    // Simulate route logic in public.js: name/email/message are required
     const requiredFields = ['name', 'email', 'message'];
     const body = { name: '', email: 'test@test.com', message: 'Hi' };
 

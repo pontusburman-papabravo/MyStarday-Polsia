@@ -1,10 +1,12 @@
-# Min Stjärndag
+# Min Stjärndag (MyStarday-Polsia)
 
 Swedish family app for children's daily routines, star rewards, and schedule management. Parents create structured daily schedules, children earn stars by completing activities, and redeem stars for rewards in the "Skattkammaren" (treasure chamber).
 
+**Repository:** [pontusburman-papabravo/MyStarday-Polsia](https://github.com/pontusburman-papabravo/MyStarday-Polsia) — Polsia-hosted deployment of the Stjärndag codebase (`polsia.toml` for cron jobs and platform integrations).
+
 ## Stack
 
-Express.js + Neon PostgreSQL + Tailwind CDN, deployed on Render.
+Express.js + Neon PostgreSQL + Tailwind CDN, deployed on Render (Polsia: email, R2 uploads, Stripe proxy — see [External Integrations](#external-integrations)).
 
 ## Local Development
 
@@ -15,11 +17,11 @@ npm install
 # Start dev server (requires DATABASE_URL)
 DATABASE_URL="postgresql://..." npm run dev
 
-# Run tests (Node 20)
+# Run tests (Node 20 — matches CI and .nvmrc)
 npm test
 
-# Node 24+ requires quoted glob:
-# node --test 'test/*.test.js'
+# If your shell uses Node 22+, use Node 20 explicitly:
+# nvm use 20 && npm test
 
 # Run linter (requires eslint installed)
 npm run lint
@@ -76,3 +78,14 @@ Deployed to Render. Push to main auto-deploys to staging. Manual production depl
 
 Build: `npm run build` (= `npm run migrate`)
 Start: `npm start`
+
+## Polsia / this repository
+
+| Item | Value |
+|------|--------|
+| GitHub | [MyStarday-Polsia](https://github.com/pontusburman-papabravo/MyStarday-Polsia) |
+| Product | Min Stjärndag (`stjarndag` in `package.json`) |
+| Cron jobs | Declared in `polsia.toml` (push reminders, midnight tasks, weekly email) |
+| Proxies | Email, R2 uploads, Stripe — configured in Polsia (not in this repo) |
+
+Tests expect **Node 20** (see `.nvmrc`). Run `npm ci` then `npm test` with `DATABASE_URL`, `JWT_SECRET`, and `NODE_ENV=test` set (CI uses mock values — see `.github/workflows/ci.yml`).

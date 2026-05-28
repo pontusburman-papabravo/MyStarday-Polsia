@@ -29,6 +29,8 @@ const PUBLIC_JS   = path.join(ROOT, 'src', 'routes', 'public.js');
 const REWARDS_JS  = path.join(ROOT, 'src', 'routes', 'rewards.js');
 const MOBILE_NAV  = path.join(PUBLIC_DIR, 'js', 'mobile-nav.js');
 const FAMILY_HTML = path.join(PUBLIC_DIR, 'family.html');
+const FAMILY_JS   = path.join(PUBLIC_DIR, 'js', 'family.js');
+const AUTH_JS     = path.join(PUBLIC_DIR, 'js', 'auth.js');
 
 // ─── Fix #12: localStorage keys ───────────────────────────
 describe('Fix #12 -- localStorage keys use stjarndag_ prefix', () => {
@@ -61,16 +63,20 @@ describe('Fix #12 -- localStorage keys use stjarndag_ prefix', () => {
       'mobile-nav.js still calls localStorage.removeItem("user") — should use "stjarndag_user"');
   });
 
-  it('family.html logout uses stjarndag_token', () => {
-    const src = fs.readFileSync(FAMILY_HTML, 'utf8');
-    assert.ok(src.includes("removeItem('stjarndag_token')"),
-      'family.html must use removeItem("stjarndag_token")');
+  it('family page logout delegates to Auth.logout()', () => {
+    const html = fs.readFileSync(FAMILY_HTML, 'utf8');
+    const js = fs.readFileSync(FAMILY_JS, 'utf8');
+    assert.ok(html.includes('logoutBtn'), 'family.html must expose logout button');
+    assert.ok(js.includes('Auth.logout()'),
+      'family.js must call Auth.logout() — not inline bare localStorage keys');
   });
 
-  it('family.html logout uses stjarndag_user', () => {
-    const src = fs.readFileSync(FAMILY_HTML, 'utf8');
-    assert.ok(src.includes("removeItem('stjarndag_user')"),
-      'family.html must use removeItem("stjarndag_user")');
+  it('Auth.clearAuth removes stjarndag_token and stjarndag_user', () => {
+    const src = fs.readFileSync(AUTH_JS, 'utf8');
+    assert.ok(src.includes('removeItem(this.TOKEN_KEY)'),
+      'auth.js clearAuth must remove TOKEN_KEY (stjarndag_token)');
+    assert.ok(src.includes('removeItem(this.USER_KEY)'),
+      'auth.js clearAuth must remove USER_KEY (stjarndag_user)');
   });
 });
 

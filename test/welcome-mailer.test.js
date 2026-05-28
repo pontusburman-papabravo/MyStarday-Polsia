@@ -6,6 +6,7 @@
  * Global fetch is mocked so sendEmail() hits our mock instead of the real proxy.
  */
 
+const path = require('path');
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert');
 
@@ -33,9 +34,8 @@ const mockDb = {
   },
 };
 
-// Patch the db module
-const WORKSPACE = '/opt/polsia/workspaces/company-87240/agent-30/exec-3022348/stjarndag';
-const dbAbsPath = require.resolve(`${WORKSPACE}/src/lib/db`);
+// Patch the db module (repo-relative — works in any checkout)
+const dbAbsPath = require.resolve(path.join(__dirname, '../src/lib/db'));
 require.cache[dbAbsPath] = { exports: mockDb };
 
 // ─── Mock global fetch (used by sendEmail in email.js) ─────────────────────────
@@ -51,7 +51,7 @@ global.fetch = async (url, opts) => {
 };
 
 // ─── Load the mailer (env must be set before this line) ────────────────────────
-const wfAbsPath = `${WORKSPACE}/src/lib/welcome-mailer.js`;
+const wfAbsPath = path.join(__dirname, '../src/lib/welcome-mailer.js');
 delete require.cache[require.resolve(wfAbsPath)];
 const { sendWelcomeEmail } = require(wfAbsPath);
 

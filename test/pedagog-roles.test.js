@@ -28,7 +28,13 @@ const mockDb = {
   query: async (text, params) => {
     const entry = queryStack.shift();
     if (entry && entry.throw) throw entry.throw;
-    return entry ? { rows: entry.rows } : { rows: [] };
+    let rows = entry ? entry.rows : [];
+    // Simulate SQL role filter for getChildrenForParent (pc.role = ANY($2))
+    if (text.includes('parent_child') && params && Array.isArray(params[1])) {
+      const allowedRoles = params[1];
+      rows = rows.filter((row) => allowedRoles.includes(row.role));
+    }
+    return { rows };
   },
   getClient: async () => { throw new Error('getClient not mocked'); },
   pool: {},
