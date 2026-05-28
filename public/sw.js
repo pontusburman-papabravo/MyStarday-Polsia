@@ -1,8 +1,10 @@
 /**
- * Min Stjärndag — Service Worker v130
- * v130: Child dashboard — mood rating no longer gated by dev kanslo_tracking flag;
- *       serialize check-offs + coalesce loadDay to fix errors when tapping multiple tasks;
- *       batch ratings in GET /api/me/daily-log (fewer parallel API calls).
+ * Min Stjärndag — Service Worker v131
+ * v131: Hotfix — batch-ratings query referenced non-existent daily_log_item_rating table,
+ *       crashing child daily-log endpoint. Fixed to use actual `rating` table.
+ * v130: Barnvy-bugfix — humörbetyg nu styrs av show_mood_rating (per-child parent setting),
+ *       INTE kanslo_tracking (dev-flagga). Serialiserade avbockningar + coalesced loadDay
+ *       för att eliminera race conditions vid snabba kryss. Batch-ratings i GET /api/me/daily-log.
  * v129: Release prep — lifetime free för topp 200 familjer.
  *       Auth.js: SELECT COUNT(*) → is_lifetime_free in same transaction.
  *       Familien #1–200: is_lifetime_free=true, Inga prenumerationskrav.
@@ -116,7 +118,8 @@
  */
 
 /* Wave 2: Offline reading — schema + belöningar vises offline i barnvy */
-const CACHE_NAME = 'stjarndag-v130';
+const CACHE_NAME = 'stjarndag-v131';
+// v129: Release prep — lifetime free för topp 200 familjer.
 // v127: DB-migration för IAP-beredskap — is_lifetime_free, rc_customer_id, subscription_status DEFAULT 'none'
 // v126: App Store-förberedelse — /terms route, privacy.html Apple ID + APNs sections
 // v125: App Store-ready — terms.html, privacy.html Apple ID + APNs token sections

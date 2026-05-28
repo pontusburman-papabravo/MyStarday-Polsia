@@ -17,18 +17,15 @@ let showNowNext = true; // toggled by parent — shows NU/NÄSTA/SEDAN badges
 let viewType = 'day_sections'; // 'day_sections' (default) | 'now_next_later'
 let viewTypeLocalOverride = false; // true when child toggled view locally (prevents server value from overwriting)
 let showMoodRating = true; // toggled by parent — shows mood slider after check-off
+// Check-off queue: serializes rapid toggles to prevent race conditions on loadDay
+let _checkOffQueue = [];
+let _checkOffRunning = false;
+let _pendingLoadDay = null; // dedup: coalesce concurrent loadDay calls
 let dopaminAnimation = true; // toggled by parent — star burst on check-off
 let minimalUiActive = false; // distraktionsfritt läge — hides print/dark/logout, replaces Skattkammaren text
 let visualTimer = true; // toggled by parent — Time Timer in now-card
 let hideClock = false; // toggled by parent — hides digital time labels on cards
 let colorCoding = true; // toggled by parent — color-codes cards by activity type
-
-// Serialize check-offs and coalesce day reloads to avoid races when tapping quickly
-let _toggleChain = Promise.resolve();
-let _loadDayInFlight = null;
-let _loadDayPending = null;
-let _loadDayGeneration = 0;
-let _ratingQueue = [];
 
 // ── Offline helpers ─────────────────────────────────────────────────────────
 
@@ -1933,13 +1930,6 @@ function toggleNextInSection(sectionKey, event) {
 // ── Toggle item & show rating ──────────────────────────
 
 async function toggleItem(itemId, isCurrentlyDone) {
-  _toggleChain = _toggleChain
-    .then(() => _toggleItemImpl(itemId, isCurrentlyDone))
-    .catch((err) => console.error('Toggle chain error:', err));
-  return _toggleChain;
-}
-
-async function _toggleItemImpl(itemId, isCurrentlyDone) {
   // ── Auto-complete sub-steps when completing the main activity ──
   // Clicking the main activity (e.g. "Klä på sig") should mark ALL sub-steps done.
   // Fetch sub-steps from API if not yet cached (child may never have expanded this activity).
@@ -2007,17 +1997,40 @@ async function _toggleItemImpl(itemId, isCurrentlyDone) {
     }
   }
 
-  // ── Fire API call (non-blocking) ──────────────────────────────────────────
-  // We start the network request immediately but do NOT await it before
-  // updating the UI. On offline, the call is queued and retried automatically.
+  // ── Enqueue check-off (serialized to prevent loadDay races) ─────────────
+  _checkOffQueue.push({
+    itemId, isCurrentlyDone, action, feedbackFor, icon, name,
+    resolve() {}, // placeholder; filled by _drainCheckOffQueue
+  });
+  // Drain queue if not already running
+  if (!_checkOffRunning) {
+    _drainCheckOffQueue();
+  }
+}
+
+/**
+ * Process check-off queue sequentially.
+ * Only one loadDay runs at a time; concurrent calls are coalesced.
+ */
+async function _drainCheckOffQueue() {
+  _checkOffRunning = true;
+  while (_checkOffQueue.length > 0) {
+    const task = _checkOffQueue.shift();
+    await _processCheckOff(task);
+  }
+  _checkOffRunning = false;
+}
+
+async function _processCheckOff({ itemId, isCurrentlyDone, action, feedbackFor, icon, name }) {
   let queueId = null;
+
   // Haptic: activity check-off → light impact (uncomplete also triggers light)
   if (window.Platform && window.Platform.haptics) {
     window.Platform.haptics.light();
   }
+
   const apiPromise = Auth.api(`/api/me/daily-log-items/${itemId}/${action}`, { method: 'PUT' })
     .then(() => {
-      // Server confirmed — if we had queued this, mark it synced
       if (queueId && window.OfflineQueue) {
         window.OfflineQueue.markSynced(queueId);
       }
@@ -2027,28 +2040,23 @@ async function _toggleItemImpl(itemId, isCurrentlyDone) {
         (err && (err.message === 'Failed to fetch' || err.message === 'NetworkError when attempting to fetch resource.'));
 
       if (isOffline && window.OfflineQueue) {
-        // Queue for background sync — do not show error to child
         queueId = window.OfflineQueue.enqueue(itemId, action);
         if (!isCurrentlyDone) {
-          // Only show the offline notice on completing (not uncompleting — less common)
           showToast('📶 Sparas när nätverket är tillbaka', false);
         }
       } else {
-        // Real server error — revert card state and inform
         console.error('Toggle error:', err);
         if (window.Platform && window.Platform.haptics) {
           window.Platform.haptics.error();
         }
-        loadDay(currentDate, false).catch(() => {});
+        _refreshLoadDay().catch(() => {});
         showToast('Kunde inte uppdatera. Försök igen.', true);
       }
     });
 
-  // ── UI update: reload the day immediately (optimistic) ───────────────────
-  // We reload regardless of whether the API succeeded yet — the optimistic
-  // assumption is that it will succeed. SSE will re-sync if needed.
+  // ── Dedupe concurrent loadDay: wait for any in-flight call ──────────────
   try {
-    await loadDay(currentDate, false);
+    await _refreshLoadDay();
     // Scroll to the new NU card so the child sees what's next
     setTimeout(() => {
       const newNowCard = document.querySelector('.now-card');
@@ -2067,6 +2075,20 @@ async function _toggleItemImpl(itemId, isCurrentlyDone) {
 
   // Await the API promise silently so unhandled rejection is avoided
   await apiPromise.catch(() => {});
+}
+
+/**
+ * Dedupe: if _pendingLoadDay is resolving a loadDay, return that promise.
+ * Otherwise start a new one and store it.
+ */
+async function _refreshLoadDay() {
+  if (_pendingLoadDay) {
+    return _pendingLoadDay;
+  }
+  _pendingLoadDay = loadDay(currentDate, false).finally(() => {
+    _pendingLoadDay = null;
+  });
+  return _pendingLoadDay;
 }
 
 // ── Listen for offline-queue sync events ─────────────────────────────────
@@ -2096,15 +2118,6 @@ window.addEventListener('offlineQueue:synced', (e) => {
 // ── Rating modal ───────────────────────────────────────
 
 function openRatingModal(itemId, icon, name) {
-  const modal = document.getElementById('ratingModal');
-  if (ratingItemId && modal && !modal.classList.contains('hidden')) {
-    _ratingQueue.push({ itemId, icon, name });
-    return;
-  }
-  _showRatingModal(itemId, icon, name);
-}
-
-function _showRatingModal(itemId, icon, name) {
   ratingItemId = itemId;
   ratingItemIcon = icon;
   ratingItemName = name;
@@ -2195,10 +2208,6 @@ function morphFace(score) {
 function dismissRating() {
   document.getElementById('ratingModal').classList.add('hidden');
   ratingItemId = null;
-  const next = _ratingQueue.shift();
-  if (next) {
-    setTimeout(() => _showRatingModal(next.itemId, next.icon, next.name), 200);
-  }
 }
 
 async function submitRating() {
@@ -2227,23 +2236,6 @@ async function submitRating() {
 // ── Load day ───────────────────────────────────────────
 
 async function loadDay(dateStr, showLoader = true) {
-  if (_loadDayInFlight) {
-    _loadDayPending = { dateStr, showLoader };
-    return _loadDayInFlight;
-  }
-  _loadDayInFlight = loadDayInternal(dateStr, showLoader).finally(() => {
-    _loadDayInFlight = null;
-    const pending = _loadDayPending;
-    _loadDayPending = null;
-    if (pending) {
-      loadDay(pending.dateStr, pending.showLoader);
-    }
-  });
-  return _loadDayInFlight;
-}
-
-async function loadDayInternal(dateStr, showLoader = true) {
-  const loadGen = ++_loadDayGeneration;
   currentDate = dateStr;
   // Clear sub-step caches when loading a new day (expand state preserved via subStepExpanded)
   subStepCache = {};
@@ -2259,7 +2251,6 @@ async function loadDayInternal(dateStr, showLoader = true) {
       ? OfflineStore.getDailyLog(me?.id, dateStr)
       : Promise.resolve(null));
     if (skeletonTimer) skeletonTimer.stop();
-    if (loadGen !== _loadDayGeneration) return;
     if (cached) {
       renderActivities(cached, null);
       showOfflineBanner('📶 Offline — visar sparat schema');
@@ -2291,7 +2282,6 @@ async function loadDayInternal(dateStr, showLoader = true) {
       Auth.api('/api/me/goal').catch(() => null),
     ]);
     if (skeletonTimer) skeletonTimer.stop();
-    if (loadGen !== _loadDayGeneration) return;
 
     // ── Cache data for offline use ─────────────────────────────
     if (window.OfflineStore && me?.id) {
@@ -2302,13 +2292,18 @@ async function loadDayInternal(dateStr, showLoader = true) {
 
     hideOfflineBanner();
 
+    // Load ratings: prefer batch from daily-log response, supplement any missing
     const items = data.items || [];
-    if (data.ratings && typeof data.ratings === 'object') {
-      itemRatings = { ...data.ratings };
-    } else {
-      await loadRatingsForItems(items.map(i => i.id));
+    for (const item of items) {
+      if (item.rating && item.rating.child_score != null) {
+        itemRatings[item.id] = { child_score: item.rating.child_score, child_comment: item.rating.child_comment || null };
+      }
     }
-    if (loadGen !== _loadDayGeneration) return;
+    // Fetch any items that didn't carry ratings in the batch response
+    const unfetched = items.filter(i => !itemRatings[i.id]).map(i => i.id);
+    if (unfetched.length > 0) {
+      await loadRatingsForItems(unfetched);
+    }
     // Store flags from API
     allowChildReorder = !!data.allow_child_reorder;
     showNowNext = data.show_now_next !== false; // default true if not present
@@ -2325,13 +2320,11 @@ async function loadDayInternal(dateStr, showLoader = true) {
     updateGoalBar(goalData);
   } catch (err) {
     if (skeletonTimer) skeletonTimer.stop();
-    if (loadGen !== _loadDayGeneration) return;
     console.error('Load day error:', err);
     // Fallback to IndexedDB cache on API failure
     const cached = await (window.OfflineStore
       ? OfflineStore.getDailyLog(me?.id, dateStr)
       : Promise.resolve(null));
-    if (loadGen !== _loadDayGeneration) return;
     if (cached) {
       renderActivities(cached, null);
       showOfflineBanner('📶 Offline — visar sparat schema');
@@ -2485,6 +2478,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
+    // Feature gate: hide mood rating if emotion_tracking is not available
+    try {
+      const featRes = await fetch('/api/features', { credentials: 'include' });
+      if (featRes.ok) {
+        const feats = await featRes.json();
+        const slugs = feats.map(f => f.slug);
+        if (!slugs.includes('emotion_tracking')) {
+          showMoodRating = false;
+        }
+      }
+    } catch { /* fail open */ }
+
     me = await Auth.api('/api/auth/me');
     // Cache child profile for offline access
     if (me && window.OfflineStore) {

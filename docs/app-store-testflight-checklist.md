@@ -138,7 +138,7 @@
 | Capabilities: Push Notifications, Sign in with Apple | ☐ |
 | Export compliance ifylld (eller N/A) | ☐ |
 | App Store Connect-metadata: screenshots, description, keywords klara | ☐ |
-| Testkontot `review@mystarday.se` finns i databasen | ✅ (2026-05-28, mystarday.se) |
+| Testkontot `review@mystarday.se` finns i databasen | ☐ |
 | SW version i app matches version notes | ☐ |
 
 ---
