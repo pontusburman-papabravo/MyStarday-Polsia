@@ -20,9 +20,9 @@ Backend räknar befintliga familjer i samma transaktion som insert — race-cond
 
 ---
 
-## Miljövariabler att verifiera på Render
+## Miljövariabler att verifiera på Polsia
 
-Kontrollera att samtliga nedan är satta i Render → Environment-variabler innan submission:
+Kontrollera att samtliga nedan är satta i Polsia → Environment innan submission:
 
 | Variabel | Värde | Kommentar |
 |----------|-------|-----------|
@@ -51,16 +51,22 @@ https://mystarday.se/api/iap/webhook
 
 ---
 
-## Testkonto — skapa manuellt på mystarday.se
+## Testkonto — Apple Review (produktion)
 
-Pontus registrerar sig manuellt på https://mystarday.se:
-1. Gå till https://mystarday.se/register
-2. E-post: `review@mystarday.se` | Lösenord: `AppReview2026!`
-3. Namn: Pontus (valfritt)
-4. Bekräfta e-post (klicka länken i inkorgen)
-5. Lägg till barn: **Anna**, född 2018-09-08, PIN **4455**
-6. Skapa minst ett veckoschema med aktiviteter + en belöning i Skattkammaren
+**Status: ✅ Skapat 2026-05-28** via ordinarie registreringsflöde på https://mystarday.se (inte SQL-seed).
 
+Kontot initierades som en riktig familj: skol- och helgscheman samt Skattkammaren-belöningar genererades automatiskt. `is_lifetime_free=true` (skapades innan gränsen på 200 familjer).
+
+> Om kontot redan finns på produktion kan du hoppa över registreringen och bara verifiera inloggning.
+>
+> Annars — registrera manuellt på https://mystarday.se:
+> 1. Gå till https://mystarday.se/register
+> 2. E-post: `review@mystarday.se` | Lösenord: `AppReview2026!`
+> 3. Namn: Pontus (valfritt)
+> 4. Bekräfta e-post (klicka länken i inkorgen)
+> 5. Lägg till barn: **Anna**, född 2018-09-08, PIN **4455**
+> 6. Skapa minst ett veckoschema med aktiviteter + en belöning i Skattkammaren
+>
 > ⚠️ Kontot hamnar bland de <200 och får **lifetime free automatiskt** — bekräfta med:
 > ```sql
 > SELECT is_lifetime_free FROM family WHERE id = (SELECT family_id FROM parent WHERE email = 'review@mystarday.se');
@@ -68,9 +74,26 @@ Pontus registrerar sig manuellt på https://mystarday.se:
 > ```
 
 ### Testkonto-referens (för Apple-revisorer)
-- E-post: `review@mystarday.se`
-- Lösenord: `AppReview2026!`
-- Barn: Anna, PIN: 4455
+
+| Fält | Värde |
+|------|-------|
+| E-post | `review@mystarday.se` |
+| Lösenord | `AppReview2026!` |
+| Barn | **Anna** (ASCII-namn; undviker å/ä/ö för internationella granskare) |
+| Födelsedatum | `2018-09-08` (app visar ~7 år) |
+| Barn-PIN | `4455` (ej `1234` — undviker Apples säkerhetsflaggor) |
+| Lifetime free | Ja |
+
+### Verifiera i Neon (valfritt)
+
+```sql
+SELECT f.is_lifetime_free, c.name, c.birthday, c.pin_hash IS NOT NULL AS has_pin
+FROM parent p
+JOIN family f ON f.id = p.family_id
+JOIN child c ON c.family_id = f.id
+WHERE p.email = 'review@mystarday.se';
+-- Förväntat: is_lifetime_free=true, name=Anna, birthday=2018-09-08
+```
 
 ---
 
