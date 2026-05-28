@@ -2,11 +2,11 @@
 
 Kopiera blocket under **"Prompt att klistra in"** när du vill att Polsia ska deploya, granska eller fortsätta arbeta på Min Stjärndag.
 
+**Källa till sanning (produktion):** Senaste **ZIP-exporten** från Polsia (t.ex. `stjarndag (16).zip`) = exakt det som kör på https://stjarndag.polsia.app.  
 **Deploy (kanonisk):** https://github.com/Polsia-Inc/stjarndag — Polsia deployer **endast** härifrån.  
-**Referens / diff:** https://github.com/pontusburman-papabravo/MyStarday-Polsia (spegel efter ZIP — inte deploy-remote).  
-**Produktion:** https://stjarndag.polsia.app  
+**Personlig spegel:** https://github.com/pontusburman-papabravo/MyStarday-Polsia — packa upp ZIP → commit; använd för diff/handoff, inte som deploy-remote.  
 
-Byt branch/commit i länkarna efter behov (`main` på Polsia-Inc, eller t.ex. `cursor/extract-stjarndag-zip-2440` @ `cfa9734` på personliga repot).
+Byt branch/commit i länkarna efter behov. `main` på personliga repot kan ligga efter ZIP/prod tills du mergat en sync-PR.
 
 ---
 
