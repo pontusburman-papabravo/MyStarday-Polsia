@@ -1462,8 +1462,8 @@
   </div>
 
   <!-- Rating Modal (child: drag-slider 1–10 + morphing face) -->
-  <!-- Gate 2B: kanslo_tracking — hide entire mood rating UI when feature is OFF -->
-  <div id="ratingModal" data-feature="kanslo_tracking" class="hidden fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-4">
+  <!-- Mood rating after check-off — gated by child.show_mood_rating (parent setting), not feature flags -->
+  <div id="ratingModal" class="hidden fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-4">
     <div class="pop-in bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
       <div class="text-center mb-3">
         <div class="text-4xl mb-1" id="ratingActivityIcon">⭐</div>
@@ -1542,7 +1542,7 @@
   <!-- SSE real-time event handlers (reload on schedule/star/goal updates) -->
   <script src="/js/child-dashboard-sse.js?v=2.12.0"></script>
 
-  <!-- Feature-flag frontend gates (Gate 2B: kanslo_tracking for rating modal) -->
+  <!-- Feature-flag frontend gates -->
   <script src="/js/feature-check.js?v=2.14.0"></script>
 </body>
 </html>

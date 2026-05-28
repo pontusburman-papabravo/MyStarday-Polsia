@@ -627,6 +627,31 @@ childSelfRouter.get('/daily-log', async (req, res) => {
       item.sub_step_count = subStepCountMap[item.activity_template_id] || 0;
     }
 
+    // Batch-load child/parent ratings for all items (avoids N+1 /rating calls from child UI)
+    const ratings = {};
+    const itemIds = sortedItems.map((i) => i.id);
+    if (itemIds.length > 0) {
+      const ratingsResult = await db.query(
+        `SELECT daily_log_item_id,
+                MAX(CASE WHEN user_type = 'child' THEN score END)::int AS child_score,
+                MAX(CASE WHEN user_type = 'child' THEN comment END) AS child_comment,
+                MAX(CASE WHEN user_type = 'parent' THEN score END)::int AS parent_score,
+                MAX(CASE WHEN user_type = 'parent' THEN comment END) AS parent_comment
+         FROM rating
+         WHERE daily_log_item_id = ANY($1::uuid[])
+         GROUP BY daily_log_item_id`,
+        [itemIds]
+      );
+      for (const row of ratingsResult.rows) {
+        ratings[row.daily_log_item_id] = {
+          child_score: row.child_score,
+          child_comment: row.child_comment,
+          parent_score: row.parent_score,
+          parent_comment: row.parent_comment,
+        };
+      }
+    }
+
     // Compute totals from the FULL list (before any filtering)
     const total = sortedItems.length;
     const completedCount = sortedItems.filter(i => i.completed).length;
@@ -685,6 +710,7 @@ childSelfRouter.get('/daily-log', async (req, res) => {
       items: filteredItems,
       sections: filteredSections,
       section_times: sectionTimes,
+      ratings,
       generated,
       total,
       completed: completedCount,
