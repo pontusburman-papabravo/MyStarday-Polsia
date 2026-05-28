@@ -2,9 +2,11 @@
 
 Kopiera blocket under **"Prompt att klistra in"** när du vill att Polsia ska deploya, granska eller fortsätta arbeta på Min Stjärndag.
 
-**Repo:** https://github.com/pontusburman-papabravo/MyStarday-Polsia  
+**Deploy (kanonisk):** https://github.com/Polsia-Inc/stjarndag — Polsia deployer **endast** härifrån.  
+**Referens / diff:** https://github.com/pontusburman-papabravo/MyStarday-Polsia (spegel efter ZIP — inte deploy-remote).  
 **Produktion:** https://stjarndag.polsia.app  
-**Gren:** Byt `main` i länkarna till din branch eller commit-SHA om `main` inte är uppdaterad än.
+
+Byt branch/commit i länkarna efter behov (`main` på Polsia-Inc, eller t.ex. `cursor/extract-stjarndag-zip-2440` @ `cfa9734` på personliga repot).
 
 ---
 
@@ -20,9 +22,9 @@ Familjeapp (svenska): scheman, stjärnor, belöningar (Skattkammaren), föräldr
 [BESKRIV HÄR: t.ex. "Deploya senaste main", "Kör migrate", "Verifiera cron efter ändring i polsia.toml"]
 
 ## Git
-- Repo: https://github.com/pontusburman-papabravo/MyStarday-Polsia
-- Branch/commit: [main ELLER branch-namn ELLER full commit-SHA]
-- PR (om relevant): [länk till PR]
+- Deploy-repo: https://github.com/Polsia-Inc/stjarndag @ [branch/commit]
+- Diff-källa (om ändringar kommer utifrån): https://github.com/pontusburman-papabravo/MyStarday-Polsia @ [branch/commit]
+- PR på personliga repot (endast referens): [länk]
 
 ## Filer som ändrats (läs och applicera dessa)
 1. [FIL 1 — GitHub blob-länk, gärna med radintervall #L10-L40]
@@ -97,4 +99,20 @@ Om `main` bara har ZIP-filen, peka Polsia på:
 - PR: https://github.com/pontusburman-papabravo/MyStarday-Polsia/pull/1  
 - Exempel-länk: `.../blob/cursor/extract-stjarndag-zip-2440/server.js`
 
-Efter merge: använd alltid `main` (eller tag/commit som Polsia deployar från).
+Efter merge på personliga repot: skapa engineering task som cherry-pickar till **Polsia-Inc/stjarndag** — deploya aldrig direkt från MyStarday-Polsia.
+
+---
+
+## Röktest efter deploy (manuellt)
+
+App Store / demo (se `docs/RELEASE.md`, `docs/app-store-demo-konto.md`):
+
+| Steg | Kontroll |
+|------|----------|
+| Health | `GET https://stjarndag.polsia.app/health` → OK |
+| Inloggning | `review@mystarday.se` / lösenord enligt demo-doc |
+| Barn-PIN | Anna — PIN **4455** |
+| Lifetime free | I Neon: `SELECT is_lifetime_free FROM family WHERE id = (SELECT family_id FROM parent WHERE email = 'review@mystarday.se');` — demo-kontot kan hamna bland första 200 |
+| Prenumeration | Ingen betalvägg för lifetime-free; `hasActiveSubscription` / IAP UI |
+
+Därefter: Xcode → TestFlight enligt `docs/app-store-testflight-checklist.md`.
