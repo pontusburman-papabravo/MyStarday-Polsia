@@ -627,29 +627,28 @@ childSelfRouter.get('/daily-log', async (req, res) => {
       item.sub_step_count = subStepCountMap[item.activity_template_id] || 0;
     }
 
-    // Batch-load child/parent ratings for all items (avoids N+1 /rating calls from child UI)
-    const ratings = {};
-    const itemIds = sortedItems.map((i) => i.id);
+    // ── Batch-fetch child ratings for all items in one query ───────────────
+    // Replaces N sequential GET /api/me/daily-log-items/:id/rating calls.
+    // Uses the `rating` table (daily_log_item_id + user_type='child').
+    const itemIds = sortedItems.map(i => i.id);
+    const ratingMap = {};
     if (itemIds.length > 0) {
-      const ratingsResult = await db.query(
-        `SELECT daily_log_item_id,
-                MAX(CASE WHEN user_type = 'child' THEN score END)::int AS child_score,
-                MAX(CASE WHEN user_type = 'child' THEN comment END) AS child_comment,
-                MAX(CASE WHEN user_type = 'parent' THEN score END)::int AS parent_score,
-                MAX(CASE WHEN user_type = 'parent' THEN comment END) AS parent_comment
+      const ratingResult = await db.query(
+        `SELECT daily_log_item_id, score AS child_score, comment AS child_comment
          FROM rating
-         WHERE daily_log_item_id = ANY($1::uuid[])
-         GROUP BY daily_log_item_id`,
+         WHERE daily_log_item_id = ANY($1::uuid[]) AND user_type = 'child'`,
         [itemIds]
       );
-      for (const row of ratingsResult.rows) {
-        ratings[row.daily_log_item_id] = {
+      for (const row of ratingResult.rows) {
+        ratingMap[row.daily_log_item_id] = {
           child_score: row.child_score,
           child_comment: row.child_comment,
-          parent_score: row.parent_score,
-          parent_comment: row.parent_comment,
         };
       }
+    }
+    // Attach rating to each item
+    for (const item of sortedItems) {
+      item.rating = ratingMap[item.id] || null;
     }
 
     // Compute totals from the FULL list (before any filtering)
@@ -710,7 +709,6 @@ childSelfRouter.get('/daily-log', async (req, res) => {
       items: filteredItems,
       sections: filteredSections,
       section_times: sectionTimes,
-      ratings,
       generated,
       total,
       completed: completedCount,

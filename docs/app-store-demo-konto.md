@@ -3,8 +3,6 @@
 > Test account credentials and step-by-step walkthrough for Apple App Store reviewers.
 > English — Apple reviewers read English.
 
-**Production status:** Account created **2026-05-28** on https://mystarday.se via the normal registration/onboarding flow (not a database seed). School and weekend schedules plus Skattkammaren rewards were auto-generated like a real family. `is_lifetime_free=true`.
-
 ---
 
 ## Credentials
@@ -13,11 +11,8 @@
 |-------|-------|
 | Parent email | `review@mystarday.se` |
 | Parent password | `AppReview2026!` |
-| Child name | Anna |
-| Child birthday | 2018-09-08 (~7 years in app) |
 | Child PIN | `4455` |
-| App URL | https://mystarday.se |
-| Legacy PWA URL | https://stjarndag.polsia.app |
+| App URL | https://stjarndag.polsia.app |
 
 ---
 
@@ -68,12 +63,28 @@ The parent dashboard shows:
 
 ## Test account setup (internal use only)
 
-**Do not SQL-seed.** Create on production so onboarding copies default schedules and rewards:
+To create this account in the database, run:
 
-1. https://mystarday.se/register — `review@mystarday.se` / `AppReview2026!`
-2. Verify email from inbox
-3. Add child **Anna**, birthday **2018-09-08**, PIN **4455** (avoid `1234` and Swedish special characters in the child name for international reviewers)
-4. Confirm `is_lifetime_free` if still under the first 200 families (see `docs/RELEASE.md`)
+```sql
+-- 1. Create the parent account (family_id will be generated)
+INSERT INTO parent (email, password_hash, name, family_id, email_verified, account_type, created_at, updated_at)
+VALUES (
+  'review@mystarday.se',
+  (SELECT ('$2b$' || rounds || '$' || encode(gen_salt('bf', ' Geno'), 'hex')) FROM (SELECT 12 AS rounds) AS x),
+  'Review Tester',
+  gen_random_uuid(),
+  true,
+  'family',
+  now(),
+  now()
+);
+
+-- The password hash is generated separately; use bcrypt with 12 rounds.
+-- Replace the hash above with a real bcrypt hash of 'AppReview2026!' before inserting.
+```
+
+> **Note:** For the actual seed, use bcrypt rounds=12 on `AppReview2026!` to generate the hash.
+> The full seed script is in `migrations/1790061000000_appstore_test_account.sql`.
 
 ---
 
@@ -94,7 +105,7 @@ The parent dashboard shows:
 ## Troubleshooting
 
 **Can't log in?**
-- Confirm the account exists on production (`review@mystarday.se`, email verified)
+- Check the account is seeded in the database (run the migration)
 - Try password reset at `/login?reset=1`
 
 **Child PIN not working?**
@@ -110,7 +121,7 @@ The parent dashboard shows:
 
 | URL | Purpose |
 |-----|---------|
-| https://mystarday.se | Main app (production) |
-| https://mystarday.se/privacy | Privacy Policy |
-| https://mystarday.se/terms | Terms of Service |
-| https://stjarndag.polsia.app | Legacy PWA host (redirects) |
+| https://stjarndag.polsia.app | Main app |
+| https://stjarndag.polsia.app/privacy | Privacy Policy |
+| https://stjarndag.polsia.app/terms | Terms of Service |
+| https://mystarday.se | Marketing landing page |
