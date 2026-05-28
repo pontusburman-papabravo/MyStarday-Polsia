@@ -28,10 +28,11 @@ Please use our dedicated App Store review test account:
 | **Parent email** | `review@mystarday.se` |
 | **Parent password** | `AppReview2026!` |
 | **Child name** | Anna |
+| **Child birthday** | 2018-09-08 (~7 years) |
 | **Child PIN** | `4455` |
-| **App URL** | https://stjarndag.polsia.app |
+| **App URL** | https://mystarday.se |
 
-**Note:** This account is pre-seeded in our database and is not connected to any real family's data. It contains only fictional review content.
+**Note:** This account was created on production (2026-05-28) through the normal app flow. It is not connected to any real family's data. School/weekend schedules and Skattkammaren rewards are pre-populated like a new family. Lifetime free access applies.
 
 ---
 
@@ -85,8 +86,8 @@ Please use our dedicated App Store review test account:
 - Passwords are hashed with bcrypt (12 rounds)
 - Push notification tokens are stored securely and can be deleted on request
 - GDPR: users can export or delete their data via Settings → Radera konto
-- Privacy Policy: https://stjarndag.polsia.app/privacy
-- Terms of Service: https://stjarndag.polsia.app/terms
+- Privacy Policy: https://mystarday.se/privacy
+- Terms of Service: https://mystarday.se/terms
 
 ---
 
