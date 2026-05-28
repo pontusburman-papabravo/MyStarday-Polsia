@@ -1,0 +1,587 @@
+/**
+ * Child-scoped bulk operations: copy day, copy to child, copy to weeks,
+ * copy item to day, copy item to child, swap day.
+ * Does NOT handle: CRUD, item management, templates.
+ */
+
+const express = require('express');
+const db = require('../../lib/db');
+const { requireParent } = require('../../middleware/auth');
+const { syncDailyLogWithSchedule } = require('../../lib/daily-log-generator');
+const { validate } = require('../../middleware/validate');
+const { CopyDaySchema, CopyToChildSchema } = require('../../lib/schemas');
+
+const router = express.Router({ mergeParams: true });
+router.use(requireParent);
+
+async function getChildAccess(parentId, childId) {
+  const result = await db.query(
+    'SELECT c.id, c.family_id FROM child c JOIN parent_child pc ON pc.child_id = c.id WHERE pc.parent_id = $1 AND c.id = $2',
+    [parentId, childId]
+  );
+  return result.rows[0] || null;
+}
+
+// POST /api/children/:childId/schedules/copy-day — copy one day → other days
+router.post('/copy-day', validate(CopyDaySchema), async (req, res) => {
+  try {
+    const child = await getChildAccess(req.user.id, req.params.childId);
+    if (!child) return res.status(403).json({ error: 'Du har inte åtkomst till detta barn' });
+
+    const { from_day, to_days } = req.body;
+    if (from_day === undefined || !Array.isArray(to_days) || to_days.length === 0) {
+      return res.status(400).json({ error: 'from_day och to_days[] krävs' });
+    }
+
+    const fromDow = parseInt(from_day, 10);
+    if (isNaN(fromDow) || fromDow < 0 || fromDow > 6) {
+      return res.status(400).json({ error: 'from_day måste vara 0–6' });
+    }
+
+    const sourceResult = await db.query(
+      'SELECT id FROM weekly_schedule WHERE child_id = $1 AND day_of_week = $2',
+      [req.params.childId, fromDow]
+    );
+    if (sourceResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Inget schema finns för den angivna veckodagen' });
+    }
+    const sourceId = sourceResult.rows[0].id;
+
+    const itemsResult = await db.query(
+      'SELECT activity_template_id, start_time, end_time, sort_order, section FROM weekly_schedule_item WHERE weekly_schedule_id = $1 ORDER BY sort_order ASC',
+      [sourceId]
+    );
+    const sourceItems = itemsResult.rows;
+
+    const client = await db.getClient();
+    try {
+      await client.query('BEGIN');
+
+      const results = [];
+      for (const toDow of to_days) {
+        const dow = parseInt(toDow, 10);
+        if (isNaN(dow) || dow < 0 || dow > 6) continue;
+        if (dow === fromDow) continue;
+
+        let targetScheduleId;
+        const existingTarget = await client.query(
+          'SELECT id FROM weekly_schedule WHERE child_id = $1 AND day_of_week = $2',
+          [req.params.childId, dow]
+        );
+        if (existingTarget.rows.length > 0) {
+          targetScheduleId = existingTarget.rows[0].id;
+          await client.query('DELETE FROM weekly_schedule_item WHERE weekly_schedule_id = $1', [targetScheduleId]);
+        } else {
+          const newSchedule = await client.query(
+            'INSERT INTO weekly_schedule (child_id, day_of_week, sort_order) VALUES ($1, $2, $3) RETURNING id',
+            [req.params.childId, dow, dow]
+          );
+          targetScheduleId = newSchedule.rows[0].id;
+        }
+
+        for (const item of sourceItems) {
+          await client.query(
+            'INSERT INTO weekly_schedule_item (weekly_schedule_id, activity_template_id, start_time, end_time, sort_order, section) VALUES ($1, $2, $3, $4, $5, $6)',
+            [targetScheduleId, item.activity_template_id, item.start_time, item.end_time, item.sort_order, item.section]
+          );
+        }
+        results.push(dow);
+      }
+
+      await client.query('COMMIT');
+
+      for (const dow of results) {
+        try {
+          await syncDailyLogWithSchedule(req.params.childId, dow);
+        } catch (syncErr) {
+          console.error('[SCHEDULES] Copy-day sync error (non-fatal):', syncErr.message);
+        }
+      }
+
+      res.json({ message: `Schema kopierat till ${results.length} dag(ar)`, copied_to_days: results });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('[SCHEDULES] Copy-day error:', err);
+    res.status(500).json({ error: 'Något gick fel. Försök igen senare.' });
+  }
+});
+
+// POST /api/children/:childId/schedules/copy-to-child — copy all schedules to another child
+router.post('/copy-to-child', validate(CopyToChildSchema), async (req, res) => {
+  try {
+    const child = await getChildAccess(req.user.id, req.params.childId);
+    if (!child) return res.status(403).json({ error: 'Du har inte åtkomst till detta barn' });
+
+    const { target_child_id, days, overwrite } = req.body;
+    if (!target_child_id) return res.status(400).json({ error: 'target_child_id krävs' });
+    if (target_child_id === req.params.childId) return res.status(400).json({ error: 'Kan inte kopiera till samma barn' });
+
+    const targetChild = await getChildAccess(req.user.id, target_child_id);
+    if (!targetChild) return res.status(403).json({ error: 'Du har inte åtkomst till målbarnet' });
+
+    const dayFilter = Array.isArray(days) && days.length > 0
+      ? days.map(d => parseInt(d, 10)).filter(d => d >= 0 && d <= 6)
+      : null;
+
+    const schedulesResult = dayFilter
+      ? await db.query(
+          'SELECT id, day_of_week, sort_order FROM weekly_schedule WHERE child_id = $1 AND day_of_week = ANY($2)',
+          [req.params.childId, dayFilter]
+        )
+      : await db.query(
+          'SELECT id, day_of_week, sort_order FROM weekly_schedule WHERE child_id = $1',
+          [req.params.childId]
+        );
+
+    const client = await db.getClient();
+    try {
+      await client.query('BEGIN');
+
+      for (const srcSchedule of schedulesResult.rows) {
+        const itemsResult = await client.query(
+          'SELECT activity_template_id, start_time, end_time, sort_order, section FROM weekly_schedule_item WHERE weekly_schedule_id = $1 ORDER BY sort_order ASC',
+          [srcSchedule.id]
+        );
+
+        let targetScheduleId;
+        const existingTarget = await client.query(
+          'SELECT id FROM weekly_schedule WHERE child_id = $1 AND day_of_week = $2',
+          [target_child_id, srcSchedule.day_of_week]
+        );
+        if (existingTarget.rows.length > 0) {
+          targetScheduleId = existingTarget.rows[0].id;
+          if (overwrite === false) {
+            const existingItems = await client.query(
+              'SELECT id FROM weekly_schedule_item WHERE weekly_schedule_id = $1 LIMIT 1',
+              [targetScheduleId]
+            );
+            if (existingItems.rows.length > 0) continue;
+          } else {
+            await client.query('DELETE FROM weekly_schedule_item WHERE weekly_schedule_id = $1', [targetScheduleId]);
+          }
+        } else {
+          const newSchedule = await client.query(
+            'INSERT INTO weekly_schedule (child_id, day_of_week, sort_order) VALUES ($1, $2, $3) RETURNING id',
+            [target_child_id, srcSchedule.day_of_week, srcSchedule.sort_order]
+          );
+          targetScheduleId = newSchedule.rows[0].id;
+        }
+
+        for (const item of itemsResult.rows) {
+          await client.query(
+            'INSERT INTO weekly_schedule_item (weekly_schedule_id, activity_template_id, start_time, end_time, sort_order, section) VALUES ($1, $2, $3, $4, $5, $6)',
+            [targetScheduleId, item.activity_template_id, item.start_time, item.end_time, item.sort_order, item.section]
+          );
+        }
+      }
+
+      await client.query('COMMIT');
+
+      for (const srcSchedule of schedulesResult.rows) {
+        try {
+          await syncDailyLogWithSchedule(target_child_id, srcSchedule.day_of_week);
+        } catch (syncErr) {
+          console.error('[SCHEDULES] Copy-to-child sync error (non-fatal):', syncErr.message);
+        }
+      }
+
+      const dayCount = schedulesResult.rows.length;
+      const msg = dayFilter
+        ? `Schema kopierat för ${dayCount} dag${dayCount !== 1 ? 'ar' : ''}!`
+        : 'Hela veckoschemat har kopierats till det andra barnet';
+      res.json({ message: msg });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('[SCHEDULES] Copy-to-child error:', err);
+    res.status(500).json({ error: 'Något gick fel. Försök igen senare.' });
+  }
+});
+
+// POST /api/children/:childId/schedules/copy-to-weeks — copy weekly schedule to future weeks
+router.post('/copy-to-weeks', async (req, res) => {
+  try {
+    const child = await getChildAccess(req.user.id, req.params.childId);
+    if (!child) return res.status(403).json({ error: 'Du har inte åtkomst till detta barn' });
+
+    const { from_day, week_offsets } = req.body;
+    if (from_day === undefined || !Array.isArray(week_offsets) || week_offsets.length === 0) {
+      return res.status(400).json({ error: 'from_day och week_offsets[] krävs' });
+    }
+
+    const fromDow = parseInt(from_day, 10);
+    if (isNaN(fromDow) || fromDow < 0 || fromDow > 6) {
+      return res.status(400).json({ error: 'from_day måste vara 0–6' });
+    }
+
+    const sourceResult = await db.query(
+      'SELECT id FROM weekly_schedule WHERE child_id = $1 AND day_of_week = $2',
+      [req.params.childId, fromDow]
+    );
+    if (sourceResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Inget schema finns för den angivna veckodagen' });
+    }
+    const sourceId = sourceResult.rows[0].id;
+
+    const itemsResult = await db.query(
+      `SELECT wsi.activity_template_id, wsi.start_time, wsi.end_time, wsi.sort_order, wsi.section,
+              at.name, at.icon, at.star_value
+       FROM weekly_schedule_item wsi
+       JOIN activity_template at ON at.id = wsi.activity_template_id
+       WHERE wsi.weekly_schedule_id = $1
+       ORDER BY wsi.sort_order ASC`,
+      [sourceId]
+    );
+    const sourceItems = itemsResult.rows;
+
+    const now = new Date();
+    const todayDow = now.getDay();
+    const daysFromMonday = fromDow === 0 ? 6 : fromDow - 1;
+    const todayFromMonday = todayDow === 0 ? 6 : todayDow - 1;
+    const diffToThisWeek = daysFromMonday - todayFromMonday;
+    const thisWeekDate = new Date(now);
+    thisWeekDate.setDate(now.getDate() + diffToThisWeek);
+    thisWeekDate.setHours(0, 0, 0, 0);
+
+    const client = await db.getClient();
+    let copiedCount = 0;
+    try {
+      await client.query('BEGIN');
+
+      for (const offset of week_offsets) {
+        const wOff = parseInt(offset, 10);
+        if (isNaN(wOff) || wOff < 1 || wOff > 52) continue;
+
+        const targetDate = new Date(thisWeekDate);
+        targetDate.setDate(thisWeekDate.getDate() + wOff * 7);
+        const dateStr = targetDate.toISOString().slice(0, 10);
+
+        const existingSd = await client.query(
+          'SELECT id FROM special_day_schedule WHERE child_id = $1 AND date = $2',
+          [req.params.childId, dateStr]
+        );
+
+        let sdId;
+        if (existingSd.rows.length > 0) {
+          sdId = existingSd.rows[0].id;
+          await client.query(
+            'DELETE FROM special_day_schedule_item WHERE special_day_schedule_id = $1',
+            [sdId]
+          );
+        } else {
+          const newSd = await client.query(
+            `INSERT INTO special_day_schedule (child_id, date, note, created_at)
+             VALUES ($1, $2, NULL, NOW()) RETURNING id`,
+            [req.params.childId, dateStr]
+          );
+          sdId = newSd.rows[0].id;
+        }
+
+        let itemSortOrder = 0;
+        for (const item of sourceItems) {
+          await client.query(
+            `INSERT INTO special_day_schedule_item
+               (special_day_schedule_id, activity_template_id, name, icon, start_time, end_time, star_value, sort_order, section)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [sdId, item.activity_template_id, item.name, item.icon, item.start_time, item.end_time, item.star_value, itemSortOrder++, item.section]
+          );
+        }
+
+        copiedCount++;
+      }
+
+      await client.query('COMMIT');
+      res.json({ message: `Schema kopierat till ${copiedCount} kommande vecka${copiedCount !== 1 ? 'r' : ''}`, copied_count: copiedCount });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('[SCHEDULES] Copy-to-weeks error:', err);
+    res.status(500).json({ error: 'Något gick fel. Försök igen senare.' });
+  }
+});
+
+// POST /api/children/:childId/schedules/copy-item-to-day — copy single item to another day
+router.post('/copy-item-to-day', async (req, res) => {
+  try {
+    const child = await getChildAccess(req.user.id, req.params.childId);
+    if (!child) return res.status(403).json({ error: 'Du har inte åtkomst till detta barn' });
+
+    const { item_id, from_schedule_id, to_day } = req.body;
+    if (!item_id || !from_schedule_id || to_day === undefined) {
+      return res.status(400).json({ error: 'item_id, from_schedule_id, to_day krävs' });
+    }
+    const toDow = parseInt(to_day, 10);
+    if (isNaN(toDow) || toDow < 0 || toDow > 6) {
+      return res.status(400).json({ error: 'to_day måste vara 0–6' });
+    }
+
+    const itemResult = await db.query(
+      `SELECT wsi.* FROM weekly_schedule_item wsi
+       JOIN weekly_schedule ws ON ws.id = wsi.weekly_schedule_id
+       WHERE wsi.id = $1 AND wsi.weekly_schedule_id = $2 AND ws.child_id = $3`,
+      [item_id, from_schedule_id, req.params.childId]
+    );
+    if (itemResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Aktiviteten hittades inte' });
+    }
+    const item = itemResult.rows[0];
+
+    const client = await db.getClient();
+    try {
+      await client.query('BEGIN');
+
+      let targetScheduleId;
+      const existingTarget = await client.query(
+        'SELECT id FROM weekly_schedule WHERE child_id = $1 AND day_of_week = $2',
+        [req.params.childId, toDow]
+      );
+      if (existingTarget.rows.length > 0) {
+        targetScheduleId = existingTarget.rows[0].id;
+      } else {
+        const newSchedule = await client.query(
+          'INSERT INTO weekly_schedule (child_id, day_of_week, sort_order) VALUES ($1, $2, $3) RETURNING id',
+          [req.params.childId, toDow, toDow]
+        );
+        targetScheduleId = newSchedule.rows[0].id;
+      }
+
+      const existingItem = await client.query(
+        'SELECT id FROM weekly_schedule_item WHERE weekly_schedule_id = $1 AND activity_template_id = $2',
+        [targetScheduleId, item.activity_template_id]
+      );
+      if (existingItem.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return res.json({ message: 'Aktiviteten finns redan den dagen', schedule_id: targetScheduleId, skipped: true });
+      }
+
+      const maxResult = await client.query(
+        'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM weekly_schedule_item WHERE weekly_schedule_id = $1',
+        [targetScheduleId]
+      );
+      const nextOrder = maxResult.rows[0].next_order;
+
+      const result = await client.query(
+        `INSERT INTO weekly_schedule_item (weekly_schedule_id, activity_template_id, start_time, end_time, sort_order, section)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+        [targetScheduleId, item.activity_template_id, item.start_time, item.end_time, nextOrder, item.section]
+      );
+      await client.query('COMMIT');
+
+      try {
+        await syncDailyLogWithSchedule(req.params.childId, toDow);
+      } catch (syncErr) {
+        console.error('[SCHEDULES] copy-item-to-day sync error (non-fatal):', syncErr.message);
+      }
+
+      res.json({ message: 'Aktiviteten kopierades', item_id: result.rows[0].id, schedule_id: targetScheduleId });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('[SCHEDULES] copy-item-to-day error:', err);
+    res.status(500).json({ error: 'Något gick fel. Försök igen senare.' });
+  }
+});
+
+// POST /api/children/:childId/schedules/copy-item-to-child — copy single item to another child
+router.post('/copy-item-to-child', async (req, res) => {
+  try {
+    const child = await getChildAccess(req.user.id, req.params.childId);
+    if (!child) return res.status(403).json({ error: 'Du har inte åtkomst till detta barn' });
+
+    const { item_id, from_schedule_id, to_child_id, to_day } = req.body;
+    if (!item_id || !from_schedule_id || !to_child_id || to_day === undefined) {
+      return res.status(400).json({ error: 'item_id, from_schedule_id, to_child_id, to_day krävs' });
+    }
+    const toDow = parseInt(to_day, 10);
+    if (isNaN(toDow) || toDow < 0 || toDow > 6) {
+      return res.status(400).json({ error: 'to_day måste vara 0–6' });
+    }
+
+    const targetChild = await getChildAccess(req.user.id, to_child_id);
+    if (!targetChild) return res.status(403).json({ error: 'Du har inte åtkomst till målbarnet' });
+
+    const itemResult = await db.query(
+      `SELECT wsi.* FROM weekly_schedule_item wsi
+       JOIN weekly_schedule ws ON ws.id = wsi.weekly_schedule_id
+       WHERE wsi.id = $1 AND wsi.weekly_schedule_id = $2 AND ws.child_id = $3`,
+      [item_id, from_schedule_id, req.params.childId]
+    );
+    if (itemResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Aktiviteten hittades inte' });
+    }
+    const item = itemResult.rows[0];
+
+    const client = await db.getClient();
+    try {
+      await client.query('BEGIN');
+
+      let targetScheduleId;
+      const existingTarget = await client.query(
+        'SELECT id FROM weekly_schedule WHERE child_id = $1 AND day_of_week = $2',
+        [to_child_id, toDow]
+      );
+      if (existingTarget.rows.length > 0) {
+        targetScheduleId = existingTarget.rows[0].id;
+      } else {
+        const newSchedule = await client.query(
+          'INSERT INTO weekly_schedule (child_id, day_of_week, sort_order) VALUES ($1, $2, $3) RETURNING id',
+          [to_child_id, toDow, toDow]
+        );
+        targetScheduleId = newSchedule.rows[0].id;
+      }
+
+      const existingItem = await client.query(
+        'SELECT id FROM weekly_schedule_item WHERE weekly_schedule_id = $1 AND activity_template_id = $2',
+        [targetScheduleId, item.activity_template_id]
+      );
+      if (existingItem.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return res.json({ message: 'Aktiviteten finns redan', schedule_id: targetScheduleId, skipped: true });
+      }
+
+      const maxResult = await client.query(
+        'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM weekly_schedule_item WHERE weekly_schedule_id = $1',
+        [targetScheduleId]
+      );
+      const result = await client.query(
+        `INSERT INTO weekly_schedule_item (weekly_schedule_id, activity_template_id, start_time, end_time, sort_order, section)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+        [targetScheduleId, item.activity_template_id, item.start_time, item.end_time, maxResult.rows[0].next_order, item.section]
+      );
+      await client.query('COMMIT');
+
+      try {
+        await syncDailyLogWithSchedule(to_child_id, toDow);
+      } catch (syncErr) {
+        console.error('[SCHEDULES] copy-item-to-child sync error (non-fatal):', syncErr.message);
+      }
+
+      res.json({ message: 'Aktiviteten kopierades till det andra barnet', item_id: result.rows[0].id });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('[SCHEDULES] copy-item-to-child error:', err);
+    res.status(500).json({ error: 'Något gick fel. Försök igen senare.' });
+  }
+});
+
+// POST /api/children/:childId/schedules/swap-day — swap all activities between two days
+router.post('/swap-day', async (req, res) => {
+  try {
+    const child = await getChildAccess(req.user.id, req.params.childId);
+    if (!child) return res.status(403).json({ error: 'Du har inte åtkomst till detta barn' });
+
+    const { day_a, day_b } = req.body;
+    const dowA = parseInt(day_a, 10);
+    const dowB = parseInt(day_b, 10);
+    if (isNaN(dowA) || isNaN(dowB) || dowA < 0 || dowA > 6 || dowB < 0 || dowB > 6 || dowA === dowB) {
+      return res.status(400).json({ error: 'Ogiltiga dagar' });
+    }
+
+    const client = await db.getClient();
+    try {
+      await client.query('BEGIN');
+
+      const getScheduleItems = async (dow) => {
+        const schedResult = await client.query(
+          'SELECT id FROM weekly_schedule WHERE child_id = $1 AND day_of_week = $2',
+          [req.params.childId, dow]
+        );
+        if (schedResult.rows.length === 0) return { scheduleId: null, items: [] };
+        const scheduleId = schedResult.rows[0].id;
+        const itemsResult = await client.query(
+          'SELECT activity_template_id, start_time, end_time, sort_order, section FROM weekly_schedule_item WHERE weekly_schedule_id = $1 ORDER BY sort_order ASC',
+          [scheduleId]
+        );
+        return { scheduleId, items: itemsResult.rows };
+      };
+
+      const { scheduleId: schedA, items: itemsA } = await getScheduleItems(dowA);
+      const { scheduleId: schedB, items: itemsB } = await getScheduleItems(dowB);
+
+      const ensureSchedule = async (dow, existingId) => {
+        if (existingId) return existingId;
+        const result = await client.query(
+          'INSERT INTO weekly_schedule (child_id, day_of_week, sort_order) VALUES ($1, $2, $3) RETURNING id',
+          [req.params.childId, dow, dow]
+        );
+        return result.rows[0].id;
+      };
+
+      const useA = itemsB.length > 0 ? await ensureSchedule(dowA, schedA) : schedA;
+      const useB = itemsA.length > 0 ? await ensureSchedule(dowB, schedB) : schedB;
+
+      if (useA) await client.query('DELETE FROM weekly_schedule_item WHERE weekly_schedule_id = $1', [useA]);
+      if (useB) await client.query('DELETE FROM weekly_schedule_item WHERE weekly_schedule_id = $1', [useB]);
+
+      for (const item of itemsB) {
+        if (useA) await client.query(
+          'INSERT INTO weekly_schedule_item (weekly_schedule_id, activity_template_id, start_time, end_time, sort_order, section) VALUES ($1,$2,$3,$4,$5,$6)',
+          [useA, item.activity_template_id, item.start_time, item.end_time, item.sort_order, item.section]
+        );
+      }
+      for (const item of itemsA) {
+        if (useB) await client.query(
+          'INSERT INTO weekly_schedule_item (weekly_schedule_id, activity_template_id, start_time, end_time, sort_order, section) VALUES ($1,$2,$3,$4,$5,$6)',
+          [useB, item.activity_template_id, item.start_time, item.end_time, item.sort_order, item.section]
+        );
+      }
+
+      if (useA) {
+        const countA = await client.query('SELECT COUNT(*) FROM weekly_schedule_item WHERE weekly_schedule_id = $1', [useA]);
+        if (parseInt(countA.rows[0].count) === 0 && !schedA) {
+          await client.query('DELETE FROM weekly_schedule WHERE id = $1', [useA]);
+        }
+      }
+      if (useB) {
+        const countB = await client.query('SELECT COUNT(*) FROM weekly_schedule_item WHERE weekly_schedule_id = $1', [useB]);
+        if (parseInt(countB.rows[0].count) === 0 && !schedB) {
+          await client.query('DELETE FROM weekly_schedule WHERE id = $1', [useB]);
+        }
+      }
+
+      await client.query('COMMIT');
+
+      for (const dow of [dowA, dowB]) {
+        try {
+          await syncDailyLogWithSchedule(req.params.childId, dow);
+        } catch (syncErr) {
+          console.error('[SCHEDULES] Swap-day sync error (non-fatal):', syncErr.message);
+        }
+      }
+
+      res.json({ message: 'Dagarna har bytts' });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('[SCHEDULES] swap-day error:', err);
+    res.status(500).json({ error: 'Något gick fel. Försök igen senare.' });
+  }
+});
+
+module.exports = router;

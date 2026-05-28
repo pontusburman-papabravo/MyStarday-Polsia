@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Min Stjärndag — Förenkla vardagen för hela familjen">
+  <meta property="og:description" content="Skapa och följ dagliga scheman, aktiviteter och belöningar">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://mystarday.se/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://mystarday.se/og-image.png">
+  <title>Aktivera konto - Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623', 'gold-light': '#FFF3D6', navy: '#1B2340', 'navy-soft': '#2A3458',
+            sky: '#E8F0FE', lavender: '#EDE7F6', mint: '#E0F5EC', coral: '#FDEAE7', 'text-soft': '#5A6178',
+          },
+          fontFamily: { heading: ['Outfit', 'sans-serif'], body: ['Plus Jakarta Sans', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+  <script src="/js/auth.js?v=2.13.0"></script>
+  <!-- PWA / Favicon -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Min Stjärndag">
+  <!-- Cookie-banner med GCM v2 + Meta Pixel + granulära val -->
+  <script src="/js/cookie-banner.js?v=2.12.0"></script>
+</head>
+<body class="bg-sky font-body text-navy min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-xl">
+
+    <!-- Loading state -->
+    <div id="loading" class="text-center py-8 text-text-soft">
+      <div class="text-4xl mb-3">⭐</div>
+      <p>Laddar inbjudan...</p>
+    </div>
+
+    <!-- Main invite form (hidden until loaded) -->
+    <div id="inviteForm" class="hidden">
+      <div class="text-center mb-6">
+        <div class="text-5xl mb-3">⭐</div>
+        <h1 class="text-2xl font-heading font-bold text-navy mb-1">Du är inbjuden!</h1>
+        <p id="inviteDescription" class="text-text-soft text-sm"></p>
+      </div>
+
+      <!-- Invite details card -->
+      <div id="inviteDetails" class="bg-sky rounded-xl p-4 mb-6 text-sm space-y-1"></div>
+
+      <form id="activateForm" class="space-y-4">
+        <!-- Name (pre-filled, read-only if set) -->
+        <div>
+          <label for="inviteeName" class="block text-sm font-semibold text-navy mb-1">Ditt namn</label>
+          <input
+            type="text"
+            id="inviteeName"
+            name="inviteeName"
+            placeholder="Anna Svensson"
+            required
+            class="w-full px-4 py-3 rounded-lg border-2 border-lavender focus:border-gold focus:outline-none bg-white text-navy placeholder-text-soft transition-colors"
+          />
+        </div>
+
+        <!-- Email (read-only) -->
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">E-postadress</label>
+          <div id="inviteeEmail" class="w-full px-4 py-3 rounded-lg bg-sky border-2 border-lavender text-text-soft text-sm"></div>
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="password" class="block text-sm font-semibold text-navy mb-1">Välj lösenord</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Minst 8 tecken"
+            required
+            minlength="8"
+            autocomplete="new-password"
+            class="w-full px-4 py-3 rounded-lg border-2 border-lavender focus:border-gold focus:outline-none bg-white text-navy placeholder-text-soft transition-colors"
+          />
+          <p class="text-xs text-text-soft mt-1">Måste vara minst 8 tecken</p>
+        </div>
+
+        <!-- Confirm password -->
+        <div>
+          <label for="confirmPassword" class="block text-sm font-semibold text-navy mb-1">Bekräfta lösenord</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            name="confirmPassword"
+            placeholder="Upprepa lösenord"
+            required
+            autocomplete="new-password"
+            class="w-full px-4 py-3 rounded-lg border-2 border-lavender focus:border-gold focus:outline-none bg-white text-navy placeholder-text-soft transition-colors"
+          />
+        </div>
+
+        <!-- Error -->
+        <div id="formError" class="hidden bg-coral border-l-4 border-red-500 p-3 rounded text-sm text-red-700"></div>
+
+        <!-- Submit -->
+        <button
+          type="submit"
+          id="activateBtn"
+          class="w-full bg-gold hover:bg-yellow-500 text-white font-heading font-bold py-3 rounded-xl transition-colors"
+        >
+          Aktivera konto
+        </button>
+      </form>
+
+      <p class="text-center text-xs text-text-soft mt-4">
+        Har du redan ett konto?
+        <a href="/login" class="text-gold font-semibold hover:underline">Logga in</a>
+      </p>
+    </div>
+
+    <!-- Success state -->
+    <div id="successState" class="hidden text-center py-8">
+      <div class="text-5xl mb-4">🎉</div>
+      <h2 class="text-xl font-heading font-bold text-navy mb-2">Konto aktiverat!</h2>
+      <p class="text-text-soft text-sm mb-6">Du omdirigeras till inloggning...</p>
+      <a href="/login" class="inline-block px-6 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-heading font-bold transition-colors">
+        Logga in nu
+      </a>
+    </div>
+
+    <!-- Error state -->
+    <div id="errorState" class="hidden text-center py-8">
+      <div class="text-4xl mb-4">⚠️</div>
+      <p class="text-red-500 font-semibold mb-2" id="errorMsg"></p>
+      <p class="text-text-soft text-sm mb-6">Kontakta den som bjöd in dig för att få en ny inbjudan.</p>
+      <a href="/" class="text-gold font-semibold hover:underline text-sm">Gå till startsidan</a>
+    </div>
+
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+
+      if (!token) {
+        showError('Ingen inbjudningstoken hittades i länken.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/family/invite/${token}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.error || 'Ogiltig inbjudan');
+          return;
+        }
+
+        // Populate form
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('inviteForm').classList.remove('hidden');
+
+        // Description
+        const descEl = document.getElementById('inviteDescription');
+        if (data.inviterName && data.familyName) {
+          descEl.textContent = `${data.inviterName} har bjudit in dig till ${data.familyName} på Min Stjärndag.`;
+        } else if (data.familyName) {
+          descEl.textContent = `Du har blivit inbjuden till ${data.familyName} på Min Stjärndag.`;
+        } else {
+          descEl.textContent = 'Du har blivit inbjuden att gå med i en familj på Min Stjärndag.';
+        }
+
+        // Details card
+        const detailsEl = document.getElementById('inviteDetails');
+        let detailsHtml = '';
+        if (data.familyName) {
+          detailsHtml += `<div class="flex items-center gap-2"><span class="text-gold font-semibold">Familj:</span> <span>${escapeHtml(data.familyName)}</span></div>`;
+        }
+        if (data.inviterName) {
+          detailsHtml += `<div class="flex items-center gap-2"><span class="text-gold font-semibold">Inbjuden av:</span> <span>${escapeHtml(data.inviterName)}</span></div>`;
+        }
+        if (data.children && data.children.length > 0) {
+          detailsHtml += `<div class="flex items-start gap-2 mt-1"><span class="text-gold font-semibold">Barn:</span> <span>${data.children.map(c => escapeHtml(c.emoji || '⭐') + ' ' + escapeHtml(c.name)).join(', ')}</span></div>`;
+        }
+        detailsEl.innerHTML = detailsHtml || '';
+        if (!detailsHtml) detailsEl.classList.add('hidden');
+
+        // Pre-fill invitee name if provided
+        const nameInput = document.getElementById('inviteeName');
+        if (data.inviteeName) {
+          nameInput.value = data.inviteeName;
+        }
+
+        // Show email (read-only)
+        document.getElementById('inviteeEmail').textContent = data.email || '';
+
+        // Handle form submission
+        document.getElementById('activateForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const name = nameInput.value.trim();
+          const password = document.getElementById('password').value;
+          const confirmPassword = document.getElementById('confirmPassword').value;
+          const errorEl = document.getElementById('formError');
+          const btn = document.getElementById('activateBtn');
+
+          errorEl.classList.add('hidden');
+
+          if (!name || name.length < 1) {
+            showFormError('Namn krävs');
+            return;
+          }
+          if (password.length < 8) {
+            showFormError('Lösenordet måste vara minst 8 tecken');
+            return;
+          }
+          if (password !== confirmPassword) {
+            showFormError('Lösenorden matchar inte');
+            return;
+          }
+
+          btn.disabled = true;
+          btn.textContent = 'Aktiverar...';
+
+          try {
+            const activateRes = await fetch('/api/family/invite/accept-new', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token, password }),
+            });
+            const activateData = await activateRes.json();
+
+            if (!activateRes.ok) {
+              showFormError(activateData.error || 'Kunde inte aktivera konto');
+              btn.disabled = false;
+              btn.textContent = 'Aktivera konto';
+              return;
+            }
+
+            // Update parent name if changed
+            // (name field is cosmetic here — the backend uses invitee_name from invite record)
+            // Success!
+            document.getElementById('inviteForm').classList.add('hidden');
+            document.getElementById('successState').classList.remove('hidden');
+            setTimeout(() => { window.location.href = '/login'; }, 3000);
+          } catch (err) {
+            showFormError('Nätverksfel. Försök igen.');
+            btn.disabled = false;
+            btn.textContent = 'Aktivera konto';
+          }
+        });
+
+      } catch (err) {
+        showError('Kunde inte ladda inbjudan. Kontrollera din anslutning.');
+      }
+    });
+
+    function showError(msg) {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('inviteForm').classList.add('hidden');
+      document.getElementById('errorState').classList.remove('hidden');
+      document.getElementById('errorMsg').textContent = msg;
+    }
+
+    function showFormError(msg) {
+      const el = document.getElementById('formError');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+  </script>
+  <script src="/js/dom-utils.js?v=2.12.0"></script>
+  <!-- Service Worker Registration (update detection in /js/sw-register.js) -->
+  <script src="/js/sw-register.js?v=2.12.0"></script>
+</body>
+</html>

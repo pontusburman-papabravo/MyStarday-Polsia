@@ -1,0 +1,176 @@
+/* Stjärndag Theme CSS — Dark mode and color blindness support */
+
+/* ─── Mobile Layout Fixes ─────────────────────────── */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Date/time inputs: constrain to container on mobile */
+input[type="date"],
+input[type="time"] {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ─── Dark Mode Overrides ───────────────────────────── */
+.dark body {
+  background-color: #0F1629;
+  color: #E2E8F0;
+}
+
+.dark .bg-white {
+  background-color: #1B2340 !important;
+}
+
+.dark .bg-sky {
+  background-color: #1B2340 !important;
+}
+
+.dark .text-navy {
+  color: #E2E8F0 !important;
+}
+
+.dark .text-text-soft {
+  color: #94A3B8 !important;
+}
+
+.dark .border-lavender {
+  border-color: #2A3458 !important;
+}
+
+.dark .border-sky {
+  border-color: #2A3458 !important;
+}
+
+.dark .bg-navy {
+  background-color: #0F1629 !important;
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #1E293B !important;
+  color: #E2E8F0 !important;
+  border-color: #334155 !important;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #F5A623 !important;
+}
+
+.dark .bg-coral {
+  background-color: #3B1F1F !important;
+}
+
+.dark .bg-mint {
+  background-color: #1A332B !important;
+}
+
+.dark .bg-lavender {
+  background-color: #2D2554 !important;
+}
+
+.dark .bg-gold-light {
+  background-color: #3D2E0F !important;
+}
+
+/* ─── Overflow Menu (mobile ⋯ per-row action menu) ──── */
+.icon-btns-desktop { display: flex; }
+@media (max-width: 639px) {
+  .icon-btns-desktop { display: none !important; }
+}
+
+.overflow-menu-wrap { position: relative; }
+.overflow-menu-btn {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  color: #5A6178;
+  padding: 6px 8px;
+  transition: background 0.15s;
+}
+.overflow-menu-btn:hover,
+.overflow-menu-btn:active { background: #EDE7F6; }
+@media (min-width: 640px) {
+  .overflow-menu-wrap { display: none; }
+}
+
+.overflow-menu-popup {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: white;
+  border: 1.5px solid #EDE7F6;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(27,35,64,0.15);
+  min-width: 160px;
+  z-index: 9999;
+  overflow: hidden;
+  /* BUG-19/BUG-22/BUG-24: MÅSTE ha display:none — rör inte !important */
+  display: none !important;
+}
+.overflow-menu-popup.open { display: flex !important; flex-direction: column; }
+.overflow-menu-popup button {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s;
+  color: #1B2340;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.overflow-menu-popup button:hover,
+.overflow-menu-popup button:active { background: #EDE7F6; }
+.overflow-menu-popup button.danger { color: #DC2626; }
+.overflow-menu-popup button.danger:hover,
+.overflow-menu-popup button.danger:active { background: #FDEAE7; }
+
+/* Dark mode */
+.dark .overflow-menu-btn { color: #94A3B8; }
+.dark .overflow-menu-btn:hover,
+.dark .overflow-menu-btn:active { background: #2A3458; }
+.dark .overflow-menu-popup { background: #1B2340; border-color: #2A3458; }
+.dark .overflow-menu-popup button { color: #E2E8F0; }
+.dark .overflow-menu-popup button:hover,
+.dark .overflow-menu-popup button:active { background: #2A3458; }
+.dark .overflow-menu-popup button.danger { color: #FCA5A5; }
+.dark .overflow-menu-popup button.danger:hover,
+.dark .overflow-menu-popup button.danger:active { background: #3B1F1F; }
+
+/* ─── Color Blindness Filters ───────────────────────── */
+
+/* Protanopia (red-blind) */
+.cb-protanopia {
+  filter: url('#protanopia-filter');
+}
+
+/* Deuteranopia (green-blind) */
+.cb-deuteranopia {
+  filter: url('#deuteranopia-filter');
+}
+
+/* Tritanopia (blue-blind) */
+.cb-tritanopia {
+  filter: url('#tritanopia-filter');
+}

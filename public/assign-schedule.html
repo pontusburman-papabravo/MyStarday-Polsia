@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Välj schema — Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623', 'gold-light': '#FFF3D6', navy: '#1B2340', 'navy-soft': '#2A3458',
+            sky: '#E8F0FE', lavender: '#EDE7F6', mint: '#E0F5EC', coral: '#FDEAE7', 'text-soft': '#5A6178',
+          },
+          fontFamily: { heading: ['Outfit', 'sans-serif'], body: ['Plus Jakarta Sans', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="/css/theme.css?v=2.12.0">
+  <link rel="stylesheet" href="/css/mobile-nav.css?v=2.12.0">
+  <script src="/js/theme.js?v=2.12.0"></script>
+  <script src="/js/auth.js?v=2.13.0"></script>
+  <script src="/js/toast.js?v=2.12.0"></script>
+  <script src="/js/birthday-picker.js?v=2.12.0"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <style>
+    html, body { overflow-x: hidden; max-width: 100vw; }
+    * { box-sizing: border-box; }
+
+    .day-btn {
+      min-height: 56px; min-width: 48px;
+      transition: all 0.15s;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border-radius: 14px; border: 2px solid #EDE7F6; padding: 6px 10px;
+      font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; cursor: pointer;
+      background: white; color: #1B2340;
+      user-select: none; flex: 1;
+    }
+    .day-btn:hover { border-color: #1B2340; }
+    .day-btn.active { background: #F5A623; color: white; border-color: #F5A623; }
+    .day-btn.has-schema { position: relative; }
+    .day-btn.has-schema::after {
+      content: '';
+      position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+      width: 6px; height: 6px; border-radius: 50%; background: #10B981;
+    }
+    .day-btn.active.has-schema::after { background: white; }
+    .day-btn.today-dot .day-date { color: #3B82F6; font-weight: 800; }
+    .day-btn.active .day-date { color: rgba(255,255,255,0.85); }
+
+    .schema-card {
+      border: 2px solid #EDE7F6; border-radius: 16px; padding: 14px 16px;
+      background: white; cursor: pointer; transition: all 0.15s;
+      display: flex; align-items: center; gap-12px;
+    }
+    .schema-card:hover { border-color: #F5A623; box-shadow: 0 3px 12px rgba(245,166,35,0.15); }
+    .schema-card.selected { border-color: #F5A623; background: #FFF3D6; }
+
+    .save-btn {
+      background: #1B2340; color: white; border-radius: 14px;
+      padding: 14px 32px; font-family: 'Outfit', sans-serif; font-weight: 700;
+      font-size: 15px; transition: all 0.15s; border: none; cursor: pointer;
+    }
+    .save-btn:hover { background: #2A3458; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(27,35,64,0.2); }
+    .save-btn:disabled { background: #9CA3AF; cursor: not-allowed; transform: none; box-shadow: none; }
+    .save-btn.saved { background: #10B981; }
+
+    .nav-btn {
+      width: 40px; height: 40px; border-radius: 50%; border: 2px solid #EDE7F6;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 800; color: #1B2340; cursor: pointer;
+      transition: all 0.15s; background: white; flex-shrink: 0;
+    }
+    .nav-btn:hover { border-color: #F5A623; color: #F5A623; }
+
+    .week-label { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; color: #1B2340; }
+    .today-btn { font-size: 12px; padding: 4px 12px; border-radius: 8px; border: 2px solid #EDE7F6; font-weight: 600; cursor: pointer; background: white; color: #5A6178; transition: all 0.15s; }
+    .today-btn:hover { border-color: #1B2340; color: #1B2340; }
+
+    .activity-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: white; border: 1.5px solid #EDE7F6; border-radius: 8px;
+      padding: 3px 8px; font-size: 12px; font-weight: 500; color: #1B2340;
+    }
+
+    .section-badge {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 2px 6px; border-radius: 5px;
+    }
+    .section-badge.morgon { background: #FEF3C7; color: #92400E; }
+    .section-badge.dag { background: #DBEAFE; color: #1D4ED8; }
+    .section-badge.kvall { background: #FEE2E2; color: #991B1B; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.2s ease; }
+
+    .confirm-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 50; padding: 16px;
+    }
+    .confirm-box {
+      background: white; border-radius: 20px; padding: 28px 24px;
+      max-width: 380px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body class="bg-white font-body text-navy dark:bg-navy dark:text-white">
+  <div class="min-h-screen flex flex-col md:flex-row">
+    <!-- Sidebar -->
+    <nav class="w-full md:w-64 bg-navy text-white p-4 md:p-6 md:min-h-screen">
+      <a href="/dashboard" class="flex items-center gap-3 mb-8 no-underline text-white hover:text-white">
+        <span class="text-2xl">⭐</span>
+        <h1 class="text-xl font-heading font-bold">Min Stjärndag</h1>
+      </a>
+      <ul class="space-y-2">
+        <li><a href="/dashboard" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Min panel</a></li>
+        <li><a href="/skattkammaren" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors" style="color:#F5A623;font-weight:600;">🏆 Skattkammaren</a></li>
+        <li><a href="/family" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Familj</a></li>
+        <li><a href="/daily-log" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Daglig logg</a></li>
+        <li><a href="/library" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Bibliotek</a></li>
+        <li><a href="/schedule" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Veckoschema</a></li>
+        <li><a href="/assign-schedule" class="block px-4 py-3 rounded-lg bg-gold text-navy font-semibold">Välj schema</a></li>
+        <li><a href="/settings" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Inställningar</a></li>
+      </ul>
+      <div class="mt-8 pt-4 border-t border-navy-soft space-y-2">
+        <button onclick="Theme.toggleDark()" class="w-full px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors text-left flex items-center gap-2">
+          <span>🌙</span> Mörkt läge
+        </button>
+        <button id="logoutBtn" class="w-full px-4 py-2 bg-coral hover:bg-red-200 text-navy rounded-lg font-semibold transition-colors">Logga ut</button>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="flex-1 p-4 md:p-8 overflow-auto">
+      <!-- Header -->
+      <div class="mb-6">
+        <div class="flex items-center gap-3 mb-1">
+          <a href="/schedule" class="text-text-soft hover:text-navy text-sm font-semibold transition-colors">← Veckoschema</a>
+        </div>
+        <h2 class="text-2xl font-heading font-bold text-navy">Välj schema per dag</h2>
+        <p class="text-sm text-text-soft mt-1">Bläddra till en vecka, välj en dag och välj vilket schema som ska gälla.</p>
+      </div>
+
+      <!-- Toast -->
+      <div id="toast" class="hidden fixed top-4 right-4 z-50 bg-navy text-white px-6 py-3 rounded-xl shadow-lg font-semibold text-sm max-w-xs"></div>
+
+      <!-- Child selector -->
+      <div class="mb-6">
+        <p class="text-xs font-semibold text-text-soft uppercase tracking-wide mb-2">Barn</p>
+        <div id="childTabs" class="flex gap-2 flex-wrap">
+          <div class="text-text-soft text-sm">Laddar barn…</div>
+        </div>
+      </div>
+
+      <!-- Week navigator -->
+      <div class="bg-sky border-2 border-lavender rounded-2xl p-4 mb-5">
+        <div class="flex items-center gap-3 mb-4">
+          <button id="prevWeekBtn" class="nav-btn" onclick="navWeek(-1)">‹</button>
+          <span id="weekLabel" class="week-label flex-1 text-center"></span>
+          <button id="nextWeekBtn" class="nav-btn" onclick="navWeek(1)">›</button>
+          <button class="today-btn" onclick="goToday()">Idag</button>
+        </div>
+        <!-- Day buttons (Mon-Sun) -->
+        <div id="dayBtns" class="flex gap-1.5 overflow-x-auto pb-1">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Selected day panel -->
+      <div id="dayPanel" class="hidden fade-in">
+        <!-- Day title -->
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div>
+            <h3 id="dayPanelTitle" class="text-lg font-heading font-bold text-navy"></h3>
+            <p id="dayPanelSubtitle" class="text-sm text-text-soft mt-0.5"></p>
+          </div>
+          <div id="saveArea" class="flex items-center gap-3">
+            <span id="currentSchemaLabel" class="text-xs font-semibold text-text-soft hidden"></span>
+            <button id="saveBtn" class="save-btn hidden" onclick="saveSelection()">Spara schema</button>
+          </div>
+        </div>
+
+        <!-- Loading state -->
+        <div id="dayLoading" class="text-center py-10 text-text-soft hidden">
+          <div class="text-3xl mb-2">⏳</div><p class="text-sm">Laddar…</p>
+        </div>
+
+        <!-- Schema picker -->
+        <div id="schemaPicker" class="hidden">
+          <p class="text-xs font-semibold text-text-soft uppercase tracking-wide mb-3">Välj schema från biblioteket</p>
+
+          <!-- Library schemas (from activity categories) -->
+          <div id="schemaList" class="space-y-2 mb-4">
+            <!-- rendered by JS -->
+          </div>
+
+          <!-- Empty library fallback -->
+          <div id="emptyLibrary" class="hidden text-center py-8 bg-sky rounded-2xl border-2 border-dashed border-lavender mb-4">
+            <p class="text-3xl mb-2">📚</p>
+            <p class="text-sm font-semibold text-navy mb-1">Inget bibliotek ännu</p>
+            <p class="text-xs text-text-soft mb-3">Skapa aktiviteter i biblioteket för att kunna välja schema här.</p>
+            <a href="/library" class="px-4 py-2 bg-gold text-white rounded-lg text-sm font-semibold inline-block">Gå till biblioteket →</a>
+          </div>
+
+          <!-- Custom / blank schema option -->
+          <button onclick="selectSchema('blank', 'Tomt schema', null)" id="blankSchemaBtn"
+            class="schema-card w-full gap-3 text-left" style="display:flex;">
+            <span class="text-2xl">📝</span>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-navy">Tomt schema</div>
+              <div class="text-xs text-text-soft">Starta med ett tomt schema — lägg till aktiviteter manuellt</div>
+            </div>
+            <div id="blankSchemaCheck" class="hidden text-gold text-xl font-bold">✓</div>
+          </button>
+        </div>
+
+        <!-- Preview of selected schema activities -->
+        <div id="schemaPreview" class="hidden mt-4 p-4 bg-mint border-2 border-green-200 rounded-2xl fade-in">
+          <p class="text-xs font-semibold text-text-soft uppercase tracking-wide mb-2">Förhandsgranskning</p>
+          <div id="schemaPreviewContent"></div>
+        </div>
+      </div>
+
+      <!-- Empty state (no child selected) -->
+      <div id="emptyState" class="text-center py-16 text-text-soft">
+        <p class="text-5xl mb-3">👆</p>
+        <p class="font-semibold text-navy">Välj ett barn ovan för att komma igång</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Replacement confirmation dialog -->
+  <div id="confirmOverlay" class="confirm-overlay hidden">
+    <div class="confirm-box">
+      <div class="text-3xl mb-3">⚠️</div>
+      <h3 class="text-lg font-heading font-bold text-navy mb-2">Ersätt befintligt schema?</h3>
+      <p id="confirmMsg" class="text-sm text-text-soft mb-6">Denna dag har redan ett schema. Ersätter du det försvinner alla aktiviteter som finns där.</p>
+      <div class="flex gap-3">
+        <button onclick="closeConfirm()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold text-sm">Avbryt</button>
+        <button id="confirmReplaceBtn" class="flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm transition-colors">Ja, ersätt</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ── Constants ──────────────────────────────────────────────
+const DAYS = ['Söndag','Måndag','Tisdag','Onsdag','Torsdag','Fredag','Lördag'];
+const DAYS_SHORT = ['Sön','Mån','Tis','Ons','Tor','Fre','Lör'];
+
+// ── State ──────────────────────────────────────────────────
+let children = [];
+let currentChildId = null;
+let weekOffset = 0; // 0 = current week
+let currentDay = null; // 0-6 (day of week)
+let currentDayDate = null; // Date object for the selected day
+let childSchedules = {}; // { [childId]: [{ day_of_week, id, item_count }] }
+let categories = []; // [{ id, name, sort_order }] — the library schemas
+let selectedSchemaId = null; // category id or 'blank'
+let selectedSchemaName = null;
+let selectedSchemaActivities = []; // preview activities
+let existingScheduleOnDay = null; // schedule row if this day already has one
+let pendingConfirm = null; // callback to run after confirmation
+
+// showToast is now in /js/toast.js
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Week navigation ────────────────────────────────────────
+function getWeekStart(offset) {
+  const now = new Date();
+  const dow = now.getDay();
+  const mondayDiff = dow === 0 ? -6 : 1 - dow;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayDiff + offset * 7);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+function navWeek(delta) {
+  weekOffset += delta;
+  renderWeekNav();
+  if (currentDay !== null) {
+    // Recompute currentDayDate for the new week
+    computeDayDate(currentDay);
+    loadDayPanel();
+  }
+}
+
+function goToday() {
+  weekOffset = 0;
+  const todayDow = new Date().getDay();
+  selectDay(todayDow === 0 ? 1 : todayDow); // default to Monday if today is Sunday
+  renderWeekNav();
+}
+
+function computeDayDate(dow) {
+  const weekStart = getWeekStart(weekOffset); // Monday
+  // Mon=1..Sat=6, Sun=0
+  // i=0→Mon(1), i=5→Sat(6), i=6→Sun(0)
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    const thisDow = i < 6 ? i + 1 : 0;
+    if (thisDow === dow) {
+      currentDayDate = d;
+      return;
+    }
+  }
+}
+
+function renderWeekNav() {
+  const ws = getWeekStart(weekOffset);
+  const wn = getWeekNumber(ws);
+  document.getElementById('weekLabel').textContent = `Vecka ${wn}, ${ws.getFullYear()}`;
+
+  const todayDow = new Date().getDay();
+  const schedules = (currentChildId && childSchedules[currentChildId]) ? childSchedules[currentChildId] : [];
+  const daysWithSchema = new Set(schedules.map(s => s.day_of_week));
+
+  // Build day buttons: Mon(1), Tue(2), Wed(3), Thu(4), Fri(5), Sat(6), Sun(0)
+  const dayOrder = [1, 2, 3, 4, 5, 6, 0];
+  const container = document.getElementById('dayBtns');
+  container.innerHTML = dayOrder.map(dow => {
+    // Compute date for this dow in current week
+    let dateObj = null;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(ws);
+      d.setDate(ws.getDate() + i);
+      const thisDow = i < 6 ? i + 1 : 0;
+      if (thisDow === dow) { dateObj = d; break; }
+    }
+    const dateLabel = dateObj ? dateObj.getDate() + '/' + (dateObj.getMonth() + 1) : '';
+    const isToday = dow === todayDow && weekOffset === 0;
+    const hasSchema = daysWithSchema.has(dow);
+    const isSelected = dow === currentDay;
+
+    let cls = 'day-btn';
+    if (isSelected) cls += ' active';
+    if (hasSchema) cls += ' has-schema';
+    if (isToday) cls += ' today-dot';
+
+    return `<button class="${cls}" onclick="selectDay(${dow})">
+      <span class="text-xs font-bold">${DAYS_SHORT[dow]}</span>
+      <span class="day-date text-[11px] font-normal opacity-75 mt-0.5">${dateLabel}</span>
+    </button>`;
+  }).join('');
+}
+
+// ── Day selection ──────────────────────────────────────────
+async function selectDay(dow) {
+  if (!currentChildId) return;
+  currentDay = dow;
+  computeDayDate(dow);
+  renderWeekNav(); // update active state
+  await loadDayPanel();
+}
+
+async function loadDayPanel() {
+  if (currentDay === null || !currentChildId) return;
+
+  // Reset selection state
+  selectedSchemaId = null;
+  selectedSchemaName = null;
+  selectedSchemaActivities = [];
+  existingScheduleOnDay = null;
+
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('dayPanel').classList.remove('hidden');
+  document.getElementById('dayLoading').classList.remove('hidden');
+  document.getElementById('schemaPicker').classList.add('hidden');
+  document.getElementById('schemaPreview').classList.add('hidden');
+  document.getElementById('saveBtn').classList.add('hidden');
+  document.getElementById('currentSchemaLabel').classList.add('hidden');
+
+  // Set day title
+  const dateStr = currentDayDate
+    ? currentDayDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })
+    : DAYS[currentDay];
+  document.getElementById('dayPanelTitle').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+
+  // Check if this day already has a schedule
+  const schedules = childSchedules[currentChildId] || [];
+  existingScheduleOnDay = schedules.find(s => s.day_of_week === currentDay) || null;
+
+  if (existingScheduleOnDay) {
+    document.getElementById('dayPanelSubtitle').textContent = `Har schema — ${existingScheduleOnDay.item_count || 0} aktiviteter`;
+    document.getElementById('currentSchemaLabel').textContent = `Befintligt schema (${existingScheduleOnDay.item_count || 0} aktiviteter)`;
+    document.getElementById('currentSchemaLabel').classList.remove('hidden');
+  } else {
+    document.getElementById('dayPanelSubtitle').textContent = 'Inget schema inlagt';
+    document.getElementById('currentSchemaLabel').classList.add('hidden');
+  }
+
+  // Load categories (library schemas) if not yet loaded
+  if (categories.length === 0) {
+    await loadCategories();
+  }
+
+  document.getElementById('dayLoading').classList.add('hidden');
+  renderSchemaPicker();
+  document.getElementById('schemaPicker').classList.remove('hidden');
+}
+
+// ── Category (library schema) loading ─────────────────────
+let allTemplates = []; // cache of all activity templates
+
+async function loadCategories() {
+  try {
+    const [catRes, tplRes] = await Promise.all([
+      window.apiFetch('/api/categories'),
+      window.apiFetch('/api/activities'),
+    ]);
+    if (catRes.ok) categories = await catRes.json();
+    if (tplRes.ok) allTemplates = await tplRes.json();
+  } catch {}
+}
+
+function loadCategoryActivities(categoryId) {
+  // Filter from cached templates
+  return allTemplates.filter(t => t.category_id === categoryId);
+}
+
+// ── Schema picker rendering ────────────────────────────────
+function renderSchemaPicker() {
+  const list = document.getElementById('schemaList');
+  const emptyLib = document.getElementById('emptyLibrary');
+
+  if (categories.length === 0) {
+    list.innerHTML = '';
+    emptyLib.classList.remove('hidden');
+  } else {
+    emptyLib.classList.add('hidden');
+    list.innerHTML = categories.map(cat => {
+      const isSelected = selectedSchemaId === cat.id;
+      return `<button onclick="selectSchema('${cat.id}', '${escHtml(cat.name).replace(/'/g,"\\'")}', null)"
+        class="schema-card w-full gap-3 text-left${isSelected ? ' selected' : ''}" style="display:flex;" data-cat-id="${cat.id}">
+        <span class="text-2xl">📋</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-navy">${escHtml(cat.name)}</div>
+          <div class="text-xs text-text-soft">Schema baserat på "${escHtml(cat.name)}" i biblioteket</div>
+        </div>
+        <div class="check-icon ${isSelected ? 'text-gold text-xl font-bold' : 'hidden'} text-gold text-xl font-bold">✓</div>
+      </button>`;
+    }).join('');
+  }
+
+  // Reset blank schema button state
+  const blankBtn = document.getElementById('blankSchemaBtn');
+  blankBtn.classList.remove('selected');
+  document.getElementById('blankSchemaCheck').classList.add('hidden');
+  if (selectedSchemaId === 'blank') {
+    blankBtn.classList.add('selected');
+    document.getElementById('blankSchemaCheck').classList.remove('hidden');
+  }
+}
+
+function selectSchema(id, name, _unused) {
+  selectedSchemaId = id;
+  selectedSchemaName = name;
+  selectedSchemaActivities = [];
+
+  // Update visual selection
+  document.querySelectorAll('.schema-card').forEach(card => {
+    card.classList.remove('selected');
+    const check = card.querySelector('.check-icon');
+    if (check) check.classList.add('hidden');
+  });
+
+  let clickedCard;
+  if (id === 'blank') {
+    clickedCard = document.getElementById('blankSchemaBtn');
+  } else {
+    clickedCard = document.querySelector(`[data-cat-id="${id}"]`);
+  }
+  if (clickedCard) {
+    clickedCard.classList.add('selected');
+    const check = clickedCard.querySelector('.check-icon') || document.getElementById('blankSchemaCheck');
+    if (check) check.classList.remove('hidden');
+  }
+
+  // Show save button
+  document.getElementById('saveBtn').classList.remove('hidden');
+  document.getElementById('saveBtn').textContent = 'Spara schema';
+  document.getElementById('saveBtn').classList.remove('saved');
+  document.getElementById('saveBtn').disabled = false;
+
+  // Load activities for preview (non-blank — synchronous from cache)
+  if (id !== 'blank') {
+    const acts = loadCategoryActivities(id);
+    selectedSchemaActivities = acts;
+    renderSchemaPreview(name, acts);
+  } else {
+    document.getElementById('schemaPreview').classList.add('hidden');
+  }
+}
+
+function renderSchemaPreview(name, activities) {
+  const preview = document.getElementById('schemaPreview');
+  const content = document.getElementById('schemaPreviewContent');
+
+  if (!activities || activities.length === 0) {
+    content.innerHTML = `<p class="text-sm text-text-soft">Inga aktiviteter hittades i "${escHtml(name)}".</p>`;
+    preview.classList.remove('hidden');
+    return;
+  }
+
+  // Group by time_group → section
+  const timeGroupMap = { 'morgon': 'morgon', 'formiddag': 'dag', 'eftermiddag': 'dag', 'kvall': 'kvall' };
+  const sections = { morgon: [], dag: [], kvall: [] };
+  for (const act of activities) {
+    const sec = timeGroupMap[act.time_group || 'morgon'] || 'dag';
+    if (sections[sec]) sections[sec].push(act);
+  }
+
+  const sectionLabels = { morgon: '🌅 Morgon', dag: '☀️ Dag', kvall: '🌆 Kväll' };
+  let html = `<p class="text-xs font-semibold text-navy mb-2">${escHtml(name)} — ${activities.length} aktiviteter</p>`;
+  for (const [sec, acts] of Object.entries(sections)) {
+    if (acts.length === 0) continue;
+    html += `<div class="mb-2">
+      <span class="text-xs font-bold text-text-soft">${sectionLabels[sec]}</span>
+      <div class="flex flex-wrap gap-1.5 mt-1">
+        ${acts.map(a => `<span class="activity-pill">${escHtml(a.icon || '')} ${escHtml(a.name)}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  content.innerHTML = html;
+  preview.classList.remove('hidden');
+}
+
+// ── Save ───────────────────────────────────────────────────
+async function saveSelection() {
+  if (!selectedSchemaId || !currentChildId || currentDay === null) return;
+
+  // If day already has a schema → show replacement warning
+  if (existingScheduleOnDay) {
+    const dayName = currentDayDate
+      ? currentDayDate.toLocaleDateString('sv-SE', { weekday: 'long' })
+      : DAYS[currentDay];
+    document.getElementById('confirmMsg').textContent =
+      `${dayName.charAt(0).toUpperCase() + dayName.slice(1)} har redan ett schema med ${existingScheduleOnDay.item_count || 0} aktiviteter. Ersätter du det försvinner alla aktiviteter som finns där.`;
+    document.getElementById('confirmOverlay').classList.remove('hidden');
+    pendingConfirm = doSave;
+    document.getElementById('confirmReplaceBtn').onclick = () => { closeConfirm(); doSave(); };
+    return;
+  }
+
+  await doSave();
+}
+
+async function doSave() {
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sparar…';
+
+  try {
+    // 1. If existing schedule → delete it first
+    if (existingScheduleOnDay) {
+      const delRes = await window.apiFetch(
+        `/api/children/${currentChildId}/schedules/${existingScheduleOnDay.id}`,
+        { method: 'DELETE' }
+      );
+      if (!delRes.ok) {
+        const e = await delRes.json();
+        throw new Error(e.error || 'Fel vid borttagning av befintligt schema');
+      }
+    }
+
+    // 2. Create new schedule for this day
+    // If blank → create empty schedule (no template_category_id)
+    // If library category → create schedule with template_category_id
+    const body = { day_of_week: currentDay };
+    if (selectedSchemaId !== 'blank') {
+      body.template_category_id = selectedSchemaId;
+    }
+
+    const createRes = await window.apiFetch(
+      `/api/children/${currentChildId}/schedules`,
+      { method: 'POST', body: JSON.stringify(body) }
+    );
+
+    if (!createRes.ok) {
+      const e = await createRes.json();
+      throw new Error(e.error || 'Fel vid skapande av schema');
+    }
+
+    const newSchedule = await createRes.json();
+
+    // 3. Reload schedules for this child
+    await refreshChildSchedules(currentChildId);
+
+    // Update UI
+    btn.textContent = '✓ Sparat!';
+    btn.classList.add('saved');
+    btn.disabled = false;
+    setTimeout(() => {
+      btn.textContent = 'Spara schema';
+      btn.classList.remove('saved');
+    }, 2500);
+
+    showToast(`Schema sparat för ${DAYS[currentDay]}!`);
+
+    // Refresh day panel to show updated state
+    existingScheduleOnDay = newSchedule;
+    const schedules = childSchedules[currentChildId] || [];
+    existingScheduleOnDay = schedules.find(s => s.day_of_week === currentDay) || newSchedule;
+
+    const count = selectedSchemaActivities.length;
+    document.getElementById('dayPanelSubtitle').textContent = `Har schema — ${count} aktiviteter`;
+    document.getElementById('currentSchemaLabel').textContent = `Befintligt schema (${count} aktiviteter)`;
+    document.getElementById('currentSchemaLabel').classList.remove('hidden');
+
+    renderWeekNav();
+
+  } catch (err) {
+    showToast(err.message || 'Något gick fel', true);
+    btn.disabled = false;
+    btn.textContent = 'Spara schema';
+  }
+}
+
+// ── Confirm dialog ─────────────────────────────────────────
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.add('hidden');
+  pendingConfirm = null;
+}
+
+// ── Children ───────────────────────────────────────────────
+async function loadChildren() {
+  const res = await window.apiFetch('/api/children');
+  if (!res.ok) return;
+  children = await res.json();
+  renderChildTabs();
+
+  if (children.length > 0) {
+    await selectChild(children[0].id);
+  }
+}
+
+async function refreshChildSchedules(childId) {
+  const res = await window.apiFetch(`/api/children/${childId}/schedules`);
+  if (res.ok) childSchedules[childId] = await res.json();
+}
+
+function renderChildTabs() {
+  const container = document.getElementById('childTabs');
+  if (children.length === 0) {
+    container.innerHTML = '<p class="text-sm text-text-soft">Inga barn tillagda. <a href="/dashboard" class="text-gold font-semibold underline">Gå till Min panel</a></p>';
+    return;
+  }
+  container.innerHTML = children.map(c => `
+    <button onclick="selectChild('${c.id}')"
+      class="px-4 py-2 rounded-full border-2 font-semibold text-sm transition-colors
+      ${currentChildId === c.id ? 'bg-navy text-white border-navy' : 'border-lavender text-navy hover:border-navy'}"
+      data-child-id="${c.id}">
+      ${escHtml(c.emoji || '👤')} ${escHtml(c.name)}
+    </button>`).join('');
+}
+
+async function selectChild(id) {
+  currentChildId = id;
+  categories = []; // reset so we reload per child's family
+
+  // Re-render child tabs active state
+  document.querySelectorAll('[data-child-id]').forEach(btn => {
+    const isActive = btn.dataset.childId === id;
+    btn.className = `px-4 py-2 rounded-full border-2 font-semibold text-sm transition-colors ${isActive ? 'bg-navy text-white border-navy' : 'border-lavender text-navy hover:border-navy'}`;
+  });
+
+  // Load schedules for this child
+  await refreshChildSchedules(id);
+  await loadCategories();
+
+  // Reset day selection
+  currentDay = null;
+  currentDayDate = null;
+  selectedSchemaId = null;
+  document.getElementById('dayPanel').classList.add('hidden');
+  document.getElementById('emptyState').classList.remove('hidden');
+
+  renderWeekNav();
+}
+
+// ── Init ───────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = await window.authGuard();
+  if (!user) return;
+
+  document.getElementById('logoutBtn').addEventListener('click', () => window.logout());
+
+  renderWeekNav();
+  await loadChildren();
+});
+</script>
+<script src="/js/feature-check.js?v=2.13.0"></script>
+<script src="/js/mobile-nav.js?v=2.13.0"></script>
+<!-- Contextual help bubble -->
+<script src="/js/help-bubble.js?v=2.12.0"></script>
+
+  <!-- Service Worker Registration (update detection in /js/sw-register.js) -->
+  <script src="/js/sw-register.js?v=2.12.0"></script>
+</body>
+</html>

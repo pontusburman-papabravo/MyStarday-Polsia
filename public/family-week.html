@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="/js/platform.js?v=1.0.0"></script>
+  <meta property="og:title" content="Min Stjärndag — Förenkla vardagen för hela familjen">
+  <meta property="og:description" content="Samlad veckoöversikt för hela familjen">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://mystarday.se/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://mystarday.se/og-image.png">
+  <title>Familjevy — Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623', 'gold-light': '#FFF3D6', navy: '#1B2340', 'navy-soft': '#2A3458',
+            sky: '#E8F0FE', lavender: '#EDE7F6', mint: '#E0F5EC', coral: '#FDEAE7', 'text-soft': '#5A6178',
+          },
+          fontFamily: { heading: ['Outfit', 'sans-serif'], body: ['Plus Jakarta Sans', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="/css/theme.css?v=2.12.0">
+  <link rel="stylesheet" href="/css/mobile-nav.css?v=2.12.0">
+  <script src="/js/theme.js?v=2.12.0"></script>
+  <script src="/js/auth.js?v=2.13.0"></script>
+  <script src="/js/feedback.js?v=2.12.0"></script>
+  <script src="/js/i18n.js?v=2.12.0"></script>
+  <script src="/js/toast.js?v=2.12.0"></script>
+  <script src="/js/birthday-picker.js?v=2.12.0"></script>
+  <style>
+    html, body { overflow-x: hidden; max-width: 100vw; }
+    * { box-sizing: border-box; }
+
+    /* Grid table */
+    .week-grid { border-collapse: separate; border-spacing: 0; width: 100%; }
+    .week-grid th { position: sticky; top: 0; z-index: 10; }
+    .child-name-col { min-width: 100px; width: 100px; max-width: 100px; }
+
+    /* Day cell */
+    .day-cell {
+      min-width: 110px; width: 110px; vertical-align: top; padding: 6px 5px;
+      border: 1px solid #EDE7F6; cursor: pointer; transition: background 0.12s;
+    }
+    .day-cell:hover { background: #FFF3D6; }
+    .day-cell.has-activities { background: #F8FAFC; }
+    .day-cell.is-today-col { background: #E8F0FE; }
+    .day-cell.is-today-col:hover { background: #FFF3D6; }
+    .day-cell.empty-cell { background: #FAFAFA; }
+
+    /* Activity pill inside cell */
+    .act-pill {
+      display: flex; align-items: center; gap: 4px;
+      padding: 2px 5px; border-radius: 6px;
+      font-size: 11px; font-weight: 500; color: #1B2340;
+      background: white; border: 1px solid #EDE7F6;
+      margin-bottom: 2px; overflow: hidden;
+      white-space: nowrap; text-overflow: ellipsis; max-width: 100%;
+    }
+    .act-pill .act-icon { flex-shrink: 0; font-size: 12px; }
+    .act-pill .act-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+
+    /* More pill */
+    .more-pill {
+      font-size: 10px; color: #5A6178; font-weight: 600;
+      padding: 1px 5px; text-align: center;
+    }
+
+    /* Sticky child name column */
+    .child-name-cell {
+      position: sticky; left: 0; z-index: 5;
+      background: white; border-right: 2px solid #EDE7F6;
+      padding: 8px 10px; vertical-align: middle;
+    }
+    .dark .child-name-cell { background: #1B2340; }
+
+    /* Header cells */
+    .day-header {
+      padding: 8px 5px; text-align: center;
+      font-size: 12px; font-weight: 700; color: #1B2340;
+      background: #F8FAFC; border: 1px solid #EDE7F6;
+      white-space: nowrap;
+    }
+    .day-header.is-today { background: #E8F0FE; color: #1B2340; }
+    .child-header-cell {
+      position: sticky; left: 0; z-index: 15;
+      background: #F8FAFC; border-right: 2px solid #EDE7F6;
+      border-bottom: 2px solid #EDE7F6; padding: 8px 10px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: #5A6178;
+    }
+
+    /* Scrollable grid container */
+    .grid-scroll {
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      border: 1px solid #EDE7F6; border-radius: 16px;
+    }
+
+    /* Section color coding in cell */
+    .section-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .section-dot.morgon { background: #FCD34D; }
+    .section-dot.dag { background: #60A5FA; }
+    .section-dot.kvall { background: #FB923C; }
+    .section-dot.natt { background: #818CF8; }
+
+    /* Empty cell content */
+    .empty-indicator {
+      color: #D1D5DB; font-size: 18px; text-align: center; padding: 10px 0;
+    }
+
+    /* Loading skeleton */
+    .skeleton { background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 6px; height: 14px; margin-bottom: 4px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    @media (max-width: 640px) {
+      .child-name-col, .child-name-cell { min-width: 72px; width: 72px; max-width: 72px; padding: 6px 6px; }
+      .day-cell { min-width: 88px; width: 88px; }
+      .day-header { min-width: 88px; width: 88px; font-size: 11px; }
+    }
+  </style>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Min Stjärndag">
+</head>
+<body class="bg-white font-body text-navy dark:bg-navy dark:text-white">
+  <div class="min-h-screen flex flex-col md:flex-row">
+    <!-- Sidebar -->
+    <nav class="w-full md:w-64 bg-navy text-white p-4 md:p-6 md:min-h-screen">
+      <a href="/dashboard" class="flex items-center gap-3 mb-8 no-underline text-white hover:text-white">
+        <span class="text-2xl">⭐</span>
+        <h1 class="text-xl font-heading font-bold">Min Stjärndag</h1>
+      </a>
+      <ul class="space-y-2">
+        <li><a href="/dashboard" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Översikt</a></li>
+        <li><a href="/daily-log" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Daglig logg</a></li>
+        <li><a href="/schedule?view=family" class="sidebar-nav block px-4 py-3 rounded-lg bg-gold text-navy font-semibold">Veckoschema</a></li>
+        <li><a href="/library" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Bibliotek</a></li>
+        <li><a href="/skattkammaren" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors" style="color:#F5A623;font-weight:600;">🏆 Skattkammaren</a></li>
+        <li><a href="/family" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Familjen &amp; inställningar</a></li>
+      </ul>
+      <div class="mt-8 pt-4 border-t border-navy-soft space-y-2">
+        <button onclick="Theme.toggleDark()" class="w-full px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors text-left flex items-center gap-2">
+          <span>🌙</span> Mörkt läge
+        </button>
+        <button id="logoutBtn" class="w-full px-4 py-2 bg-coral hover:bg-red-200 text-navy rounded-lg font-semibold transition-colors">Logga ut</button>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="flex-1 flex flex-col min-w-0">
+      <!-- Header -->
+      <div class="bg-sky border-b border-lavender p-4 md:p-6">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 class="text-xl font-heading font-bold text-navy">Familjevy</h2>
+            <p class="text-sm text-text-soft">Alla barn — klicka på en dag för att redigera</p>
+          </div>
+          <!-- Week navigation -->
+          <div class="flex items-center gap-2">
+            <button id="prevWeekBtn" onclick="changeWeek(-1)" class="w-9 h-9 rounded-full border-2 border-lavender hover:border-gold flex items-center justify-center font-bold text-navy transition-colors">‹</button>
+            <span id="weekLabel" class="font-heading font-bold text-navy text-sm min-w-[130px] text-center">Laddar…</span>
+            <button id="nextWeekBtn" onclick="changeWeek(1)" class="w-9 h-9 rounded-full border-2 border-lavender hover:border-gold flex items-center justify-center font-bold text-navy transition-colors">›</button>
+            <button onclick="goToCurrentWeek()" class="px-3 py-1.5 text-xs border-2 border-lavender hover:border-navy rounded-lg font-semibold text-navy transition-colors">Idag</button>
+            <button onclick="shareWeekSchedule()" class="px-3 py-1.5 text-xs border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50 rounded-lg font-semibold text-blue-600 transition-colors" title="Dela veckans schema">📤 Dela</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="toast" class="hidden fixed top-4 right-4 z-50 bg-navy text-white px-6 py-3 rounded-xl shadow-lg font-semibold text-sm max-w-xs"></div>
+
+      <!-- Content -->
+      <div class="flex-1 p-4 md:p-6 overflow-auto">
+        <div id="mainContent">
+          <!-- Loading state -->
+          <div class="grid-scroll">
+            <table class="week-grid">
+              <thead>
+                <tr>
+                  <th class="child-header-cell child-name-col">Barn</th>
+                  <th class="day-header">Mån</th>
+                  <th class="day-header">Tis</th>
+                  <th class="day-header">Ons</th>
+                  <th class="day-header">Tor</th>
+                  <th class="day-header">Fre</th>
+                  <th class="day-header">Lör</th>
+                  <th class="day-header">Sön</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                <tr>
+                  <td class="child-name-cell" colspan="8">
+                    <div class="flex items-center justify-center py-12 text-text-soft gap-2">
+                      <span class="animate-spin text-xl">⏳</span>
+                      <span class="font-semibold">Laddar schema…</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Empty state (no children) -->
+        <div id="emptyState" class="hidden text-center py-20">
+          <p class="text-5xl mb-4">👨‍👩‍👧</p>
+          <p class="font-heading font-bold text-navy text-xl mb-2">Inga barn tillagda</p>
+          <p class="text-sm text-text-soft mb-6">Lägg till barn från veckoschema-sidan.</p>
+          <a href="/schedule" class="px-6 py-3 bg-gold text-white rounded-xl font-semibold inline-block">Gå till Veckoschema</a>
+        </div>
+
+        <!-- Legend -->
+        <div id="legend" class="hidden mt-4 flex flex-wrap items-center gap-3 text-xs text-text-soft">
+          <span class="font-semibold">Sektioner:</span>
+          <span class="flex items-center gap-1"><span class="section-dot morgon"></span> Morgon</span>
+          <span class="flex items-center gap-1"><span class="section-dot dag"></span> Dag</span>
+          <span class="flex items-center gap-1"><span class="section-dot kvall"></span> Kväll</span>
+          <span class="flex items-center gap-1"><span class="section-dot natt"></span> Natt</span>
+          <span class="ml-auto text-[11px] opacity-70">Klicka på en cell för att redigera schemat</span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script>
+// ── Constants ────────────────────────────────────────────
+// day-of-week mapping: JS Sunday=0, Monday=1…Saturday=6
+// Display order: Mon(1), Tue(2), Wed(3), Thu(4), Fri(5), Sat(6), Sun(0)
+const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0];
+const DAYS_SHORT = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
+const DAYS_FULL = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
+
+// ── State ───────────────────────────────────────────────
+let children = [];
+let weekOffset = 0; // 0 = current week
+// childData[childId][dow] = { scheduleId, items: [] }
+let childData = {};
+
+// ── Helpers ─────────────────────────────────────────────
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// showToast is now in /js/toast.js
+
+function getWeekStart(offset) {
+  const now = new Date();
+  const dow = now.getDay();
+  const mondayDiff = dow === 0 ? -6 : 1 - dow;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayDiff + offset * 7);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+function updateWeekLabel() {
+  const ws = getWeekStart(weekOffset);
+  const wn = getWeekNumber(ws);
+  document.getElementById('weekLabel').textContent = `Vecka ${wn}, ${ws.getFullYear()}`;
+}
+
+function getDatesForWeek(offset) {
+  const ws = getWeekStart(offset);
+  const dates = {};
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(ws);
+    d.setDate(ws.getDate() + i);
+    // i=0→Mon(1), i=5→Sat(6), i=6→Sun(0)
+    const dow = i < 6 ? i + 1 : 0;
+    dates[dow] = d;
+  }
+  return dates;
+}
+
+// ── Data loading ─────────────────────────────────────────
+async function loadAll() {
+  // Load children
+  const res = await window.apiFetch('/api/children');
+  if (!res.ok) { showToast('Kunde inte ladda barn', true); return; }
+  children = await res.json();
+
+  if (children.length === 0) {
+    document.getElementById('mainContent').classList.add('hidden');
+    document.getElementById('emptyState').classList.remove('hidden');
+    return;
+  }
+
+  await loadScheduleData();
+  renderGrid();
+}
+
+async function loadScheduleData() {
+  // For each child, fetch their schedules (metadata), then fetch items per schedule
+  const scheduleResults = await Promise.all(
+    children.map(async c => {
+      const r = await window.apiFetch(`/api/children/${c.id}/schedules`);
+      return { childId: c.id, schedules: r.ok ? await r.json() : [] };
+    })
+  );
+
+  // Build flat list of { childId, scheduleId, dow }
+  const scheduleList = [];
+  for (const { childId, schedules } of scheduleResults) {
+    for (const s of schedules) {
+      scheduleList.push({ childId, scheduleId: s.id, dow: s.day_of_week });
+    }
+  }
+
+  // Fetch items for all schedules in parallel
+  const itemResults = await Promise.all(
+    scheduleList.map(async ({ childId, scheduleId, dow }) => {
+      const r = await window.apiFetch(`/api/schedules/${scheduleId}/items`);
+      const data = r.ok ? await r.json() : { items: [] };
+      return { childId, scheduleId, dow, items: data.items || [] };
+    })
+  );
+
+  // Build childData[childId][dow]
+  childData = {};
+  for (const child of children) {
+    childData[child.id] = {};
+  }
+  for (const { childId, scheduleId, dow, items } of itemResults) {
+    childData[childId][dow] = { scheduleId, items };
+  }
+}
+
+// ── Rendering ────────────────────────────────────────────
+function renderGrid() {
+  updateWeekLabel();
+
+  const todayDow = new Date().getDay();
+  const weekDates = getDatesForWeek(weekOffset);
+
+  // Build header row
+  const headerCells = DOW_ORDER.map(dow => {
+    const date = weekDates[dow];
+    const dateLabel = date ? `${date.getDate()}/${date.getMonth() + 1}` : '';
+    const isToday = dow === todayDow && weekOffset === 0;
+    return `<th class="day-header${isToday ? ' is-today' : ''}">
+      <div>${DAYS_SHORT[dow]}</div>
+      <div style="font-size:10px; font-weight:500; opacity:0.65; margin-top:1px;">${dateLabel}</div>
+      ${isToday ? '<div style="width:6px;height:6px;border-radius:50%;background:#3B82F6;margin:3px auto 0;"></div>' : ''}
+    </th>`;
+  }).join('');
+
+  // Build child rows
+  const rows = children.map(child => {
+    const cells = DOW_ORDER.map(dow => {
+      const dayData = childData[child.id]?.[dow];
+      const items = dayData?.items || [];
+      const isToday = dow === todayDow && weekOffset === 0;
+      const hasAct = items.length > 0;
+
+      let cellContent = '';
+      if (hasAct) {
+        // Show up to 4 activity pills, then a "+N more" indicator
+        const MAX_PILLS = 4;
+        const shown = items.slice(0, MAX_PILLS);
+        const rest = items.length - MAX_PILLS;
+        cellContent = shown.map(item => {
+          const sectionClass = item.section || 'dag';
+          return `<div class="act-pill">
+            <span class="section-dot ${sectionClass}"></span>
+            <span class="act-icon">${escHtml(item.activity_icon || '📌')}</span>
+            <span class="act-name">${escHtml(item.activity_name_display || item.activity_name || '')}</span>
+          </div>`;
+        }).join('');
+        if (rest > 0) {
+          cellContent += `<div class="more-pill">+${rest} till</div>`;
+        }
+      } else {
+        cellContent = `<div class="empty-indicator">—</div>`;
+      }
+
+      const cellClass = `day-cell${hasAct ? ' has-activities' : ' empty-cell'}${isToday ? ' is-today-col' : ''}`;
+      return `<td class="${cellClass}" data-date="${dateStr}" onclick="goToEdit('${child.id}', ${dow})" title="${DAYS_FULL[dow]} — ${escHtml(child.name)}">
+        ${cellContent}
+      </td>`;
+    }).join('');
+
+    return `<tr data-child-id="${child.id}">
+      <td class="child-name-cell child-name-col">
+        <div class="flex flex-col items-center gap-0.5">
+          <span style="font-size:24px; line-height:1;">${escHtml(child.emoji || '👤')}</span>
+          <span style="font-size:11px; font-weight:700; color:#1B2340; text-align:center; word-break:break-word; max-width:80px; line-height:1.2; margin-top:2px;">${escHtml(child.name)}</span>
+        </div>
+      </td>
+      ${cells}
+    </tr>`;
+  }).join('');
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="grid-scroll">
+      <table class="week-grid">
+        <thead>
+          <tr>
+            <th class="child-header-cell child-name-col">Barn</th>
+            ${headerCells}
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          ${rows}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  document.getElementById('legend').classList.remove('hidden');
+}
+
+// ── Navigation ───────────────────────────────────────────
+function changeWeek(delta) {
+  weekOffset += delta;
+  renderGrid();
+}
+
+function goToCurrentWeek() {
+  weekOffset = 0;
+  renderGrid();
+}
+
+// ── Click-to-edit ────────────────────────────────────────
+function goToEdit(childId, dow) {
+  // Navigate to per-child schedule editor with child + day pre-selected
+  window.location.href = `/schedule?child=${encodeURIComponent(childId)}&day=${dow}`;
+}
+
+// ── Init ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const user = await window.authGuard();
+    if (!user) return;
+    document.getElementById('logoutBtn').addEventListener('click', () => window.logout());
+    updateWeekLabel();
+    await loadAll();
+  } catch (err) {
+    console.error('[FAMILY-WEEK] Init error:', err);
+    const tb = document.getElementById('tableBody');
+    if (tb) tb.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-red-500 font-semibold">Något gick fel vid laddning. Ladda om sidan.</td></tr>';
+  }
+});
+
+// ── Share week schedule ────────────────────────────────────
+async function shareWeekSchedule() {
+  if (!window.Platform || !window.Platform.share) {
+    alert('Dela-funktionen är inte tillgänglig på denna enhet.');
+    return;
+  }
+  const label = document.getElementById('weekLabel');
+  const weekText = label ? label.textContent : '';
+  const tbody = document.getElementById('tableBody');
+  if (!tbody) return;
+
+  const lines = [];
+  // Get child rows
+  tbody.querySelectorAll('tr[data-child-id]').forEach(row => {
+    const nameCell = row.querySelector('.child-name-cell');
+    const name = nameCell ? nameCell.textContent.trim().split('\n').pop()?.trim() : '';
+    if (!name) return;
+    // Collect activity names from all day cells
+    const dayNames = [];
+    row.querySelectorAll('.day-cell[data-date]').forEach(cell => {
+      const date = cell.dataset.date || '';
+      const shortDate = date ? date.slice(5) : '';
+      const acts = [];
+      cell.querySelectorAll('.act-name').forEach(el => {
+        const n = el.textContent?.trim();
+        if (n) acts.push(n);
+      });
+      if (acts.length) dayNames.push(`${shortDate}: ${acts.join(', ')}`);
+    });
+    if (dayNames.length) {
+      lines.push(`${name}: ${dayNames.join(' | ')}`);
+    }
+  });
+
+  const text = lines.length
+    ? `${weekText}\n${lines.join('\n')}\n(Min Stjärndag)`
+    : `Veckans schema ${weekText}\n(Min Stjärndag)`;
+
+  try {
+    const result = await window.Platform.share({
+      title: `Veckans schema ${weekText} – Min Stjärndag`,
+      text,
+    });
+    if (!result) showToast('Delat!', false);
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      showToast('Kunde inte dela: ' + err.message, true);
+    }
+  }
+}
+    console.error('[FAMILY-WEEK] Init error:', err);
+    const tb = document.getElementById('tableBody');
+    if (tb) tb.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-red-500 font-semibold">Något gick fel vid laddning. Ladda om sidan.</td></tr>';
+  }
+});
+</script>
+
+  <!-- Service Worker Registration (update detection in /js/sw-register.js) -->
+  <script src="/js/sw-register.js?v=2.12.0"></script>
+<script src="/js/feature-check.js?v=2.13.0"></script>
+<script src="/js/mobile-nav.js?v=2.13.0"></script>
+<script src="/js/help-bubble.js?v=2.12.0"></script>
+</body>
+</html>

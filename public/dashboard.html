@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="/js/platform.js?v=1.0.0"></script>
+    <meta property="og:title" content="Min Stjärndag — Förenkla vardagen för hela familjen">
+    <meta property="og:description" content="Skapa och följ dagliga scheman, aktiviteter och belöningar">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://mystarday.se/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://mystarday.se/og-image.png">
+  <title>Översikt - Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="/js/dom-utils.js?v=2.12.0"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623', 'gold-light': '#FFF3D6', navy: '#1B2340', 'navy-soft': '#2A3458',
+            sky: '#E8F0FE', lavender: '#EDE7F6', mint: '#E0F5EC', coral: '#FDEAE7', 'text-soft': '#5A6178',
+          },
+          fontFamily: { heading: ['Outfit', 'sans-serif'], body: ['Plus Jakarta Sans', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+  <script src="/js/dashboard-system-messages.js?v=2.12.0"></script>
+  <link rel="stylesheet" href="/css/theme.css?v=2.12.0">
+  <link rel="stylesheet" href="/css/skeleton.css?v=1.0.0">
+  <link rel="stylesheet" href="/css/mobile-nav.css?v=2.12.0">
+  <script src="/js/theme.js?v=2.12.0"></script>
+  <script src="/js/auth.js?v=2.14.0"></script>
+  <script src="/js/pwa-install.js?v=2.13.0"></script>
+  <script src="/js/push-manager.js?v=2.12.0"></script>
+  <script src="/js/feedback.js?v=2.12.0"></script>
+  <script src="/js/i18n.js?v=2.12.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
+  <script src="/js/toast.js?v=2.12.0"></script>
+  <script src="/js/offline-store.js?v=1.0.0"></script>
+  <script src="/js/offline-queue.js?v=2.13.0"></script>
+  <script src="/js/birthday-picker.js?v=2.12.0"></script>
+  <script src="/js/survey-popup.js?v=2.12.0"></script>
+  <style>
+    /* Prevent horizontal overflow on mobile */
+    html, body { overflow-x: hidden; max-width: 100vw; }
+    * { box-sizing: border-box; }
+
+    /* ── Month/special-day calendar grids: mobile scroll ── */
+    .cal-scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    @media (max-width: 639px) {
+      .cal-scroll-wrap .grid.grid-cols-7 { min-width: 322px; }
+      .cal-scroll-wrap .grid.grid-cols-7 > div { min-height: 44px; }
+    }
+
+    /* ── Main content: bottom padding so FAB doesn't cover last item ── */
+    main { padding-bottom: max(80px, calc(env(safe-area-inset-bottom, 0px) + 80px)); }
+    input[type="date"], input[type="time"] { max-width: 100%; box-sizing: border-box; -webkit-appearance: none; }
+    /* Mobile modal scroll fix — iOS safe area + touch scroll */
+    .fixed.inset-0.overflow-y-auto { -webkit-overflow-scrolling: touch; padding-bottom: env(safe-area-inset-bottom, 16px); }
+    /* Modals use Tailwind z-[9100]/z-[9200] classes — sit above topbar (z-200),
+       dropdown (z-199) AND survey popup (z-9000). Do NOT add z-index override here. */
+
+    /* ── Mobile responsive fixes (393px / iPhone 16) ── */
+    @media (max-width: 640px) {
+      /* Quick action buttons: horizontal row with wrap on small screens */
+      .quick-actions-bar { flex-direction: row; flex-wrap: wrap; gap: 4px; }
+      .quick-actions-bar button { flex: 0 1 auto; justify-content: center; font-size: 11px; padding: 5px 8px; min-height: 36px; }
+      /* Child card name: ensure truncation not word-break */
+      .dash-child-card h4 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; word-break: normal !important; }
+      /* Section pills: compact emoji-only on mobile */
+      .dash-section-pill { font-size: 11px; padding: 2px 5px; }
+      /* Modal inner panels: constrain width properly */
+      .modal-inner { max-width: calc(100vw - 32px); }
+      /* Date/time inputs: prevent iOS oversized rendering */
+      input[type="date"], input[type="time"] { font-size: 16px; height: 44px; }
+
+      /* Modals: ensure they sit above mobile topbar and fit viewport */
+      #addActivityModal > div,
+      #editItemModal > div,
+      #addChildModal > div,
+      #giveStarsModal > div,
+      #ledigDagModal > div {
+        max-height: calc(100dvh - 2rem);
+        overflow-y: auto;
+      }
+      /* Modal sticky footer buttons — always visible */
+      #addActivityModal .flex-shrink-0:last-child {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        padding-top: 0.75rem;
+        border-top: 1px solid #EDE7F6;
+      }
+      /* Child name tabs: horizontal scroll instead of wrap, compact sizing */
+      #childTabs {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 6px !important;
+      }
+      #childTabs::-webkit-scrollbar { display: none; }
+      #childTabs .child-tab {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      /* Back button: compact */
+      #backToChildrenBtn {
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+      }
+      /* View mode bar: compact on mobile */
+      #viewModeBar .view-btn {
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+      }
+    }
+    .section-card { transition: background 0.2s; }
+    .activity-item { touch-action: pan-y; user-select: none; }
+    .activity-item.dragging { opacity: 0.45; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transform: scale(1.02); }
+    .activity-item.sortable-ghost { opacity: 0.4; background: #FFF3D6; border: 2px dashed #F5A623; }
+    .activity-item.sortable-chosen { box-shadow: 0 8px 24px rgba(245,166,35,0.3); transform: scale(1.02); }
+    .drag-handle {
+      touch-action: none;
+      min-width: 44px; min-height: 44px;
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: grab; color: #9CA3AF;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .drag-handle:hover, .drag-handle:active { color: #3B31A8; }
+    .drop-target { outline: 2px dashed #F5A623; outline-offset: 2px; }
+    .day-btn { min-height: 44px; }
+    .action-btn { min-height: 44px; min-width: 44px; -webkit-tap-highlight-color: transparent; }
+    @media (hover: hover) {
+      .action-btn-remove:hover { background-color: #FDEAE7; }
+    }
+    .action-btn-remove:active { background-color: #FDEAE7; }
+
+    /* ── Wizard-style date/time inputs ── */
+    .wizard-date-input, .wizard-time-input { min-height: 48px; }
+    input[type="date"]:placeholder-shown, input[type="time"]:placeholder-shown { color: #5A6178; }
+    .child-card { transition: all 0.15s ease; }
+    .child-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+    .child-card.active { border-color: #F5A623; background: #FFF3D6; }
+    .day-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .day-dot.has-activities { background: #10B981; }
+    .day-dot.empty { background: #E5E7EB; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #EDE7F6; border-radius: 3px; }
+    /* WCAG 2.5.8: min 44×44px touch target for sidebar nav + move buttons */
+    .sidebar-nav a { display: block; padding: 10px 16px; min-height: 44px; }
+    .move-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: transparent; color: #9CA3AF; transition: all 0.15s; }
+    .move-btn:hover { background: #EDE7F6; color: #1B2340; }
+    .move-btn:active { background: #F5A623; color: white; }
+
+    /* Day Tab DnD */
+    .day-tab { cursor: pointer; transition: all 0.15s; }
+    .day-tab[draggable="true"] { cursor: grab; }
+    .day-tab.day-drag-src { opacity: 0.4 !important; }
+    .day-tab.day-drop-hover {
+      background: #FFF3D6 !important; border-color: #F5A623 !important;
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.4); transform: scale(1.08);
+    }
+    .day-tab.activity-drop-hover {
+      background: #EDE7F6 !important; border-color: #7C3AED !important;
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.4); position: relative;
+    }
+    .day-tab.activity-drop-hover::after {
+      content: '📋'; position: absolute; top: -10px; right: -6px;
+      font-size: 12px; background: white; border-radius: 50%; width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    /* Drag Ghost */
+    .dnd-ghost {
+      position: fixed; z-index: 9999; pointer-events: none;
+      opacity: 0.82; transform: rotate(-2deg) scale(0.93);
+      box-shadow: 0 14px 36px rgba(0,0,0,0.2); border-radius: 12px;
+      max-width: 240px; background: white; padding: 8px 12px;
+      font-size: 13px; font-weight: 600; color: #1B2340;
+      display: flex; align-items: center; gap: 8px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .dnd-ghost.copy-ghost { border: 2px dashed #7C3AED; }
+    .dnd-ghost.day-ghost { border: 2px solid #F5A623; background: #FFF3D6; }
+
+    /* Timeline View */
+    .time-slot {
+      height: 38px; display: flex; align-items: center;
+      border-bottom: 1px solid #F3F4F6; position: relative; transition: background 0.1s;
+    }
+    .time-slot.slot-half { border-bottom-style: dashed; }
+    .time-slot.slot-drop-target { background: #FFF3D6 !important; border-color: #F5A623; }
+    .time-slot-label {
+      width: 50px; flex-shrink: 0; font-size: 11px; color: #9CA3AF;
+      font-weight: 600; padding-left: 6px;
+    }
+    .time-slot.slot-half .time-slot-label { color: #E5E7EB; font-size: 10px; }
+    .timeline-activity {
+      flex: 1; margin: 2px 6px 2px 0; background: white; border-radius: 8px;
+      border: 1.5px solid #E5E7EB; padding: 4px 8px; font-size: 12px;
+      cursor: grab; display: flex; align-items: center; gap: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: box-shadow 0.1s;
+      user-select: none;
+    }
+    .timeline-activity:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+    .timeline-activity.tl-dragging { opacity: 0.35; cursor: grabbing; }
+    .tl-unscheduled-label {
+      font-size: 11px; font-weight: 700; color: #9CA3AF; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 8px 6px 4px; border-top: 2px dashed #E5E7EB; margin-top: 4px;
+    }
+
+    /* Side-by-Side */
+    .sbs-container { display: flex; gap: 12px; }
+    .sbs-panel { flex: 1; min-width: 0; }
+    .sbs-panel-header {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+      background: #F8FAFC; border-radius: 10px; margin-bottom: 10px;
+      border: 2px solid #EDE7F6; flex-wrap: wrap;
+    }
+    .sbs-inner {
+      border-radius: 12px; border: 2px solid transparent; min-height: 120px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .sbs-inner.sbs-drop-active {
+      border-color: #7C3AED !important;
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.25);
+    }
+
+    /* View toggle buttons */
+    .view-btn {
+      padding: 5px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600;
+      border: 2px solid #EDE7F6; transition: all 0.15s; white-space: nowrap;
+      background: white; color: #5A6178;
+    }
+    .view-btn:hover { border-color: #1B2340; color: #1B2340; }
+    .view-btn.active { background: #1B2340; color: white; border-color: #1B2340; }
+
+    /* Activity drag hint on day tabs */
+    .drag-copy-hint {
+      display: none; font-size: 10px; color: #7C3AED; font-weight: 700;
+      padding: 2px 8px; background: #EDE7F6; border-radius: 6px;
+    }
+    .activity-dragging-now .drag-copy-hint { display: inline-block; }
+
+    @media (max-width: 640px) { .sbs-container { flex-direction: column; } }
+
+    /* ── Compact Child Cards (redesigned Del A) ── */
+    .dash-child-card {
+      border: 2px solid #EDE7F6;
+      border-radius: 16px;
+      background: white;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      /* Allow vertical page scroll when touching cards — fixes iOS touch capture */
+      touch-action: pan-y;
+    }
+    .dash-child-card:hover {
+      border-color: #F5A623;
+      box-shadow: 0 4px 16px rgba(245,166,35,0.12);
+    }
+    .dash-child-card.paused { opacity: 0.65; border-style: dashed; }
+    .dash-card-compact {
+      padding: 12px 14px;
+      cursor: pointer;
+      user-select: none;
+      /* Allow vertical scroll on mobile — cards are near-full-width, touch must not be captured */
+      touch-action: pan-y;
+    }
+    .dash-card-expanded { padding: 0 14px 14px; }
+
+    /* Avatar with reward progress ring */
+    .dash-avatar-wrap {
+      position: relative; flex-shrink: 0;
+      width: 52px; height: 52px;
+    }
+    .dash-avatar-ring {
+      position: absolute; top: 0; left: 0; width: 52px; height: 52px;
+    }
+    .dash-avatar-ring circle { transition: stroke-dashoffset 0.6s ease; }
+    .dash-avatar-emoji {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-size: 22px; line-height: 1;
+    }
+
+    /* Section pills (trafikljus) */
+    .dash-section-pill {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.03em;
+      padding: 2px 8px; border-radius: 999px;
+      border: 1.5px solid #D1D5DB; color: #6B7280; background: #F9FAFB;
+      white-space: nowrap; transition: background 0.3s, border-color 0.3s, color 0.3s;
+    }
+    /* Grön: alla klara */
+    .dash-section-pill.pill-green {
+      background: #D1FAE5; border-color: #6EE7B7; color: #065F46;
+    }
+    /* Gul: pågår + oavklarade */
+    .dash-section-pill.pill-yellow {
+      background: #FEF9C3; border-color: #FCD34D; color: #92400E;
+    }
+    /* Röd: passerat tid + oavklarade */
+    .dash-section-pill.pill-red {
+      background: #FEE2E2; border-color: #FCA5A5; color: #991B1B;
+    }
+    /* Grå: framtid (default — same as base, just explicit) */
+    .dash-section-pill.pill-gray {
+      background: #F9FAFB; border-color: #D1D5DB; color: #6B7280;
+    }
+
+    /* Status row */
+    .dash-status-row { font-size: 11px; color: #5A6178; line-height: 1.3; }
+    .dash-status-row strong { color: #1B2340; }
+
+    /* Action buttons strip */
+    .dash-action-btn {
+      min-width: 36px; min-height: 36px;
+      border-radius: 10px; border: 2px solid #EDE7F6;
+      background: white; color: #1B2340; font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+      transition: all 0.15s; cursor: pointer; padding: 4px 8px;
+      white-space: nowrap;
+    }
+    .dash-action-btn:hover { border-color: #F5A623; background: #FFF3D6; }
+    .dash-action-btn.btn-gold { background: #F5A623; border-color: #F5A623; color: white; }
+    .dash-action-btn.btn-gold:hover { background: #e8971a; }
+    .dash-action-btn.btn-redemption { background: #FEF3C7; border-color: #F59E0B; color: #92400E; animation: pulse-subtle 2s infinite; }
+
+    @keyframes pulse-subtle {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.3); }
+      50% { box-shadow: 0 0 0 4px rgba(245,158,11,0.0); }
+    }
+
+    /* Inline redemption panel */
+    .dash-inline-redemption {
+      margin-top: 8px; padding: 10px 12px;
+      background: #FFFBEB; border: 1.5px solid #F59E0B;
+      border-radius: 12px; font-size: 12px;
+    }
+
+    /* Expanded detail */
+    .dash-expand-chevron {
+      font-size: 12px; color: #9CA3AF; transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .dash-child-card.is-expanded .dash-expand-chevron { transform: rotate(180deg); }
+    .dash-detail-panel { border-top: 1.5px solid #EDE7F6; padding-top: 12px; }
+
+    .pause-btn {
+      min-height: 36px; padding: 6px 14px; border-radius: 10px;
+      font-size: 12px; font-weight: 600; transition: all 0.15s;
+      border: 2px solid #EDE7F6; background: white; color: #5A6178;
+    }
+    .pause-btn:hover { border-color: #F5A623; color: #1B2340; }
+    .pause-btn.is-paused { background: #FDEAE7; border-color: #FECACA; color: #B91C1C; }
+
+    /* Weekly overview chart */
+    .week-day-col { text-align: center; min-width: 80px; flex: 1; }
+    .week-bar-track { width: 28px; height: 80px; background: #F3F4F6; border-radius: 14px; margin: 0 auto; position: relative; overflow: hidden; }
+    .week-bar-fill { position: absolute; bottom: 0; left: 0; right: 0; border-radius: 14px; transition: height 0.5s ease; }
+    .week-bar-fill.green { background: linear-gradient(180deg, #34D399, #10B981); }
+    .week-bar-fill.gold { background: linear-gradient(180deg, #FBBF24, #F5A623); }
+    .week-bar-fill.red { background: linear-gradient(180deg, #FCA5A5, #EF4444); }
+    .week-bar-fill.gray { background: #D1D5DB; }
+
+    /* Per-child mini weekly chart inside child cards */
+    .mini-week-chart { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; padding: 0 4px; }
+    .mini-week-day { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; }
+    .mini-week-bar-track { width: 100%; max-width: 32px; height: 48px; background: #F3F4F6; border-radius: 8px; position: relative; overflow: hidden; }
+    .mini-week-bar-fill { position: absolute; bottom: 0; left: 0; right: 0; border-radius: 8px; transition: height 0.4s ease; min-height: 0; }
+    .mini-week-label { font-size: 10px; font-weight: 700; margin-top: 4px; color: #5A6178; }
+
+    /* Star hero section */
+    .star-hero {
+      background: linear-gradient(135deg, #1B2340 0%, #2d3a5c 100%);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      color: white;
+    }
+    .star-balance-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1;
+      color: #F5A623;
+    }
+    .reward-progress-bar-track {
+      background: rgba(255,255,255,0.15);
+      border-radius: 999px;
+      height: 7px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+    .reward-progress-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #F5A623, #FBBF24);
+      transition: width 0.6s ease;
+    }
+
+    /* Activity list in dashboard card */
+    .dash-activity-list {
+      max-height: 220px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #EDE7F6 transparent;
+    }
+    .dash-activity-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 10px;
+      transition: background 0.12s;
+      min-height: 44px;
+      cursor: default;
+    }
+    .dash-activity-item.status-nu {
+      background: #FFFBEB;
+      border: 1.5px solid #F5A623;
+    }
+    .dash-activity-item.status-nasta {
+      background: #F5F3FF;
+      border: 1.5px solid transparent;
+    }
+    .dash-activity-item.status-sedan {
+      background: transparent;
+      border: 1.5px solid transparent;
+      opacity: 0.65;
+    }
+    .dash-activity-item.status-done {
+      background: transparent;
+      border: 1.5px solid transparent;
+      opacity: 0.45;
+    }
+    .dash-activity-check {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      border-radius: 50%;
+      border: 2px solid #D1D5DB;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .dash-activity-check:hover { border-color: #F5A623; background: #FFF3D6; }
+    .dash-activity-check.checked { border-color: #10B981; background: #10B981; }
+    .dash-activity-check.checking { border-color: #F5A623; background: #F5A623; opacity: 0.7; }
+    .status-badge-nu {
+      font-size: 9px; font-weight: 800; letter-spacing: 0.04em;
+      padding: 2px 6px; border-radius: 4px;
+      background: #F5A623; color: white; flex-shrink: 0;
+    }
+    .status-badge-nasta {
+      font-size: 9px; font-weight: 800; letter-spacing: 0.04em;
+      padding: 2px 6px; border-radius: 4px;
+      background: #7C3AED; color: white; flex-shrink: 0;
+    }
+  </style>
+  <!-- PWA / Favicon -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Min Stjärndag">
+</head>
+<body class="bg-white font-body text-navy dark:bg-navy dark:text-white">
+
+  <!-- ─── IMPERSONATION BANNER (hidden until activated) ─────── -->
+  <div id="impersonationBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#DC2626; color:white; padding:10px 16px; font-weight:700; font-size:14px; text-align:center; border-bottom:3px solid #991B1B; box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+    🔒 Du är i support-läge: Visar data för familj <span id="impersonationFamilyName" style="font-weight:800;"></span>. Ingen data kan ändras. Sessionen löper ut om <span id="impersonationCountdown" style="font-family:monospace; font-weight:800;">15:00</span>.
+  </div>
+  <!-- Spacer: same height as banner so content doesn't go under it -->
+  <div id="impersonationBannerSpacer" style="display:none; height:46px; flex-shrink:0;"></div>
+
+  <!-- ─── OFFLINE BANNER ──────────────────────────────────────── -->
+  <!-- Shown when the parent browser is offline; "Senast uppdaterat" timestamp. -->
+  <div id="parentOfflineBanner" class="hidden flex items-center justify-center gap-2 px-4 py-2 bg-amber-100 text-amber-800 text-sm font-semibold" style="border-bottom:1.5px solid rgba(245,158,35,0.25);">
+    <span>📶</span>
+    <span id="parentOfflineText">Offline — dina ändringar sparas</span>
+    <span id="parentOfflineTime" class="ml-2 text-amber-600 text-xs"></span>
+  </div>
+
+  <!-- ─── TRIAL COUNTDOWN BANNER ───────────────────────────────── -->
+  <!-- Shown for trial families; hidden for beta/active/expired. -->
+  <div id="trialBanner" style="display:none; position:relative; z-index:9990; background:#1B2340; color:white; padding:10px 16px 10px 20px; border-bottom:3px solid #F5A623; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+    <div style="display:flex; align-items:center; gap:10px; max-width:900px; margin:0 auto;">
+      <span style="font-size:18px; flex-shrink:0;">⭐</span>
+      <div style="flex:1; min-width:0;">
+        <p id="trialBannerText" style="font-size:13px; font-weight:600; margin:0; line-height:1.4;"></p>
+      </div>
+      <a id="trialBannerCta" href="/upgrade"
+         style="flex-shrink:0; background:#F5A623; color:#1B2340; border-radius:8px; padding:6px 14px; font-size:12px; font-weight:800; text-decoration:none; white-space:nowrap;">
+        Uppgradera – 59 kr/mån
+      </a>
+    </div>
+  </div>
+
+  <!-- ─── SYSTEM MESSAGE BANNER ────────────────────────────────── -->
+  <!-- Hidden by default. Shown when unread system messages exist.  -->
+  <div id="systemMsgBanner" style="display:none; position:relative; z-index:9990; background:#1B2340; color:white; padding:12px 16px 12px 20px; border-bottom:3px solid #F5A623; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+    <div style="display:flex; align-items:flex-start; gap:12px; max-width:800px; margin:0 auto;">
+      <span style="font-size:20px; flex-shrink:0; margin-top:1px;">📣</span>
+      <div style="flex:1; min-width:0;">
+        <p style="font-size:11px; font-weight:700; letter-spacing:0.06em; opacity:0.7; text-transform:uppercase; margin:0 0 4px 0;">Meddelande från Min Stjärndag</p>
+        <p id="systemMsgText" style="font-size:14px; font-weight:600; margin:0; line-height:1.4;"></p>
+        <p id="systemMsgTime" style="font-size:11px; opacity:0.6; margin:4px 0 0 0;"></p>
+      </div>
+      <button id="systemMsgClose" onclick="dismissSystemMessage()" style="flex-shrink:0; background:rgba(255,255,255,0.15); border:none; color:white; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; margin-top:2px;" onmouseover="this.style.background='rgba(245,166,35,0.4)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">Stäng ✕</button>
+    </div>
+  </div>
+
+  <script src="/js/dashboard-impersonation.js?v=2.12.0"></script>
+  <script src="/js/skeleton.js?v=1.0.0"></script>
+  <script src="/js/dashboard.js?v=2.35.0"></script>
+
+  <div class="min-h-screen flex flex-col md:flex-row">
+    <!-- Sidebar -->
+    <nav class="w-full md:w-64 bg-navy text-white p-4 md:p-6 md:min-h-screen">
+      <a href="/dashboard" class="flex items-center gap-3 mb-8 no-underline text-white hover:text-white">
+        <span class="text-2xl">⭐</span>
+        <h1 class="text-xl font-heading font-bold">Min Stjärndag</h1>
+      </a>
+      <ul class="space-y-2">
+        <li><a href="/dashboard" class="sidebar-nav block px-4 py-3 rounded-lg bg-gold text-navy font-semibold">Översikt</a></li>
+        <li><a href="/daily-log" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Daglig logg</a></li>
+        <li><a href="/schedule" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Veckoschema</a></li>
+        <li><a href="/reports" data-feature="klinisk_rapportering" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">📊 Rapporter</a></li>
+        <li><a href="/pedagog-note" data-feature="pedagoganteckningar" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">📝 Pedagoganteckningar</a></li>
+        <li><a href="/library" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Bibliotek</a></li>
+        <li><a href="/skattkammaren" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors" style="color:#F5A623;font-weight:600;">🏆 Skattkammaren</a></li>
+        <li><a href="/family" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Familjen &amp; inställningar</a></li>
+      </ul>
+      <div class="mt-8 pt-4 border-t border-navy-soft space-y-2">
+        <button onclick="Theme.toggleDark()" class="w-full px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors text-left flex items-center gap-2">
+          <span>🌙</span> Mörkt läge
+        </button>
+        <button id="logoutBtn" class="w-full px-4 py-2 bg-coral hover:bg-red-200 text-navy rounded-lg font-semibold transition-colors">Logga ut</button>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="flex-1 flex flex-col min-w-0">
+      <div class="bg-sky border-b border-lavender p-4 md:p-6">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-xl font-heading font-bold text-navy">🏠 Översikt</h2>
+          <div class="flex items-center gap-3">
+            <button id="backToChildrenBtn" onclick="backToChildrenList()" class="hidden px-4 py-2 bg-lavender hover:bg-purple-100 text-navy rounded-lg font-semibold text-sm transition-colors">← Alla barn</button>
+          </div>
+        </div>
+        <!-- Dag / Vecka / Månad toggle + week navigation -->
+        <div id="calNavBar" class="hidden flex flex-wrap items-center gap-2">
+          <!-- View type toggle -->
+          <div class="flex rounded-xl border-2 border-lavender overflow-hidden">
+            <button id="btnViewDay" onclick="setCalView('day')" class="cal-view-btn px-3 py-1.5 text-sm font-semibold transition-colors bg-white text-navy hover:bg-lavender">Dag</button>
+            <button id="btnViewWeek" onclick="setCalView('week')" class="cal-view-btn px-3 py-1.5 text-sm font-semibold transition-colors bg-navy text-white">Vecka</button>
+            <button id="btnViewMonth" onclick="setCalView('month')" class="cal-view-btn px-3 py-1.5 text-sm font-semibold transition-colors bg-white text-navy hover:bg-lavender">Månad</button>
+          </div>
+          <!-- Week/day navigation -->
+          <div class="flex items-center gap-1 ml-1">
+            <button id="calNavPrev" onclick="calNavPrev()" class="w-8 h-8 rounded-full border-2 border-lavender hover:border-gold flex items-center justify-center font-bold text-navy transition-colors text-sm">‹</button>
+            <span id="calNavLabel" class="font-heading font-bold text-navy text-sm min-w-[130px] text-center px-1"></span>
+            <button id="calNavNext" onclick="calNavNext()" class="w-8 h-8 rounded-full border-2 border-lavender hover:border-gold flex items-center justify-center font-bold text-navy transition-colors text-sm">›</button>
+          </div>
+          <button onclick="calNavToday()" class="px-3 py-1.5 text-xs border-2 border-lavender hover:border-navy rounded-lg font-semibold text-navy transition-colors">Idag</button>
+        </div>
+      </div>
+
+      <div id="toast" class="hidden fixed top-4 right-4 z-[300] bg-navy text-white px-6 py-3 rounded-xl shadow-lg font-semibold text-sm max-w-xs"></div>
+
+      <!-- Dagens nyhet in-app banner (dismissable, parent-only) -->
+      <div id="dagensNyhetAppBanner" class="hidden mx-4 mt-4 rounded-xl border-2 border-gold bg-gold-light px-4 py-3 flex items-start gap-3">
+        <span class="text-xl flex-shrink-0 mt-0.5">📢</span>
+        <div class="flex-1 min-w-0">
+          <p class="font-heading font-bold text-navy text-sm mb-0.5" id="appBannerTitle"></p>
+          <p class="text-text-soft text-xs leading-relaxed" id="appBannerBody"></p>
+        </div>
+        <button onclick="dismissAppBanner()" class="flex-shrink-0 text-text-soft hover:text-navy text-lg leading-none transition-colors" title="Stäng">✕</button>
+      </div>
+
+      <!-- Active sharing indicator (shown on overview only) -->
+      <a id="activeSharingBanner" href="/reports" class="hidden mx-4 mt-3 rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-3 flex items-center gap-3 no-underline hover:bg-indigo-100 transition-colors">
+        <span class="text-xl flex-shrink-0">🔗</span>
+        <div class="flex-1">
+          <p class="font-semibold text-sm text-indigo-900" id="activeSharingText"></p>
+          <p class="text-xs text-indigo-600">Klicka för att hantera delade rapporter</p>
+        </div>
+        <span class="text-indigo-400 text-lg">→</span>
+      </a>
+
+      <!-- Medförälder CTA banner (feature-gated, shown to single-parent families) -->
+      <div id="medforalderCtaBanner"
+           data-feature="medforalder_cta"
+           style="display:none;"
+           class="mx-4 mt-3 rounded-xl border-2 border-gold bg-gradient-to-r from-gold-light to-white px-4 py-3 flex items-center gap-3">
+        <span class="text-2xl flex-shrink-0">👨‍👩‍👧</span>
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-navy text-sm leading-snug">Bjud in en medförälder</p>
+          <p class="text-xs text-text-soft leading-snug">Så slipper ni fråga varandra om schemat</p>
+        </div>
+        <button id="medforalderCtaBtn"
+                onclick="openMedforalderCtaInvite()"
+                class="flex-shrink-0 bg-gold hover:bg-yellow-500 text-white font-bold text-xs px-3 py-2 rounded-lg transition-colors whitespace-nowrap">
+          Bjud in
+        </button>
+        <button onclick="dismissMedforalderCtaBanner()"
+                class="flex-shrink-0 text-text-soft hover:text-navy text-lg leading-none transition-colors w-8 h-8 flex items-center justify-center"
+                title="Stäng">✕</button>
+      </div>
+
+      <!-- Dela appen CTA banner (feature-gated, all families) -->
+      <div id="delaAppenCtaBanner"
+           data-feature="dela_appen"
+           style="display:none;"
+           class="mx-4 mt-3 rounded-xl border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-white px-4 py-3 flex items-center gap-3">
+        <span class="text-2xl flex-shrink-0">🎉</span>
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-navy text-sm leading-snug">Min Stjärndag — Tipsa en vän!</p>
+          <p class="text-xs text-text-soft leading-snug">Hjälp en annan familj att få struktur i vardagen</p>
+        </div>
+        <button id="delaAppenCtaBtn"
+                onclick="openDelaAppenShare()"
+                class="flex-shrink-0 bg-purple-500 hover:bg-purple-600 text-white font-bold text-xs px-3 py-2 rounded-lg transition-colors whitespace-nowrap">
+          Dela
+        </button>
+        <button onclick="dismissDelaAppenCtaBanner()"
+                class="flex-shrink-0 text-text-soft hover:text-navy text-lg leading-none transition-colors w-8 h-8 flex items-center justify-center"
+                title="Stäng">✕</button>
+      </div>
+
+      <div class="flex-1 p-4 md:p-8 overflow-auto">
+
+        <!-- Dashboard: child cards side-by-side + weekly overview -->
+        <div id="childrenListView">
+          <!-- Header -->
+          <div class="mb-5 flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h3 class="text-lg font-heading font-bold text-navy mb-0.5">Barnens progress</h3>
+              <p class="text-xs text-text-soft">Klicka på ett barn för schema · Stjärnhistorik nedan</p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap quick-actions-bar">
+              <button onclick="openGiveStarsQuick()" class="px-3 py-2 text-sm bg-gold hover:bg-yellow-500 text-white rounded-lg font-semibold transition-colors flex items-center gap-1">⭐ Ge extra stjärnor</button>
+              <button onclick="openOnceTaskModal()" class="px-3 py-2 text-sm bg-lavender hover:bg-purple-100 text-navy rounded-lg font-semibold transition-colors flex items-center gap-1">📋 Engångsaktivitet</button>
+              <button onclick="openLedigDagModal()" class="px-3 py-2 text-sm bg-sky hover:bg-blue-100 text-navy rounded-lg font-semibold transition-colors flex items-center gap-1">🏠 Ledig dag</button>
+            </div>
+          </div>
+
+          <!-- Child cards: compact stacked (max 3 visible without scroll on mobile) -->
+          <div id="childCardsGrid" class="flex flex-col gap-3 mb-6">
+            <div class="text-text-soft text-sm py-8 text-center">Laddar…</div>
+          </div>
+
+          <!-- Star history chart (replaces weekly overview) -->
+          <div id="starHistorySection" class="hidden">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-heading font-bold text-navy">⭐ Stjärnhistorik</h3>
+              <span class="text-xs text-text-soft font-semibold">Senaste 8 veckorna</span>
+            </div>
+            <div id="starHistoryContent" class="bg-white border-2 border-lavender rounded-2xl p-4 overflow-x-auto"></div>
+          </div>
+
+          <!-- PWA install guide banner (dismissible, hides when already standalone) -->
+          <div id="dashboardPwaInstallWrap" class="mt-6" style="display:none;">
+            <div id="dashboardPwaInstallGuide"></div>
+            <div class="text-right mt-1">
+              <button onclick="dismissDashPwaGuide()" class="text-xs text-text-soft hover:text-navy underline">Stäng</button>
+            </div>
+          </div>
+
+          <!-- Tips section -->
+          <div class="mt-6 bg-sky border border-lavender rounded-2xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-lg">💡</span>
+              <span class="font-semibold text-navy text-sm">Tips: Så funkar stjärnor</span>
+            </div>
+            <ul class="text-xs text-text-soft space-y-1.5">
+              <li>• Barnet samlar stjärnor när aktiviteter bockas av i barnvyn</li>
+              <li>• Ge extra stjärnor direkt från barnkortet för insatser utanför schemat</li>
+              <li>• Stjärnorna räknas mot sparade belöningar — sätt upp mål i Bibliotek</li>
+              <li>• Klicka på ett barnkort för att se och redigera dess veckoschema</li>
+            </ul>
+          </div>
+
+
+        </div>
+
+        <!-- Schedule editor -->
+        <div id="scheduleEditorView" class="hidden">
+          <!-- Child tabs -->
+          <div id="childTabs" class="flex gap-2 flex-wrap mb-4"></div>
+
+          <!-- View mode bar (schema/tidsvy/jämför/specialdagar — secondary views) -->
+          <div id="viewModeBar" class="hidden flex flex-wrap items-center gap-2 mb-3">
+            <button id="btnNormalView" onclick="setViewMode('normal')" class="view-btn active">📋 Schema</button>
+            <button id="btnTimelineView" onclick="setViewMode('timeline')" class="view-btn">⏱ Tidsvy</button>
+            <button id="btnSbsView" onclick="setViewMode('sbs')" class="view-btn">👥 Jämför barn</button>
+            <button id="btnSpecialDaysView" onclick="setViewMode('special-days')" class="view-btn">🌟 Specialdagar</button>
+            <span class="drag-copy-hint">← Dra aktivitet till dag-flik för att kopiera</span>
+          </div>
+
+          <!-- Day selector -->
+          <div id="daySelectorWrap" class="hidden">
+            <p class="text-xs text-text-soft mb-2">Välj dag — <em>dra dag-flik till annan dag för att kopiera/byta</em></p>
+            <div class="flex gap-1 overflow-x-auto pb-1" id="dayTabs"></div>
+          </div>
+
+          <!-- SBS child picker -->
+          <div id="sbsChildSelector" class="hidden mb-4 p-4 bg-lavender rounded-2xl">
+            <p class="text-sm font-semibold text-navy mb-2">Välj barn att jämföra med:</p>
+            <div id="sbsChildOptions" class="flex gap-2 flex-wrap"></div>
+          </div>
+
+          <!-- Content -->
+          <div id="scheduleContent">
+            <div class="text-center py-16 text-text-soft"><p class="text-4xl mb-3">📅</p><p class="font-semibold">Välj ett barn ovan</p></div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Activity Modal -->
+  <div id="addActivityModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center z-[9100] p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl my-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-heading font-bold text-navy">Lägg till aktivitet</h3>
+        <button onclick="closeAddModal()" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+      </div>
+      <div class="mb-4">
+        <input type="text" id="templateSearch" placeholder="Sök aktivitet…" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors mb-3" oninput="filterTemplates()">
+        <div id="templateList" class="space-y-1 max-h-52 overflow-y-auto"></div>
+      </div>
+      <div id="selectedTemplateInfo" class="hidden bg-sky rounded-xl p-3 mb-4 flex items-center gap-3">
+        <span id="selTemplateIcon" class="text-3xl"></span>
+        <div><div id="selTemplateName" class="font-semibold text-navy"></div><div id="selTemplateStars" class="text-xs text-text-soft"></div></div>
+        <button onclick="clearSelectedTemplate()" class="ml-auto text-text-soft hover:text-navy text-lg">✕</button>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-2">
+        <div><label class="block text-sm font-semibold text-navy mb-1">Starttid</label><input type="time" id="addStartTime" class="w-full px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors"></div>
+        <div><label class="block text-sm font-semibold text-navy mb-1">Sluttid</label><input type="time" id="addEndTime" class="w-full px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors"></div>
+      </div>
+      <p id="timeTipMsg" class="text-xs text-text-soft mb-3">💡 Tips: Lägg till en tid så placeras aktiviteten rätt i NU / NÄSTA / SEDAN-vyn</p>
+      <div class="mb-4">
+        <label class="block text-sm font-semibold text-navy mb-2">Sektion</label>
+        <div class="flex gap-2 flex-wrap">
+          <button type="button" class="section-pick-btn px-4 py-2 rounded-xl border-2 border-lavender text-sm font-semibold hover:border-gold transition-colors" data-sec="morgon" onclick="pickSection('morgon')">🌅 Morgon</button>
+          <button type="button" class="section-pick-btn px-4 py-2 rounded-xl border-2 border-lavender text-sm font-semibold hover:border-gold transition-colors" data-sec="dag" onclick="pickSection('dag')">☀️ Dag</button>
+          <button type="button" class="section-pick-btn px-4 py-2 rounded-xl border-2 border-lavender text-sm font-semibold hover:border-gold transition-colors" data-sec="kvall" onclick="pickSection('kvall')">🌆 Kväll</button>
+          <button type="button" class="section-pick-btn px-4 py-2 rounded-xl border-2 border-lavender text-sm font-semibold hover:border-gold transition-colors" data-sec="natt" onclick="pickSection('natt')">🌙 Natt</button>
+        </div>
+        <input type="hidden" id="addSection" value="dag">
+      </div>
+      <div id="addActivityOnceWrap" class="hidden mb-4 space-y-3 p-3 bg-sky rounded-xl border-2 border-sky">
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">Datum *</label>
+          <div class="flex items-center gap-3 p-3 rounded-xl border-2 border-sky bg-white">
+            <span class="text-xl flex-shrink-0">📅</span>
+            <input type="date" id="addActivityOnceDate"
+              class="flex-1 bg-transparent outline-none font-semibold text-navy text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-2">Gäller *</label>
+          <div id="addActivityOnceChildList" class="space-y-2"></div>
+        </div>
+      </div>
+      <div id="addActivityError" class="text-red-500 text-sm hidden mb-3"></div>
+      <div id="addActivityChildrenWrap" class="hidden mb-3 p-3 bg-purple-50 rounded-xl border border-purple-200">
+        <p class="text-xs font-semibold text-purple-600 mb-2">Gäller barn:</p>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="closeAddModal()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold">Avbryt</button>
+        <button onclick="submitAddActivity()" id="addActivityBtn" class="flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold transition-colors">Lägg till</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create New Activity Inline Modal -->
+  <div id="createActivityModal" class="hidden fixed inset-0 bg-black/60 flex items-start justify-center z-[9200] p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-xl my-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-heading font-bold text-navy">Skapa ny aktivitet</h3>
+        <button onclick="closeCreateActivityModal()" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-semibold text-navy mb-1">Namn *</label>
+        <input type="text" id="newActName" placeholder="T.ex. Borsta tänderna" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-semibold text-navy mb-1">Emoji</label>
+        <div class="flex gap-2 items-center mb-2">
+          <span id="newActEmojiPreview" class="text-3xl w-10 h-10 flex items-center justify-center border-2 border-lavender rounded-xl">📌</span>
+          <input type="text" id="newActEmojiInput" placeholder="Skriv eller klistra in emoji" maxlength="50" class="flex-1 px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none text-sm transition-colors" oninput="previewNewActEmoji()">
+        </div>
+        <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto" id="newActEmojiGrid"></div>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-semibold text-navy mb-1">Stjärnvärde</label>
+        <div class="flex gap-2">
+          <button type="button" class="star-val-btn px-3 py-2 rounded-xl border-2 border-lavender text-sm font-semibold transition-colors hover:border-gold" data-val="1" onclick="pickStarVal(1)">⭐ 1</button>
+          <button type="button" class="star-val-btn px-3 py-2 rounded-xl border-2 border-lavender text-sm font-semibold transition-colors hover:border-gold" data-val="2" onclick="pickStarVal(2)">⭐ 2</button>
+          <button type="button" class="star-val-btn px-3 py-2 rounded-xl border-2 border-lavender text-sm font-semibold transition-colors hover:border-gold" data-val="3" onclick="pickStarVal(3)">⭐ 3</button>
+          <button type="button" class="star-val-btn px-3 py-2 rounded-xl border-2 border-lavender text-sm font-semibold transition-colors hover:border-gold" data-val="4" onclick="pickStarVal(4)">⭐ 4</button>
+          <button type="button" class="star-val-btn px-3 py-2 rounded-xl border-2 border-lavender text-sm font-semibold transition-colors hover:border-gold" data-val="5" onclick="pickStarVal(5)">⭐ 5</button>
+        </div>
+        <input type="hidden" id="newActStarValue" value="1">
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-semibold text-navy mb-1">Delsteg <span class="font-normal text-text-soft text-xs">(valfritt)</span></label>
+        <div id="newActSubstepList" class="space-y-1 mb-2"></div>
+        <div class="flex gap-2">
+          <input type="text" id="newActSubstepInput" placeholder="Lägg till delsteg…"
+            class="flex-1 px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none text-sm transition-colors"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();addNewActSubstep();}">
+          <button type="button" onclick="addNewActSubstep()"
+            class="px-3 py-2 bg-lavender hover:bg-purple-100 text-navy rounded-xl text-sm font-semibold transition-colors">+</button>
+        </div>
+      </div>
+      <div id="createActivityError" class="text-red-500 text-sm hidden mb-3"></div>
+      <div id="createActivityChildrenWrap" class="hidden mb-3 p-3 bg-purple-50 rounded-xl border border-purple-200">
+        <p class="text-xs font-semibold text-purple-600 mb-2">Gäller barn:</p>
+      </div>
+      <div class="flex gap-2 sm:gap-3 flex-nowrap">
+        <button onclick="closeCreateActivityModal()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold text-sm">Avbryt</button>
+        <button id="createActivitySubmitBtn" onclick="submitCreateActivity()" class="flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold transition-colors text-sm">Skapa &amp; lägg till</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recurrence Choice Modal -->
+  <div id="recurrenceModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-[9200] p-4">
+    <div class="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-sm shadow-xl">
+      <div class="text-center mb-5">
+        <div class="text-3xl mb-2">🗓️</div>
+        <h3 class="text-lg font-heading font-bold text-navy mb-1">En gång eller flera gånger?</h3>
+        <p id="recurrenceActivityName" class="text-sm text-text-soft"></p>
+      </div>
+      <div id="recurrenceChildrenWrap" class="hidden mb-3 p-3 bg-purple-50 rounded-xl border border-purple-200">
+        <p class="text-xs font-semibold text-purple-600 mb-2">Gäller barn:</p>
+      </div>
+      <p id="recurrenceChildHint" class="hidden text-xs text-text-soft mb-2 font-medium"></p>
+      <div class="space-y-3 mb-4">
+        <button type="button" id="recurrenceOnceBtn" class="w-full px-4 py-3 bg-sky hover:bg-blue-100 text-navy rounded-xl font-semibold transition-colors border-2 border-blue-200 text-left">
+          <div class="font-bold" id="recurrenceOnceLbl">📌 Bara idag</div>
+          <div class="text-xs text-text-soft mt-0.5" id="recurrenceOnceDesc">Läggs till för dagens schema</div>
+        </button>
+        <button type="button" id="recurrenceWeeklyBtn" class="w-full px-4 py-3 bg-lavender hover:bg-purple-100 text-navy rounded-xl font-semibold transition-colors border-2 border-purple-200 text-left">
+          <div class="font-bold" id="recurrenceWeeklyLbl">🔁 Flera gånger</div>
+          <div class="text-xs text-text-soft mt-0.5" id="recurrenceWeeklyDesc">Välj vilka veckodagar</div>
+        </button>
+      </div>
+      <div id="weekdayPickerSection" class="hidden mb-4">
+        <p class="text-sm font-semibold text-navy mb-2">Vilka dagar?</p>
+        <div class="grid grid-cols-4 gap-2" id="weekdayPicker"></div>
+        <button onclick="confirmRecurrence('weekly')" class="w-full mt-3 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold transition-colors">Lägg till i valda dagar</button>
+      </div>
+      <div id="recurrenceError" class="text-red-500 text-sm hidden mb-3"></div>
+      <button onclick="closeRecurrenceModal()" class="w-full px-4 py-3 border-2 border-lavender rounded-xl font-semibold text-sm text-text-soft">Avbryt</button>
+    </div>
+  </div>
+
+  <!-- Edit Item Modal -->
+  <div id="editItemModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center z-[9100] p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl my-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-heading font-bold text-navy">Redigera tid</h3>
+        <button onclick="closeEditItemModal()" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+      </div>
+      <input type="hidden" id="editItemId">
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div><label class="block text-sm font-semibold text-navy mb-1">Starttid</label><input type="time" id="editStartTime" class="w-full px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors"></div>
+        <div><label class="block text-sm font-semibold text-navy mb-1">Sluttid</label><input type="time" id="editEndTime" class="w-full px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors"></div>
+      </div>
+      <div class="mb-5">
+        <label class="block text-sm font-semibold text-navy mb-2">Sektion</label>
+        <div class="flex gap-2 flex-wrap">
+          <button type="button" class="edit-sec-btn px-3 py-2 rounded-xl border-2 border-lavender text-sm font-semibold hover:border-gold transition-colors" data-sec="morgon" onclick="setEditSection('morgon')">🌅 Morgon</button>
+          <button type="button" class="edit-sec-btn px-3 py-2 rounded-xl border-2 border-lavender text-sm font-semibold hover:border-gold transition-colors" data-sec="dag" onclick="setEditSection('dag')">☀️ Dag</button>
+          <button type="button" class="edit-sec-btn px-3 py-2 rounded-xl border-2 border-lavender text-sm font-semibold hover:border-gold transition-colors" data-sec="kvall" onclick="setEditSection('kvall')">🌆 Kväll</button>
+          <button type="button" class="edit-sec-btn px-3 py-2 rounded-xl border-2 border-lavender text-sm font-semibold hover:border-gold transition-colors" data-sec="natt" onclick="setEditSection('natt')">🌙 Natt</button>
+        </div>
+        <input type="hidden" id="editSection" value="dag">
+      </div>
+      <div class="flex gap-3">
+        <button onclick="closeEditItemModal()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold">Avbryt</button>
+        <button onclick="submitEditItem()" class="flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold transition-colors">Spara</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Copy Day Modal -->
+  <div id="copyDayModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center z-[9100] p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl my-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-heading font-bold text-navy">Kopiera dag</h3>
+        <button onclick="closeCopyDayModal()" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+      </div>
+      <p id="copyFromLabel" class="text-sm text-text-soft mb-3">Kopiera schemat från <strong></strong> till:</p>
+      <div id="copyDayPicker" class="grid grid-cols-2 gap-2 mb-5"></div>
+      <div class="flex gap-3">
+        <button onclick="closeCopyDayModal()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold">Avbryt</button>
+        <button onclick="submitCopyDay()" class="flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold">Kopiera</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Copy to Child Modal -->
+  <div id="copyChildModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center z-[9100] p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl my-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-heading font-bold text-navy">Kopiera till annat barn</h3>
+        <button onclick="closeCopyChildModal()" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+      </div>
+      <p class="text-sm text-text-soft mb-3">Hela veckoschemat kopieras och skriver över befintliga scheman för det valda barnet.</p>
+      <div id="copyChildPicker" class="space-y-2 mb-5"></div>
+      <div class="flex gap-3">
+        <button onclick="closeCopyChildModal()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold">Avbryt</button>
+        <button onclick="submitCopyChild()" class="flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold">Kopiera</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day DnD Modal -->
+  <div id="dayDndModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center z-[9100] p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl my-auto">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-xl font-heading font-bold text-navy" id="dayDndTitle">Dag-operation</h3>
+        <button onclick="closeDayDndModal()" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+      </div>
+      <p id="dayDndDesc" class="text-sm text-text-soft mb-5"></p>
+      <div class="flex flex-col gap-3">
+        <button id="dayDndCopyBtn" class="px-4 py-3 bg-sky hover:bg-blue-100 text-navy rounded-xl font-semibold flex items-center gap-3 text-left">
+          <span class="text-2xl">📋</span>
+          <div><div class="font-bold">Kopiera</div><div class="text-xs text-text-soft">Källdagens aktiviteter läggs till på måldagen (ersätter befintliga)</div></div>
+        </button>
+        <button id="dayDndSwapBtn" class="px-4 py-3 bg-mint hover:bg-green-100 text-navy rounded-xl font-semibold flex items-center gap-3 text-left">
+          <span class="text-2xl">🔄</span>
+          <div><div class="font-bold">Byta plats</div><div class="text-xs text-text-soft">De två dagarnas aktiviteter byter plats med varandra</div></div>
+        </button>
+        <button onclick="closeDayDndModal()" class="px-4 py-3 border-2 border-lavender rounded-xl font-semibold text-sm">Avbryt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm modal -->
+  <div id="confirmModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center z-[9100] p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl my-auto">
+      <h3 class="text-lg font-heading font-bold text-navy mb-3">Bekräfta</h3>
+      <p id="confirmMsg" class="text-text-soft mb-6"></p>
+      <div class="flex gap-3">
+        <button onclick="closeConfirmModal()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold">Avbryt</button>
+        <button type="button" id="confirmOkBtn" class="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold">Ta bort</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Child Modal -->
+  <!-- Give Stars Modal -->
+  <div id="giveStarsModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center z-[9100] p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl my-auto">
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-xl font-heading font-bold text-navy">⭐ Ge extra stjärnor</h3>
+        <button onclick="document.getElementById('giveStarsModal').classList.add('hidden')" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+      </div>
+      <input type="hidden" id="giveStarsChildId">
+      <div class="flex items-center gap-2 mb-4 p-3 bg-sky rounded-xl">
+        <span class="text-2xl" id="giveStarsChildName"></span>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-semibold text-navy mb-1">Antal stjärnor</label>
+        <div class="flex items-center gap-3">
+          <button type="button" onclick="document.getElementById('giveStarsCount').value = Math.max(1, parseInt(document.getElementById('giveStarsCount').value||'5')-1)" class="w-10 h-10 rounded-xl border-2 border-lavender hover:border-gold font-bold text-lg flex items-center justify-center">−</button>
+          <input type="number" id="giveStarsCount" min="1" max="100" value="5"
+            class="flex-1 px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none text-center font-bold text-lg">
+          <button type="button" onclick="document.getElementById('giveStarsCount').value = Math.min(100, parseInt(document.getElementById('giveStarsCount').value||'5')+1)" class="w-10 h-10 rounded-xl border-2 border-lavender hover:border-gold font-bold text-lg flex items-center justify-center">+</button>
+        </div>
+        <div class="flex gap-2 mt-2 flex-wrap">
+          <button type="button" onclick="document.getElementById('giveStarsCount').value='1'" class="px-3 py-1 text-xs border-2 border-lavender hover:border-gold rounded-lg font-semibold">1</button>
+          <button type="button" onclick="document.getElementById('giveStarsCount').value='5'" class="px-3 py-1 text-xs border-2 border-lavender hover:border-gold rounded-lg font-semibold">5</button>
+          <button type="button" onclick="document.getElementById('giveStarsCount').value='10'" class="px-3 py-1 text-xs border-2 border-lavender hover:border-gold rounded-lg font-semibold">10</button>
+          <button type="button" onclick="document.getElementById('giveStarsCount').value='25'" class="px-3 py-1 text-xs border-2 border-lavender hover:border-gold rounded-lg font-semibold">25</button>
+          <button type="button" onclick="document.getElementById('giveStarsCount').value='50'" class="px-3 py-1 text-xs border-2 border-lavender hover:border-gold rounded-lg font-semibold">50</button>
+        </div>
+      </div>
+      <div class="mb-5">
+        <label class="block text-sm font-semibold text-navy mb-1">Anledning *</label>
+        <input type="text" id="giveStarsReason" placeholder="T.ex. Hjälpte till med disken"
+          class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-sm">
+      </div>
+      <div id="giveStarsError" class="hidden text-red-500 text-sm mb-3"></div>
+      <div class="flex gap-3">
+        <button type="button" onclick="document.getElementById('giveStarsModal').classList.add('hidden')"
+          class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold text-sm">Avbryt</button>
+        <button type="button" id="giveStarsSubmitBtn" onclick="submitGiveStars()"
+          class="flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm transition-colors">Ge stjärnor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ge Extra Stjärnor — Child Picker (quick access from header) -->
+  <div id="giveStarsPickerModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center z-[9100] p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl my-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-heading font-bold text-navy">⭐ Ge extra stjärnor</h3>
+        <button onclick="document.getElementById('giveStarsPickerModal').classList.add('hidden')" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+      </div>
+      <p class="text-sm text-text-soft mb-4">Välj vilket barn du vill ge stjärnor till:</p>
+      <div id="giveStarsPickerList" class="flex flex-col gap-2"></div>
+    </div>
+  </div>
+
+  <!-- Ledig dag — Child Picker + Toggle -->
+  <div id="ledigDagModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center z-[9100] p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl my-auto">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h3 class="text-xl font-heading font-bold text-navy">🏠 Ledig dag</h3>
+          <p class="text-xs text-text-soft mt-0.5">Pausar barnets schema för hela dagen</p>
+        </div>
+        <button onclick="document.getElementById('ledigDagModal').classList.add('hidden')" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+      </div>
+      <div id="ledigDagList" class="flex flex-col gap-2"></div>
+      <p class="text-xs text-text-soft mt-4 text-center">Barnet behöver inte bocka av aktiviteter en ledig dag</p>
+    </div>
+  </div>
+
+  
+  <!-- Pending Requests Panel -->
+  <div id="requestPanelModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center z-[9100] p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-md shadow-xl max-h-[85vh] flex flex-col my-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-heading font-bold text-navy">📨 Väntande förfrågningar</h3>
+        <button onclick="closeRequestPanel()" class="text-text-soft hover:text-navy text-2xl min-w-[44px] min-h-[44px] flex items-center justify-center">&times;</button>
+      </div>
+      <div class="text-sm text-text-soft mb-3" id="requestPanelChildName"></div>
+      <div id="requestPanelContent" class="overflow-y-auto flex-1 space-y-3">
+        <p class="text-center text-text-soft py-6">Laddar...</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="addChildModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center z-[9100] p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-6 md:p-8 w-full max-w-md shadow-xl my-auto">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-heading font-bold text-navy">Lägg till barn</h3>
+        <button onclick="document.getElementById('addChildModal').classList.add('hidden')" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+      </div>
+      <form id="addChildForm" class="space-y-4">
+        <div><label class="block text-sm font-semibold text-navy mb-1">Förnamn *</label><input type="text" id="childName" required class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors" placeholder="T.ex. Anna"></div>
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">Emoji *</label>
+          <div class="flex gap-2 flex-wrap" id="emojiPicker">
+            <button type="button" class="emoji-opt text-2xl p-2 rounded-lg border-2 border-transparent hover:border-gold transition-colors" data-emoji="👧">👧</button>
+            <button type="button" class="emoji-opt text-2xl p-2 rounded-lg border-2 border-transparent hover:border-gold transition-colors" data-emoji="👦">👦</button>
+            <button type="button" class="emoji-opt text-2xl p-2 rounded-lg border-2 border-transparent hover:border-gold transition-colors" data-emoji="🧒">🧒</button>
+            <button type="button" class="emoji-opt text-2xl p-2 rounded-lg border-2 border-transparent hover:border-gold transition-colors" data-emoji="👶">👶</button>
+            <button type="button" class="emoji-opt text-2xl p-2 rounded-lg border-2 border-transparent hover:border-gold transition-colors" data-emoji="🌟">🌟</button>
+            <button type="button" class="emoji-opt text-2xl p-2 rounded-lg border-2 border-transparent hover:border-gold transition-colors" data-emoji="🦄">🦄</button>
+            <button type="button" class="emoji-opt text-2xl p-2 rounded-lg border-2 border-transparent hover:border-gold transition-colors" data-emoji="🐱">🐱</button>
+            <button type="button" class="emoji-opt text-2xl p-2 rounded-lg border-2 border-transparent hover:border-gold transition-colors" data-emoji="🐶">🐶</button>
+          </div>
+          <input type="hidden" id="childEmoji" required>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">Födelsedatum *</label>
+          <div class="grid grid-cols-3 gap-2">
+            <select id="childBirthdayYear" required class="px-3 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-sm" onchange="updateBirthdayHidden('childBirthday')">
+              <option value="">År</option>
+            </select>
+            <select id="childBirthdayMonth" required class="px-3 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-sm" onchange="updateBirthdayDays('childBirthday');updateBirthdayHidden('childBirthday')">
+              <option value="">Månad</option>
+            </select>
+            <select id="childBirthdayDay" required class="px-3 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-sm" onchange="updateBirthdayHidden('childBirthday')">
+              <option value="">Dag</option>
+            </select>
+          </div>
+          <input type="hidden" id="childBirthday">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">PIN-kod <span class="text-text-soft font-normal">(4 siffror, valfritt)</span></label>
+          <input type="text" id="childPin" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors" placeholder="T.ex. 4721">
+          <p class="text-xs text-text-soft mt-1">Lämna tomt för slumpmässig kod.</p>
+        </div>
+        <button type="submit" id="addChildSubmit" class="w-full px-4 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-heading font-bold transition-colors">Lägg till</button>
+        <div id="addChildMsg" class="text-sm min-h-[1.4em]"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Special Day Modal -->
+  <div id="specialDayModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center z-[9100] p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl my-4">
+      <div class="flex justify-between items-center mb-1">
+        <h3 class="text-xl font-heading font-bold text-navy" id="specialDayModalTitle">Specialdag</h3>
+        <button onclick="closeSpecialDayModal()" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+      </div>
+      <p id="specialDayDateLabel" class="text-sm text-text-soft mb-4"></p>
+
+      <!-- Note field -->
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-navy mb-1">Anteckning (valfritt)</label>
+        <input type="text" id="specialDayNote" placeholder="T.ex. Utflyktsdag, Ledig, Sjuk…" class="w-full px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none text-sm transition-colors">
+      </div>
+
+      
+      <!-- Items list -->
+      <div id="sdItemsList" class="space-y-2 mb-4 min-h-[60px]">
+        <div class="text-text-soft text-sm text-center py-4">Inga aktiviteter — lägg till nedan</div>
+      </div>
+
+      <!-- Add activity row -->
+      <div class="border-t border-lavender pt-4 mb-4">
+        <p class="text-xs font-semibold text-navy mb-2">Lägg till aktivitet</p>
+        <div class="flex gap-2 flex-wrap items-end">
+          <div class="flex-1 min-w-0">
+            <select id="sdAddTemplateSelect" class="w-full px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none text-sm transition-colors">
+              <option value="">-- Välj aktivitet --</option>
+            </select>
+          </div>
+          <div>
+            <select id="sdAddSection" class="px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none text-sm transition-colors">
+              <option value="morgon">🌅 Morgon</option>
+              <option value="dag" selected>☀️ Dag</option>
+              <option value="kvall">🌆 Kväll</option>
+              <option value="natt">🌙 Natt</option>
+            </select>
+          </div>
+          <button onclick="sdAddItem()" class="px-3 py-2 bg-gold hover:bg-yellow-500 text-white rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">+ Lägg till</button>
+        </div>
+      </div>
+
+      <div id="specialDayError" class="text-red-500 text-sm hidden mb-3"></div>
+
+      <div class="flex gap-3 flex-wrap">
+        <button onclick="closeSpecialDayModal()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold text-sm">Stäng</button>
+        <button onclick="sdDeleteSpecialDay()" id="sdDeleteBtn" class="hidden px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 border-2 border-red-200 rounded-xl font-semibold text-sm transition-colors">🗑 Ta bort specialdag</button>
+        <button onclick="sdSave()" class="flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm transition-colors">Spara</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/dashboard-tour.js?v=2.12.0"></script>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       DASHBOARD TOUR OVERLAY (shows once after onboarding)
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="dashTourOverlay" class="hidden fixed inset-0 z-[9990] bg-black/50 backdrop-blur-sm flex items-end justify-center p-4"
+    style="font-family: 'Plus Jakarta Sans', sans-serif;">
+    <!-- Tour card -->
+    <div id="dashTourCard" class="bg-white rounded-2xl p-5 w-full max-w-md shadow-2xl mb-4 animate-[slideUp_0.3s_ease]">
+      <!-- Progress dots -->
+      <div class="flex gap-1.5 justify-center mb-4" id="tourDots"></div>
+
+      <!-- Step content -->
+      <div id="tourStepContent" class="text-center mb-5"></div>
+
+      <!-- Buttons -->
+      <div class="flex gap-2">
+        <button id="tourSkipBtn" onclick="skipTour()"
+          class="flex-1 px-4 py-2.5 border-2 border-lavender hover:border-navy text-text-soft hover:text-navy rounded-xl font-semibold text-sm transition-colors">
+          Hoppa över
+        </button>
+        <button id="tourNextBtn" onclick="nextTourStep()"
+          class="flex-1 px-4 py-2.5 bg-gold hover:bg-yellow-500 text-white rounded-xl font-heading font-bold text-sm transition-colors">
+          Nästa →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tooltip highlight ring (follows target element) -->
+  <div id="tourHighlight" class="hidden fixed pointer-events-none z-[9985] rounded-xl border-4 border-gold shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]"
+    style="transition: all 0.3s ease;"></div>
+
+  <!-- Help button (always visible) -->
+  <!-- Help button: above mobile nav (bottom-20=80px), on desktop above feedback btn (bottom-[76px]) -->
+  <button id="helpBtn" onclick="toggleHelpPanel()"
+    class="fixed bottom-20 right-4 z-[900] w-11 h-11 bg-navy text-white rounded-full shadow-lg flex items-center justify-center text-lg hover:bg-navy-soft transition-colors md:bottom-[76px] md:right-5"
+    title="Hur funkar det?">
+    ❓
+  </button>
+
+  <!-- Help / FAQ Panel -->
+  <div id="helpPanel" class="hidden fixed inset-0 z-[9980] bg-black/50 flex items-end justify-center p-4"
+    style="font-family: 'Plus Jakarta Sans', sans-serif;">
+    <div class="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto shadow-2xl mb-2">
+      <!-- Header -->
+      <div class="sticky top-0 bg-white border-b border-lavender px-5 py-4 flex items-center justify-between rounded-t-2xl">
+        <h2 class="font-heading font-bold text-navy text-lg">❓ Hur funkar det?</h2>
+        <button onclick="toggleHelpPanel()" class="w-9 h-9 rounded-full bg-lavender hover:bg-purple-200 text-navy font-bold text-lg flex items-center justify-center transition-colors">×</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex gap-1 p-3 border-b border-lavender overflow-x-auto" id="helpTabs">
+        <button class="help-tab active whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-navy text-white" data-tab="schema" onclick="switchHelpTab(this, 'schema')">📅 Schema</button>
+        <button class="help-tab whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-lavender text-navy hover:bg-purple-200" data-tab="stars" onclick="switchHelpTab(this, 'stars')">⭐ Stjärnor</button>
+        <button class="help-tab whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-lavender text-navy hover:bg-purple-200" data-tab="family" onclick="switchHelpTab(this, 'family')">👨‍👩‍👧 Familj</button>
+        <button class="help-tab whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-lavender text-navy hover:bg-purple-200" data-tab="adults" onclick="switchHelpTab(this, 'adults')">🔑 Fler vuxna</button>
+        <button class="help-tab whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-lavender text-navy hover:bg-purple-200" data-tab="trouble" onclick="switchHelpTab(this, 'trouble')">🔧 Felsökning</button>
+      </div>
+
+      <!-- Tab content -->
+      <div class="p-5 space-y-4" id="helpContent">
+        <!-- Schema tab (default) -->
+        <div id="help-schema">
+          <div class="help-faq-item">
+            <button class="w-full text-left flex items-center justify-between py-2 font-semibold text-navy text-sm" onclick="toggleFaq(this)">
+              Hur lägger jag till en aktivitet?
+              <span class="text-text-soft text-lg flex-shrink-0">+</span>
+            </button>
+            <div class="hidden pb-3 text-xs text-text-soft leading-relaxed">
+              Klicka på ett barnkort på Översikten → välj dag → klicka "+" för att lägga till en aktivitet från ditt bibliotek. Du kan också skapa egna aktiviteter i <strong>Bibliotek</strong>.
+            </div>
+          </div>
+          <hr class="border-lavender">
+          <div class="help-faq-item">
+            <button class="w-full text-left flex items-center justify-between py-2 font-semibold text-navy text-sm" onclick="toggleFaq(this)">
+              Kan jag dra och flytta aktiviteter?
+              <span class="text-text-soft text-lg flex-shrink-0">+</span>
+            </button>
+            <div class="hidden pb-3 text-xs text-text-soft leading-relaxed">
+              Ja! I barnets schemavyn (klicka på ett kort på Översikten) kan du hålla in och dra aktiviteter för att ändra ordning. Du kan också dra en aktivitet till en annan dagflik för att kopiera den.
+            </div>
+          </div>
+          <hr class="border-lavender">
+          <div class="help-faq-item">
+            <button class="w-full text-left flex items-center justify-between py-2 font-semibold text-navy text-sm" onclick="toggleFaq(this)">
+              Hur kopierar jag schemat till alla dagar?
+              <span class="text-text-soft text-lg flex-shrink-0">+</span>
+            </button>
+            <div class="hidden pb-3 text-xs text-text-soft leading-relaxed">
+              I schemaredigeraren (📋-knappen) → välj "Kopiera till andra dagar" för att kopiera en dags schema till resten av veckan.
+            </div>
+          </div>
+        </div>
+
+        <!-- Stars tab -->
+        <div id="help-stars" class="hidden">
+          <div class="help-faq-item">
+            <button class="w-full text-left flex items-center justify-between py-2 font-semibold text-navy text-sm" onclick="toggleFaq(this)">
+              Hur tjänar barnet stjärnor?
+              <span class="text-text-soft text-lg flex-shrink-0">+</span>
+            </button>
+            <div class="hidden pb-3 text-xs text-text-soft leading-relaxed">
+              Varje avklarad aktivitet ger <strong>1 stjärna</strong>. Barnet bockar av i sin barnvy. Du kan också ge <strong>bonus-stjärnor</strong> manuellt direkt från barnkortet på Översikten.
+            </div>
+          </div>
+          <hr class="border-lavender">
+          <div class="help-faq-item">
+            <button class="w-full text-left flex items-center justify-between py-2 font-semibold text-navy text-sm" onclick="toggleFaq(this)">
+              Hur funkar Skattkammaren?
+              <span class="text-text-soft text-lg flex-shrink-0">+</span>
+            </button>
+            <div class="hidden pb-3 text-xs text-text-soft leading-relaxed">
+              I barnvyn kan barnet trycka på ⭐-ikonen för att se Skattkammaren — en lista med belöningar och hur många stjärnor som krävs. Barnet kan begära ut en belöning när det sparat tillräckligt.
+            </div>
+          </div>
+          <hr class="border-lavender">
+          <div class="help-faq-item">
+            <button class="w-full text-left flex items-center justify-between py-2 font-semibold text-navy text-sm" onclick="toggleFaq(this)">
+              Hur lägger jag till eller redigerar belöningar?
+              <span class="text-text-soft text-lg flex-shrink-0">+</span>
+            </button>
+            <div class="hidden pb-3 text-xs text-text-soft leading-relaxed">
+              Gå till <strong>Bibliotek</strong> i menyn → fliken "Belöningar". Här kan du lägga till egna belöningar, redigera stjärnkostnad och välja vilka barn som ser belöningen.
+            </div>
+          </div>
+        </div>
+
+        <!-- Family tab -->
+        <div id="help-family" class="hidden">
+          <div class="help-faq-item">
+            <button class="w-full text-left flex items-center justify-between py-2 font-semibold text-navy text-sm" onclick="toggleFaq(this)">
+              Hur lägger jag till ett syskon?
+              <span class="text-text-soft text-lg flex-shrink-0">+</span>
+            </button>
+            <div class="hidden pb-3 text-xs text-text-soft leading-relaxed">
+              På Översikten → klicka på <strong>"+ Lägg till barn"</strong>. Varje barn får sitt eget schema, egna aktiviteter och egna stjärnor.
+            </div>
+          </div>
+          <hr class="border-lavender">
+          <div class="help-faq-item">
+            <button class="w-full text-left flex items-center justify-between py-2 font-semibold text-navy text-sm" onclick="toggleFaq(this)">
+              Hur loggar barnet in?
+              <span class="text-text-soft text-lg flex-shrink-0">+</span>
+            </button>
+            <div class="hidden pb-3 text-xs text-text-soft leading-relaxed">
+              Barnet loggar in på <strong>/child-login</strong> med sitt användarnamn och PIN-kod — inga lösenord. Barnets inloggningsuppgifter hittar du under <strong>Familjen &amp; inställningar → Barn</strong>.
+            </div>
+          </div>
+        </div>
+
+        <!-- Adults tab -->
+        <div id="help-adults" class="hidden">
+          <div class="help-faq-item">
+            <button class="w-full text-left flex items-center justify-between py-2 font-semibold text-navy text-sm" onclick="toggleFaq(this)">
+              Hur bjuder jag in en annan vuxen?
+              <span class="text-text-soft text-lg flex-shrink-0">+</span>
+            </button>
+            <div class="hidden pb-3 text-xs text-text-soft leading-relaxed">
+              Gå till <strong>Familjen &amp; inställningar → Familjemedlemmar</strong> → klicka på "Bjud in". Den inbjudna personen får ett e-postmeddelande med en länk där de skapar sitt eget konto och direkt får åtkomst till familjen.
+            </div>
+          </div>
+          <hr class="border-lavender">
+          <div class="help-faq-item">
+            <button class="w-full text-left flex items-center justify-between py-2 font-semibold text-navy text-sm" onclick="toggleFaq(this)">
+              Kan den inbjudna vuxne se alla barn?
+              <span class="text-text-soft text-lg flex-shrink-0">+</span>
+            </button>
+            <div class="hidden pb-3 text-xs text-text-soft leading-relaxed">
+              Du väljer vilka barn personen ska se när du skickar inbjudan. Du kan ändra det senare under <strong>Familjemedlemmar</strong> → klicka på personen → justera barn-åtkomst.
+            </div>
+          </div>
+        </div>
+
+        <!-- Troubleshooting tab -->
+        <div id="help-trouble" class="hidden">
+          <div class="help-faq-item">
+            <button class="w-full text-left flex items-center justify-between py-2 font-semibold text-navy text-sm" onclick="toggleFaq(this)">
+              Barnet ser inga aktiviteter idag
+              <span class="text-text-soft text-lg flex-shrink-0">+</span>
+            </button>
+            <div class="hidden pb-3 text-xs text-text-soft leading-relaxed">
+              Kontrollera att schemat är inställt för rätt dag. Gå till barnets schema (klicka på barnkortet) → välj dagens dag → se om det finns aktiviteter. Om schemat är tomt: använd "Kopiera till andra dagar" för att fylla på.
+            </div>
+          </div>
+          <hr class="border-lavender">
+          <div class="help-faq-item">
+            <button class="w-full text-left flex items-center justify-between py-2 font-semibold text-navy text-sm" onclick="toggleFaq(this)">
+              Jag har glömt barnets PIN
+              <span class="text-text-soft text-lg flex-shrink-0">+</span>
+            </button>
+            <div class="hidden pb-3 text-xs text-text-soft leading-relaxed">
+              Gå till <strong>Familjen &amp; inställningar → Barn</strong> → välj barnet → klicka "Ändra PIN" för att sätta en ny PIN-kod.
+            </div>
+          </div>
+          <hr class="border-lavender">
+          <div class="help-faq-item">
+            <button class="w-full text-left flex items-center justify-between py-2 font-semibold text-navy text-sm" onclick="toggleFaq(this)">
+              Kontakta support
+              <span class="text-text-soft text-lg flex-shrink-0">+</span>
+            </button>
+            <div class="hidden pb-3 text-xs text-text-soft leading-relaxed">
+              Maila oss på <a href="mailto:my-starday@polsia.app" class="text-gold font-semibold">my-starday@polsia.app</a> — vi svarar inom 24 timmar.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
+  <script src="/js/dashboard-sse.js?v=2.12.0"></script>
+
+  <!-- Service Worker Registration (update detection in /js/sw-register.js) -->
+  <script src="/js/sw-register.js?v=2.12.0"></script>
+<script src="/js/feature-check.js?v=2.13.0"></script>
+<script src="/js/mobile-nav.js?v=2.13.0"></script>
+
+  <!-- SSE real-time sync -->
+  <script src="/js/sse-client.js?v=2.12.0"></script>
+  <script src="/js/dashboard-banner.js?v=2.12.0"></script>
+
+  <!-- Dagens nyhet in-app banner logic -->
+
+  <script>
+    // PWA install guide on dashboard — dismissed per-session
+    (async function () {
+      var DISMISS_KEY = 'pwa_guide_dismissed';
+      var wrap = document.getElementById('dashboardPwaInstallWrap');
+      var container = document.getElementById('dashboardPwaInstallGuide');
+      if (!wrap || !container) return;
+      if (sessionStorage.getItem(DISMISS_KEY)) return;
+      if (!window.PWAInstall) return;
+      var rendered = await PWAInstall.render(container);
+      if (rendered) wrap.style.display = '';
+    })();
+
+    function dismissDashPwaGuide() {
+      sessionStorage.setItem('pwa_guide_dismissed', '1');
+      var wrap = document.getElementById('dashboardPwaInstallWrap');
+      if (wrap) wrap.style.display = 'none';
+    }
+  </script>
+  <script>
+    // Survey popup — fires after page loads, deferred so auth cookie is available
+    if (typeof initSurveyPopup === 'function') {
+      window.addEventListener('load', function () { initSurveyPopup(); });
+    }
+
+    // Active sharing indicator — fetch count and show banner on overview
+    window.refreshReportsActiveCount = function () {
+      fetch('/api/reports/active-count', { credentials: 'include' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var banner = document.getElementById('activeSharingBanner');
+          if (!banner) return;
+          if (data.count > 0) {
+            var text = data.count === 1
+              ? '🔗 1 aktiv delning pågår'
+              : '🔗 ' + data.count + ' aktiva delningar pågår';
+            document.getElementById('activeSharingText').textContent = text;
+            banner.classList.remove('hidden');
+          } else {
+            banner.classList.add('hidden');
+          }
+        })
+        .catch(function () {});
+    };
+
+    // Only show on the overview (children list) view
+    window.addEventListener('DOMContentLoaded', function () {
+      // Wait a tick for initDashboard to set up childrenListView
+      setTimeout(function () { window.refreshReportsActiveCount(); }, 500);
+    });
+  </script>
+
+  <!-- ─── MEDFÖRÄLDER CTA INVITE MODAL ─────────────────────────────────────── -->
+  <div id="medforalderCtaModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-[9200] p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
+      <div class="w-14 h-14 bg-gradient-to-br from-gold-light to-yellow-100 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <span class="text-2xl">👨‍👩‍👧</span>
+      </div>
+      <h2 class="text-lg font-heading font-bold text-navy mb-1">Bjud in medförälder</h2>
+      <p class="text-text-soft text-sm mb-5 leading-relaxed">
+        Din partner får en e-post med en direktlänk — inget krångligt, inga nya appar.
+      </p>
+      <div id="medforalderCtaForm">
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-navy mb-1 text-left">E-postadress</label>
+          <input type="email" id="medforalderCtaEmail"
+                 placeholder="t.ex. partner@email.se"
+                 class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-sm">
+        </div>
+        <p id="medforalderCtaError" class="text-red-500 text-sm hidden mb-3"></p>
+        <button id="medforalderCtaSubmit"
+                onclick="submitMedforalderCtaInvite()"
+                class="w-full bg-gold hover:bg-yellow-500 text-white font-bold text-base py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-[0.98] mb-3">
+          Skicka inbjudan
+        </button>
+        <button onclick="closeMedforalderCtaModal()"
+                class="w-full text-text-soft hover:text-navy text-sm py-2 transition-colors">
+          Avbryt
+        </button>
+      </div>
+      <!-- Success state -->
+      <div id="medforalderCtaSuccess" class="hidden">
+        <div class="text-4xl mb-3">✉️</div>
+        <p class="font-semibold text-navy text-base mb-1">Inbjudan skickad!</p>
+        <p class="text-text-soft text-sm mb-5">Din partner kan nu logga in och se schemat.</p>
+        <button onclick="closeMedforalderCtaModal()"
+                class="w-full bg-gold hover:bg-yellow-500 text-white font-bold text-base py-3 rounded-xl transition-colors shadow-lg">
+          Klart
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── PAYMENT PROMPT MODAL (hidden until trial expires + payment enabled) ──── -->
+  <div id="paymentPromptModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-[9200] p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+      <div class="w-16 h-16 bg-gradient-to-br from-amber-100 to-yellow-200 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <span class="text-3xl">⭐</span>
+      </div>
+      <h2 class="text-xl font-heading font-bold text-navy mb-2">Din provperiod är slut</h2>
+      <p class="text-text-soft text-sm mb-6 leading-relaxed">
+        Fortsätt med Basic för <strong>59 kr/månad</strong> och behåll alla funktioner i Min Stjärndag.
+      </p>
+      <button onclick="goToUpgrade()"
+        class="block w-full bg-gold hover:bg-yellow-600 text-white font-semibold text-lg py-3 px-6 rounded-xl transition-all shadow-lg shadow-amber-200 hover:shadow-xl active:scale-[0.98] mb-3">
+        Uppgradera — 59 kr/mån
+      </button>
+      <button onclick="dismissPaymentPrompt()"
+        class="block w-full text-text-soft hover:text-navy text-sm py-2 transition-colors">
+        Fortsätt med begränsad åtkomst
+      </button>
+      <p class="text-text-soft text-xs mt-4">Betalning via Stripe · Avsluta när som helst</p>
+    </div>
+  </div>
+
+  </body>
+</html>

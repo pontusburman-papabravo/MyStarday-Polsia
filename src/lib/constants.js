@@ -1,0 +1,341 @@
+/**
+ * Centralized constants for Min Stjärndag.
+ * Owns: role names, event types, feature flag names, advisory lock IDs, status values.
+ * Does NOT own: business logic, validation rules, user preferences.
+ *
+ * This file eliminates string typos and enables RBAC expansion.
+ * Every constant here should be imported and used instead of raw strings.
+ */
+
+// ─── RBAC: Parent roles ────────────────────────────────────────
+const PARENT_ROLE_PRIMARY = 'primary';
+const PARENT_ROLE_SHARED = 'shared';
+
+const PARENT_ROLES = {
+  PRIMARY: PARENT_ROLE_PRIMARY,
+  SHARED: PARENT_ROLE_SHARED,
+};
+
+// ─── Admin roles (feature flags, admin panel) ──────────────────
+const ADMIN_ROLE = 'admin';
+
+// ─── Activity statuses ────────────────────────────────────────
+const ACTIVITY_STATUS_DRAFT = 'draft';
+const ACTIVITY_STATUS_PUBLISHED = 'published';
+const ACTIVITY_STATUS_ARCHIVED = 'archived';
+
+const ACTIVITY_STATUSES = {
+  DRAFT: ACTIVITY_STATUS_DRAFT,
+  PUBLISHED: ACTIVITY_STATUS_PUBLISHED,
+  ARCHIVED: ACTIVITY_STATUS_ARCHIVED,
+};
+
+// ─── Daily log item completion states ─────────────────────────
+const LOG_ITEM_STATUS_PENDING = 'pending';
+const LOG_ITEM_STATUS_COMPLETED = 'completed';
+const LOG_ITEM_STATUS_SKIPPED = 'skipped';
+
+const LOG_ITEM_STATUSES = {
+  PENDING: LOG_ITEM_STATUS_PENDING,
+  COMPLETED: LOG_ITEM_STATUS_COMPLETED,
+  SKIPPED: LOG_ITEM_STATUS_SKIPPED,
+};
+
+// ─── Family statuses ──────────────────────────────────────────
+const FAMILY_STATUS_TRIAL = 'trial';
+const FAMILY_STATUS_ACTIVE = 'active';
+const FAMILY_STATUS_PAUSED = 'paused';
+const FAMILY_STATUS_CANCELLED = 'cancelled';
+
+const FAMILY_STATUSES = {
+  TRIAL: FAMILY_STATUS_TRIAL,
+  ACTIVE: FAMILY_STATUS_ACTIVE,
+  PAUSED: FAMILY_STATUS_PAUSED,
+  CANCELLED: FAMILY_STATUS_CANCELLED,
+};
+
+// ─── Email subscription statuses ──────────────────────────────
+const EMAIL_SUBSCRIPTION_SUBSCRIBED = 'subscribed';
+const EMAIL_SUBSCRIPTION_UNSUBSCRIBED = 'unsubscribed';
+
+const EMAIL_SUBSCRIPTION_STATUSES = {
+  SUBSCRIBED: EMAIL_SUBSCRIPTION_SUBSCRIBED,
+  UNSUBSCRIBED: EMAIL_SUBSCRIPTION_UNSUBSCRIBED,
+};
+
+// ─── News (dagens_nyhet) statuses ─────────────────────────────
+const NEWS_STATUS_DRAFT = 'draft';
+const NEWS_STATUS_SCHEDULED = 'scheduled';
+const NEWS_STATUS_PUBLISHED = 'published';
+const NEWS_STATUS_UNPUBLISHED = 'unpublished';
+
+const NEWS_STATUSES = {
+  DRAFT: NEWS_STATUS_DRAFT,
+  SCHEDULED: NEWS_STATUS_SCHEDULED,
+  PUBLISHED: NEWS_STATUS_PUBLISHED,
+  UNPUBLISHED: NEWS_STATUS_UNPUBLISHED,
+};
+
+// ─── Newsletter statuses ──────────────────────────────────────
+const NEWSLETTER_STATUS_DRAFT = 'draft';
+const NEWSLETTER_STATUS_SENT = 'sent';
+const NEWSLETTER_STATUS_FAILED = 'failed';
+
+const NEWSLETTER_STATUSES = {
+  DRAFT: NEWSLETTER_STATUS_DRAFT,
+  SENT: NEWSLETTER_STATUS_SENT,
+  FAILED: NEWSLETTER_STATUS_FAILED,
+};
+
+// ─── Reward redemption statuses ───────────────────────────────
+const REWARD_REDEMPTION_PENDING = 'pending';
+const REWARD_REDEMPTION_COMPLETED = 'completed';
+const REWARD_REDEMPTION_CANCELLED = 'cancelled';
+
+const REWARD_REDEMPTION_STATUSES = {
+  PENDING: REWARD_REDEMPTION_PENDING,
+  COMPLETED: REWARD_REDEMPTION_COMPLETED,
+  CANCELLED: REWARD_REDEMPTION_CANCELLED,
+};
+
+// ─── PIN lockout statuses ────────────────────────────────────
+const PIN_STATUS_UNLOCKED = 'unlocked';
+const PIN_STATUS_LOCKED = 'locked';
+
+const PIN_STATUSES = {
+  UNLOCKED: PIN_STATUS_UNLOCKED,
+  LOCKED: PIN_STATUS_LOCKED,
+};
+
+// ─── Admin audit actions ─────────────────────────────────────
+const AUDIT_ACTION_IMPERSONATION_START = 'impersonation_start';
+const AUDIT_ACTION_IMPERSONATION_END = 'impersonation_end';
+const AUDIT_ACTION_WRITE_BLOCKED = 'write_blocked';
+
+const AUDIT_ACTIONS = {
+  IMPERSONATION_START: AUDIT_ACTION_IMPERSONATION_START,
+  IMPERSONATION_END: AUDIT_ACTION_IMPERSONATION_END,
+  WRITE_BLOCKED: AUDIT_ACTION_WRITE_BLOCKED,
+};
+
+// ─── Pin audit log events ────────────────────────────────────
+const PIN_EVENT_ATTEMPT = 'attempt';
+const PIN_EVENT_LOCKOUT = 'lockout';
+const PIN_EVENT_NOTIFICATION_SENT = 'notification_sent';
+const PIN_EVENT_UNLOCK = 'unlock';
+const PIN_EVENT_RESET = 'reset';
+
+const PIN_EVENTS = {
+  ATTEMPT: PIN_EVENT_ATTEMPT,
+  LOCKOUT: PIN_EVENT_LOCKOUT,
+  NOTIFICATION_SENT: PIN_EVENT_NOTIFICATION_SENT,
+  UNLOCK: PIN_EVENT_UNLOCK,
+  RESET: PIN_EVENT_RESET,
+};
+
+// ─── Analytics event types ───────────────────────────────────
+const ANALYTICS_EVENT_FAMILY_CREATED = 'family_created';
+const ANALYTICS_EVENT_CHILD_ADDED = 'child_added';
+const ANALYTICS_EVENT_ACTIVITY_COMPLETED = 'activity_completed';
+const ANALYTICS_EVENT_REWARD_REDEEMED = 'reward_redeemed';
+const ANALYTICS_EVENT_LOGIN = 'login';
+const ANALYTICS_EVENT_PARENT_LOGIN = 'parent_login';
+const ANALYTICS_EVENT_CHILD_LOGIN = 'child_login';
+
+const ANALYTICS_EVENTS = {
+  FAMILY_CREATED: ANALYTICS_EVENT_FAMILY_CREATED,
+  CHILD_ADDED: ANALYTICS_EVENT_CHILD_ADDED,
+  ACTIVITY_COMPLETED: ANALYTICS_EVENT_ACTIVITY_COMPLETED,
+  REWARD_REDEEMED: ANALYTICS_EVENT_REWARD_REDEEMED,
+  LOGIN: ANALYTICS_EVENT_LOGIN,
+  PARENT_LOGIN: ANALYTICS_EVENT_PARENT_LOGIN,
+  CHILD_LOGIN: ANALYTICS_EVENT_CHILD_LOGIN,
+};
+
+// ─── Feature flags ────────────────────────────────────────────
+const FEATURE_FLAG_BETA = 'beta';
+const FEATURE_FLAG_MAINTENANCE = 'maintenance';
+const FEATURE_FLAG_RETROACTIVE_LOGGING = 'retroactive_logging';
+
+const FEATURE_FLAGS = {
+  BETA: FEATURE_FLAG_BETA,
+  MAINTENANCE: FEATURE_FLAG_MAINTENANCE,
+  RETROACTIVE_LOGGING: FEATURE_FLAG_RETROACTIVE_LOGGING,
+};
+
+// ─── Advisory lock IDs (for distributed locks) ─────────────────
+// Format: number in range 1–2147483647 (PostgreSQL advisory lock range).
+// These lock specific operations to prevent concurrent execution.
+const ADVISORY_LOCK_DAILY_LOG_GENERATION = 100001;
+const ADVISORY_LOCK_RENEWAL_CHECK = 100002;
+const ADVISORY_LOCK_NEWSLETTER_SEND = 100003;
+const ADVISORY_LOCK_NYHET_PUBLISH = 100004;
+const ADVISORY_LOCK_ANALYTICS_SNAPSHOT = 100005;
+
+const ADVISORY_LOCKS = {
+  DAILY_LOG_GENERATION: ADVISORY_LOCK_DAILY_LOG_GENERATION,
+  RENEWAL_CHECK: ADVISORY_LOCK_RENEWAL_CHECK,
+  NEWSLETTER_SEND: ADVISORY_LOCK_NEWSLETTER_SEND,
+  NYHET_PUBLISH: ADVISORY_LOCK_NYHET_PUBLISH,
+  ANALYTICS_SNAPSHOT: ADVISORY_LOCK_ANALYTICS_SNAPSHOT,
+};
+
+// ─── Activity source tracking ─────────────────────────────────
+const ACTIVITY_SOURCE_ADMIN = 'admin';
+const ACTIVITY_SOURCE_USER = 'user';
+
+const ACTIVITY_SOURCES = {
+  ADMIN: ACTIVITY_SOURCE_ADMIN,
+  USER: ACTIVITY_SOURCE_USER,
+};
+
+// ─── View types (child dashboard layouts) ────────────────────
+const VIEW_TYPE_GRID = 'grid';
+const VIEW_TYPE_LIST = 'list';
+
+const VIEW_TYPES = {
+  GRID: VIEW_TYPE_GRID,
+  LIST: VIEW_TYPE_LIST,
+};
+
+// ─── HTTP methods ────────────────────────────────────────────
+const HTTP_METHOD_GET = 'GET';
+const HTTP_METHOD_POST = 'POST';
+const HTTP_METHOD_PUT = 'PUT';
+const HTTP_METHOD_DELETE = 'DELETE';
+const HTTP_METHOD_PATCH = 'PATCH';
+
+const HTTP_METHODS = {
+  GET: HTTP_METHOD_GET,
+  POST: HTTP_METHOD_POST,
+  PUT: HTTP_METHOD_PUT,
+  DELETE: HTTP_METHOD_DELETE,
+  PATCH: HTTP_METHOD_PATCH,
+};
+
+// ─── Time constants (milliseconds) ───────────────────────────
+const MILLISECONDS_PER_SECOND = 1000;
+const MILLISECONDS_PER_MINUTE = 60 * 1000;
+const MILLISECONDS_PER_HOUR = 60 * 60 * 1000;
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const TIME_CONSTANTS = {
+  SECOND: MILLISECONDS_PER_SECOND,
+  MINUTE: MILLISECONDS_PER_MINUTE,
+  HOUR: MILLISECONDS_PER_HOUR,
+  DAY: MILLISECONDS_PER_DAY,
+};
+
+// ─── Exports ──────────────────────────────────────────────────
+module.exports = {
+  // Parent roles
+  PARENT_ROLE_PRIMARY,
+  PARENT_ROLE_SHARED,
+  PARENT_ROLES,
+
+  // Admin
+  ADMIN_ROLE,
+
+  // Activity
+  ACTIVITY_STATUS_DRAFT,
+  ACTIVITY_STATUS_PUBLISHED,
+  ACTIVITY_STATUS_ARCHIVED,
+  ACTIVITY_STATUSES,
+  ACTIVITY_SOURCE_ADMIN,
+  ACTIVITY_SOURCE_USER,
+  ACTIVITY_SOURCES,
+
+  // Log item statuses
+  LOG_ITEM_STATUS_PENDING,
+  LOG_ITEM_STATUS_COMPLETED,
+  LOG_ITEM_STATUS_SKIPPED,
+  LOG_ITEM_STATUSES,
+
+  // Family
+  FAMILY_STATUS_TRIAL,
+  FAMILY_STATUS_ACTIVE,
+  FAMILY_STATUS_PAUSED,
+  FAMILY_STATUS_CANCELLED,
+  FAMILY_STATUSES,
+
+  // Email subscriptions
+  EMAIL_SUBSCRIPTION_SUBSCRIBED,
+  EMAIL_SUBSCRIPTION_UNSUBSCRIBED,
+  EMAIL_SUBSCRIPTION_STATUSES,
+
+  // News
+  NEWS_STATUS_DRAFT,
+  NEWS_STATUS_SCHEDULED,
+  NEWS_STATUS_PUBLISHED,
+  NEWS_STATUS_UNPUBLISHED,
+  NEWS_STATUSES,
+
+  // Newsletters
+  NEWSLETTER_STATUS_DRAFT,
+  NEWSLETTER_STATUS_SENT,
+  NEWSLETTER_STATUS_FAILED,
+  NEWSLETTER_STATUSES,
+
+  // Rewards
+  REWARD_REDEMPTION_PENDING,
+  REWARD_REDEMPTION_COMPLETED,
+  REWARD_REDEMPTION_CANCELLED,
+  REWARD_REDEMPTION_STATUSES,
+
+  // PIN
+  PIN_STATUS_UNLOCKED,
+  PIN_STATUS_LOCKED,
+  PIN_STATUSES,
+  PIN_EVENT_ATTEMPT,
+  PIN_EVENT_LOCKOUT,
+  PIN_EVENT_NOTIFICATION_SENT,
+  PIN_EVENT_UNLOCK,
+  PIN_EVENT_RESET,
+  PIN_EVENTS,
+
+  // Admin audit
+  AUDIT_ACTION_IMPERSONATION_START,
+  AUDIT_ACTION_IMPERSONATION_END,
+  AUDIT_ACTION_WRITE_BLOCKED,
+  AUDIT_ACTIONS,
+
+  // Analytics
+  ANALYTICS_EVENT_FAMILY_CREATED,
+  ANALYTICS_EVENT_CHILD_ADDED,
+  ANALYTICS_EVENT_ACTIVITY_COMPLETED,
+  ANALYTICS_EVENT_REWARD_REDEEMED,
+  ANALYTICS_EVENT_LOGIN,
+  ANALYTICS_EVENT_PARENT_LOGIN,
+  ANALYTICS_EVENT_CHILD_LOGIN,
+  ANALYTICS_EVENTS,
+
+  // Feature flags
+  FEATURE_FLAG_BETA,
+  FEATURE_FLAG_MAINTENANCE,
+  FEATURE_FLAG_RETROACTIVE_LOGGING,
+  FEATURE_FLAGS,
+
+  // Advisory locks
+  ADVISORY_LOCK_DAILY_LOG_GENERATION,
+  ADVISORY_LOCK_RENEWAL_CHECK,
+  ADVISORY_LOCK_NEWSLETTER_SEND,
+  ADVISORY_LOCK_NYHET_PUBLISH,
+  ADVISORY_LOCK_ANALYTICS_SNAPSHOT,
+  ADVISORY_LOCKS,
+
+  // View types
+  VIEW_TYPE_GRID,
+  VIEW_TYPE_LIST,
+  VIEW_TYPES,
+
+  // HTTP methods
+  HTTP_METHOD_GET,
+  HTTP_METHOD_POST,
+  HTTP_METHOD_PUT,
+  HTTP_METHOD_DELETE,
+  HTTP_METHOD_PATCH,
+  HTTP_METHODS,
+
+  // Time
+  TIME_CONSTANTS,
+};

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Undersökning — Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623',
+            'gold-light': '#FFF3D6',
+            navy: '#1B2340',
+            'navy-soft': '#2A3458',
+            sky: '#E8F0FE',
+            lavender: '#EDE7F6',
+            mint: '#E0F5EC',
+            coral: '#FDEAE7',
+            'text-soft': '#5A6178',
+          },
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            body: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    .scale-btn.selected { background: #1B2340; color: white; border-color: #1B2340; }
+    .option-btn.selected { background: #1B2340; color: white; border-color: #1B2340; }
+    .option-btn.selected .option-check { display: flex; }
+    .option-check { display: none; }
+    .progress-fill { transition: width 0.4s ease; }
+    .slide-in { animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-sky via-white to-lavender min-h-screen font-body text-navy">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-20 bg-white/80 backdrop-blur border-b border-lavender">
+    <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2">
+        <span class="text-xl">⭐</span>
+        <span class="font-heading font-bold text-navy text-sm">Min Stjärndag</span>
+      </a>
+      <div id="progressLabel" class="text-xs font-semibold text-text-soft hidden"></div>
+    </div>
+    <!-- Progress bar -->
+    <div class="h-1 bg-lavender">
+      <div id="progressBar" class="progress-fill h-1 bg-gold" style="width:0%"></div>
+    </div>
+  </header>
+
+  <main class="max-w-xl mx-auto px-4 py-8">
+
+    <!-- Loading state -->
+    <div id="loadingState" class="text-center py-16">
+      <div class="text-4xl mb-4 animate-pulse">📋</div>
+      <p class="text-text-soft">Laddar enkät…</p>
+    </div>
+
+    <!-- Error state -->
+    <div id="errorState" class="hidden text-center py-16">
+      <div class="text-5xl mb-4">😞</div>
+      <h2 class="text-2xl font-heading font-bold text-navy mb-2" id="errorTitle">Hittades inte</h2>
+      <p class="text-text-soft mb-6" id="errorMsg">Den här enkäten finns inte eller är stängd.</p>
+      <a href="/" class="inline-block px-6 py-3 bg-gold text-navy font-semibold rounded-2xl hover:bg-gold/80 transition">Till startsidan</a>
+    </div>
+
+    <!-- Duplicate state -->
+    <div id="duplicateState" class="hidden text-center py-16">
+      <div class="text-5xl mb-4">✅</div>
+      <h2 class="text-2xl font-heading font-bold text-navy mb-2">Du har redan svarat</h2>
+      <p class="text-text-soft mb-6">Vi har redan ditt svar på den här enkäten. Tack!</p>
+      <a href="/" class="inline-block px-6 py-3 bg-gold text-navy font-semibold rounded-2xl hover:bg-gold/80 transition">Till startsidan</a>
+    </div>
+
+    <!-- Survey header (shown once loaded) -->
+    <div id="surveyHeader" class="hidden mb-8 slide-in">
+      <div id="surveyTargetTag" class="inline-block px-3 py-1 bg-gold-light text-yellow-800 text-xs font-semibold rounded-full mb-3 hidden"></div>
+      <h1 id="surveyTitle" class="text-3xl font-heading font-bold text-navy mb-3"></h1>
+      <p id="surveyDesc" class="text-text-soft hidden"></p>
+      <div id="closesAtBanner" class="hidden mt-4 bg-coral/50 text-red-700 text-sm px-4 py-2 rounded-xl font-medium"></div>
+
+      <!-- Contest banner (shown if survey has contest enabled) -->
+      <div id="contestBanner" class="hidden mt-4 bg-gradient-to-r from-gold-light to-yellow-100 border border-yellow-300 rounded-2xl p-4">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="text-2xl">🎁</span>
+          <p class="font-heading font-bold text-yellow-900 text-base" id="contestBannerTitle">Tävla om ett pris!</p>
+        </div>
+        <p class="text-sm text-yellow-800 mb-3" id="contestPrizeDesc"></p>
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" id="contestGdprCheck" class="mt-1 w-4 h-4 accent-navy" onchange="toggleContestEmail()">
+          <span class="text-sm text-yellow-900 font-medium">Jag vill delta i utlottningen och godkänner att min e-postadress sparas (GDPR).</span>
+        </label>
+        <div id="contestEmailWrapper" class="hidden mt-3">
+          <input type="email" id="contestEmail" placeholder="din@email.se"
+            class="w-full border border-yellow-300 bg-white rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-gold">
+          <p id="contestClosesMsg" class="text-xs text-yellow-700 mt-1 hidden"></p>
+        </div>
+      </div>
+
+      <!-- GDPR consent (shown if any email collection) -->
+      <div id="gdprSection" class="hidden mt-4 bg-lavender/50 rounded-2xl p-4">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" id="gdprCheck" class="mt-1 w-4 h-4 accent-navy">
+          <span class="text-sm text-text-soft">Jag samtycker till att min e-postadress sparas för uppföljning (frivilligt).</span>
+        </label>
+        <div id="emailInputWrapper" class="hidden mt-3">
+          <input type="email" id="respondentEmail" placeholder="din@email.se"
+            class="w-full border border-lavender rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-gold">
+        </div>
+      </div>
+
+      <button id="startBtn" onclick="startSurvey()"
+        class="mt-6 w-full py-4 bg-gold text-navy font-heading font-bold text-lg rounded-2xl hover:bg-gold/80 transition shadow-lg shadow-gold/30">
+        Starta enkäten →
+      </button>
+    </div>
+
+    <!-- Questions container -->
+    <div id="questionsContainer" class="hidden">
+      <!-- Individual question card rendered here dynamically -->
+    </div>
+
+    <!-- Thank you page -->
+    <div id="thankYouState" class="hidden text-center py-12 slide-in">
+      <div class="text-6xl mb-4" id="thankYouEmoji">🌟</div>
+      <h2 class="text-3xl font-heading font-bold text-navy mb-3" id="thankYouTitle">Tack!</h2>
+      <p class="text-text-soft mb-4 text-base" id="thankYouMsg">Ditt svar har tagits emot.</p>
+      <!-- Contest confirmation (shown if user entered contest) -->
+      <div id="contestConfirmBox" class="hidden mb-6 bg-gradient-to-r from-gold-light to-yellow-100 border border-yellow-300 rounded-2xl p-4 text-left">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-xl">🎉</span>
+          <p class="font-bold text-yellow-900 text-sm">Du är med i utlottningen!</p>
+        </div>
+        <p class="text-xs text-yellow-800" id="contestConfirmMsg">Vi kontaktar vinnaren via e-post.</p>
+      </div>
+      <!-- Target-tag specific CTA -->
+      <div id="thankYouCta" class="hidden">
+        <a id="thankYouCtaLink" href="/"
+          class="inline-block px-8 py-4 bg-gold text-navy font-heading font-bold text-lg rounded-2xl hover:bg-gold/80 transition shadow-lg shadow-gold/30">
+        </a>
+      </div>
+      <!-- Reaktiverings-CTA for Grupp B (registered but inactive) -->
+      <div id="reactivateCta" class="hidden mt-4">
+        <p class="text-text-soft text-sm mb-3">Vill du ge appen en ny chans?</p>
+        <a href="/dashboard" class="inline-block px-6 py-3 bg-navy text-white font-semibold rounded-2xl text-sm">
+          Klicka här för att logga in →
+        </a>
+      </div>
+      <!-- Conversion CTA for Grupp C (unregistered visitors) -->
+      <div id="conversionCta" class="hidden mt-4">
+        <p class="text-text-soft text-sm mb-3">Nyfiken på Min Stjärndag?</p>
+        <a href="/register" class="inline-block px-6 py-3 bg-gold text-navy font-heading font-bold rounded-2xl">
+          Säkra din gratisplats →
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // ── State ───────────────────────────────────────────────────────────────
+    let survey = null;
+    let responseId = null;
+    let currentQuestionIndex = 0;
+    let answers = {}; // questionId → { answer_text, selected_option_ids, freetext_value, scale_value }
+    let cookieToken = null;
+    let allVisibleQuestions = []; // filtered by conditional logic
+
+    // ── Init ────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', init);
+
+    async function init() {
+      // Get slug from URL: /tyck/[slug]
+      const slug = location.pathname.replace(/^\/tyck\//, '').replace(/\/+$/, '');
+      if (!slug) return showError('Ingen enkät angiven', '');
+
+      // Cookie token for duplicate detection
+      cookieToken = getCookieToken();
+
+      try {
+        const res = await fetch(`/api/surveys/s/${encodeURIComponent(slug)}`);
+        if (res.status === 410) {
+          const data = await res.json();
+          return showError('Enkäten är stängd', data.error || 'Den här enkäten är stängd.');
+        }
+        if (res.status === 503) return showError('Enkäten är pausad', 'Den här enkäten är tillfälligt pausad.');
+        if (!res.ok) return showError('Hittades inte', 'Den här enkäten finns inte.');
+        survey = await res.json();
+      } catch (e) {
+        return showError('Nätverksfel', 'Kunde inte ladda enkäten. Kontrollera din uppkoppling.');
+      }
+
+      document.getElementById('loadingState').classList.add('hidden');
+
+      // Render survey intro
+      document.getElementById('surveyTitle').textContent = survey.title;
+      if (survey.description) {
+        document.getElementById('surveyDesc').textContent = survey.description;
+        document.getElementById('surveyDesc').classList.remove('hidden');
+      }
+      if (survey.target_tag) {
+        document.getElementById('surveyTargetTag').textContent = survey.target_tag;
+        document.getElementById('surveyTargetTag').classList.remove('hidden');
+      }
+      if (survey.closes_at) {
+        const remaining = msUntil(survey.closes_at);
+        if (remaining > 0) {
+          document.getElementById('closesAtBanner').textContent = `⏰ Enkäten stängs ${formatDate(survey.closes_at)}`;
+          document.getElementById('closesAtBanner').classList.remove('hidden');
+        }
+      }
+
+      document.getElementById('surveyHeader').classList.remove('hidden');
+
+      // Del 4: show contest banner if enabled
+      if (survey.contest_enabled && survey.contest_prize_description) {
+        document.getElementById('contestBannerTitle').textContent = `Tävla om ${survey.contest_prize_description}!`;
+        document.getElementById('contestPrizeDesc').textContent = 'Fyll i din e-postadress för att vara med i utlottningen.';
+        if (survey.contest_closes_at) {
+          const msg = document.getElementById('contestClosesMsg');
+          msg.textContent = `Utlottning sker ${formatDate(survey.contest_closes_at)}`;
+          msg.classList.remove('hidden');
+        }
+        document.getElementById('contestBanner').classList.remove('hidden');
+      }
+    }
+
+    function toggleContestEmail() {
+      const checked = document.getElementById('contestGdprCheck').checked;
+      document.getElementById('contestEmailWrapper').classList.toggle('hidden', !checked);
+    }
+
+    // ── Start survey ────────────────────────────────────────────────────────
+    async function startSurvey() {
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('startBtn').textContent = 'Startar…';
+
+      // Generate fingerprint (simple)
+      const fingerprint = await generateFingerprint();
+
+      try {
+        const res = await fetch(`/api/surveys/s/${encodeURIComponent(survey.slug)}/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fingerprint, cookie_token: cookieToken }),
+        });
+        const data = await res.json();
+        if (res.status === 409 && data.duplicate) {
+          document.getElementById('surveyHeader').classList.add('hidden');
+          document.getElementById('duplicateState').classList.remove('hidden');
+          return;
+        }
+        if (!res.ok) throw new Error(data.error);
+        responseId = data.response_id;
+      } catch (e) {
+        alert('Kunde inte starta enkäten. Försök igen.');
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('startBtn').textContent = 'Starta enkäten →';
+        return;
+      }
+
+      // Build visible question list (respecting conditional logic)
+      allVisibleQuestions = computeVisibleQuestions();
+
+      document.getElementById('surveyHeader').classList.add('hidden');
+      document.getElementById('questionsContainer').classList.remove('hidden');
+      currentQuestionIndex = 0;
+      renderCurrentQuestion();
+    }
+
+    // ── Conditional logic ───────────────────────────────────────────────────
+    function computeVisibleQuestions() {
+      return (survey.questions || []).filter(q => {
+        if (!q.condition_question_id || !q.condition_option_id) return true;
+        const ans = answers[q.condition_question_id];
+        if (!ans) return false;
+        return (ans.selected_option_ids || []).includes(q.condition_option_id);
+      });
+    }
+
+    // ── Render question ─────────────────────────────────────────────────────
+    function renderCurrentQuestion() {
+      allVisibleQuestions = computeVisibleQuestions();
+      const total = allVisibleQuestions.length;
+      const idx = currentQuestionIndex;
+      const question = allVisibleQuestions[idx];
+
+      // Progress
+      const pct = total > 0 ? Math.round((idx / total) * 100) : 0;
+      document.getElementById('progressBar').style.width = pct + '%';
+      document.getElementById('progressLabel').textContent = `Fråga ${idx + 1} av ${total}`;
+      document.getElementById('progressLabel').classList.remove('hidden');
+
+      const existing = answers[question.id] || {};
+
+      let questionHtml = '';
+      if (question.question_type === 'radio') {
+        questionHtml = renderRadio(question, existing);
+      } else if (question.question_type === 'checkbox') {
+        questionHtml = renderCheckbox(question, existing);
+      } else if (question.question_type === 'text_short') {
+        questionHtml = renderTextShort(question, existing);
+      } else if (question.question_type === 'text_long') {
+        questionHtml = renderTextLong(question, existing);
+      } else if (question.question_type === 'scale') {
+        questionHtml = renderScale(question, existing);
+      }
+
+      const isLast = idx === total - 1;
+
+      document.getElementById('questionsContainer').innerHTML = `
+        <div class="slide-in">
+          <div class="mb-6">
+            <span class="text-xs font-semibold text-text-soft uppercase tracking-wide">${questionTypeLabel(question.question_type)}</span>
+            <h2 class="text-xl font-heading font-bold text-navy mt-1 leading-snug">${escHtml(question.question_text)}</h2>
+            ${!question.is_required ? '<p class="text-xs text-text-soft mt-1">Frivillig fråga</p>' : ''}
+          </div>
+
+          ${questionHtml}
+
+          <div class="flex gap-3 mt-8">
+            ${idx > 0 ? `<button onclick="goBack()" class="px-6 py-3 bg-sky text-navy rounded-2xl font-semibold hover:bg-lavender transition">← Tillbaka</button>` : ''}
+            <button onclick="goNext(${isLast})" id="nextBtn"
+              class="flex-1 py-3 bg-gold text-navy font-heading font-bold text-base rounded-2xl hover:bg-gold/80 transition shadow-md shadow-gold/20">
+              ${isLast ? 'Skicka in ✓' : 'Nästa →'}
+            </button>
+          </div>
+
+          ${idx > 0 ? '' : '<p class="text-center text-xs text-text-soft mt-4">Dina svar sparas automatiskt</p>'}
+        </div>
+      `;
+    }
+
+    function questionTypeLabel(type) {
+      const map = { radio: 'Välj ett', checkbox: 'Välj ett eller flera', text_short: 'Kort svar', text_long: 'Öppet svar', scale: 'Skala' };
+      return map[type] || type;
+    }
+
+    function renderRadio(q, existing) {
+      const selected = (existing.selected_option_ids || [])[0] || null;
+      return `<div class="space-y-3">
+        ${(q.options || []).map(opt => `
+          <button type="button" onclick="selectRadio('${q.id}','${opt.id}',${opt.allows_freetext})"
+            class="option-btn w-full text-left px-5 py-4 rounded-2xl border-2 border-lavender bg-white hover:border-gold/50 transition flex items-center gap-4 ${selected === opt.id ? 'selected' : ''}">
+            <span class="option-check w-5 h-5 rounded-full bg-gold items-center justify-center shrink-0">
+              <svg class="w-3 h-3 text-navy" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+            </span>
+            <span class="w-5 h-5 rounded-full border-2 border-current shrink-0 ${selected === opt.id ? 'hidden' : ''}"></span>
+            <span class="font-medium">${escHtml(opt.option_text)}</span>
+          </button>
+          ${opt.allows_freetext && selected === opt.id ? `
+            <input type="text" id="freetext_${opt.id}" value="${escHtml(existing.freetext_value || '')}"
+              placeholder="Berätta mer…" oninput="updateFreetext('${q.id}', this.value)"
+              class="w-full border border-lavender rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-gold mt-1">` : ''}
+        `).join('')}
+      </div>`;
+    }
+
+    function renderCheckbox(q, existing) {
+      const selected = existing.selected_option_ids || [];
+      return `<div class="space-y-3">
+        ${(q.options || []).map(opt => `
+          <button type="button" onclick="toggleCheckbox('${q.id}','${opt.id}',${opt.allows_freetext})"
+            class="option-btn w-full text-left px-5 py-4 rounded-2xl border-2 border-lavender bg-white hover:border-gold/50 transition flex items-center gap-4 ${selected.includes(opt.id) ? 'selected' : ''}">
+            <span class="option-check w-5 h-5 rounded bg-gold items-center justify-center shrink-0">
+              <svg class="w-3 h-3 text-navy" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+            </span>
+            <span class="w-5 h-5 rounded border-2 border-current shrink-0 ${selected.includes(opt.id) ? 'hidden' : ''}"></span>
+            <span class="font-medium">${escHtml(opt.option_text)}</span>
+          </button>
+          ${opt.allows_freetext && selected.includes(opt.id) ? `
+            <input type="text" id="freetext_${opt.id}" value="${escHtml(existing.freetext_value || '')}"
+              placeholder="Berätta mer…" oninput="updateFreetext('${q.id}', this.value)"
+              class="w-full border border-lavender rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-gold mt-1">` : ''}
+        `).join('')}
+      </div>`;
+    }
+
+    function renderTextShort(q, existing) {
+      return `<input type="text" id="textAnswer_${q.id}" value="${escHtml(existing.answer_text || '')}"
+        placeholder="Ditt svar…"
+        class="w-full border-2 border-lavender rounded-2xl px-5 py-4 text-base focus:outline-none focus:border-gold bg-white">`;
+    }
+
+    function renderTextLong(q, existing) {
+      return `<textarea id="textAnswer_${q.id}" rows="5" placeholder="Ditt svar…"
+        class="w-full border-2 border-lavender rounded-2xl px-5 py-4 text-base focus:outline-none focus:border-gold bg-white resize-none">${escHtml(existing.answer_text || '')}</textarea>`;
+    }
+
+    function renderScale(q, existing) {
+      const min = q.scale_min || 1;
+      const max = q.scale_max || 5;
+      const selected = existing.scale_value;
+      const nums = [];
+      for (let i = min; i <= max; i++) nums.push(i);
+      return `
+        <div class="flex flex-col items-center gap-4">
+          <div class="flex gap-3 justify-center flex-wrap">
+            ${nums.map(n => `
+              <button type="button" onclick="selectScale('${q.id}',${n})"
+                class="scale-btn w-14 h-14 rounded-2xl border-2 border-lavender bg-white font-heading font-bold text-xl hover:border-gold transition ${selected === n ? 'selected' : ''}">
+                ${n}
+              </button>
+            `).join('')}
+          </div>
+          <div class="flex justify-between w-full text-xs text-text-soft px-1">
+            <span>${escHtml(q.scale_min_label || min)}</span>
+            <span>${escHtml(q.scale_max_label || max)}</span>
+          </div>
+        </div>`;
+    }
+
+    // ── Answer handlers ─────────────────────────────────────────────────────
+    function selectRadio(qid, optId, allowsFreetext) {
+      answers[qid] = { selected_option_ids: [optId], freetext_value: null };
+      saveAnswer(qid);
+      renderCurrentQuestion();
+    }
+
+    function toggleCheckbox(qid, optId, allowsFreetext) {
+      const current = answers[qid]?.selected_option_ids || [];
+      const idx = current.indexOf(optId);
+      let next;
+      if (idx === -1) next = [...current, optId];
+      else next = current.filter(id => id !== optId);
+      answers[qid] = { ...(answers[qid] || {}), selected_option_ids: next };
+      saveAnswer(qid);
+      renderCurrentQuestion();
+    }
+
+    function selectScale(qid, value) {
+      answers[qid] = { scale_value: value };
+      saveAnswer(qid);
+      renderCurrentQuestion();
+    }
+
+    function updateFreetext(qid, value) {
+      if (!answers[qid]) answers[qid] = {};
+      answers[qid].freetext_value = value;
+      // Debounced save
+      clearTimeout(updateFreetext._t);
+      updateFreetext._t = setTimeout(() => saveAnswer(qid), 600);
+    }
+
+    // ── Partial save ────────────────────────────────────────────────────────
+    async function saveAnswer(qid) {
+      if (!responseId) return;
+      const ans = answers[qid] || {};
+      try {
+        await fetch(`/api/surveys/responses/${responseId}/answers`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question_id: qid,
+            answer_text: ans.answer_text || null,
+            selected_option_ids: ans.selected_option_ids || [],
+            freetext_value: ans.freetext_value || null,
+            scale_value: ans.scale_value ?? null,
+          }),
+        });
+      } catch (_) { /* Partial saves are best-effort */ }
+    }
+
+    // ── Navigation ──────────────────────────────────────────────────────────
+    async function goNext(isLast) {
+      const question = allVisibleQuestions[currentQuestionIndex];
+
+      // Collect text answers from DOM
+      const textEl = document.getElementById(`textAnswer_${question.id}`);
+      if (textEl) {
+        const val = textEl.value.trim();
+        if (!answers[question.id]) answers[question.id] = {};
+        answers[question.id].answer_text = val || null;
+        await saveAnswer(question.id);
+      }
+
+      // Validate required
+      if (question.is_required) {
+        const ans = answers[question.id] || {};
+        const hasAnswer =
+          (ans.scale_value != null) ||
+          (ans.answer_text && ans.answer_text.trim()) ||
+          (ans.selected_option_ids && ans.selected_option_ids.length > 0);
+        if (!hasAnswer) {
+          const btn = document.getElementById('nextBtn');
+          btn.textContent = 'Vänligen svara på frågan';
+          btn.classList.add('bg-red-100', 'text-red-700');
+          setTimeout(() => {
+            btn.textContent = isLast ? 'Skicka in ✓' : 'Nästa →';
+            btn.classList.remove('bg-red-100', 'text-red-700');
+          }, 2000);
+          return;
+        }
+      }
+
+      if (isLast) {
+        await submitSurvey();
+        return;
+      }
+
+      currentQuestionIndex++;
+      // Recompute visible in case conditional changed
+      allVisibleQuestions = computeVisibleQuestions();
+      // Skip past now-hidden questions
+      while (currentQuestionIndex < allVisibleQuestions.length - 1) {
+        break; // visible list already filtered — just go to next index
+      }
+      if (currentQuestionIndex >= allVisibleQuestions.length) {
+        await submitSurvey();
+        return;
+      }
+      renderCurrentQuestion();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goBack() {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        renderCurrentQuestion();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    // ── Submit ──────────────────────────────────────────────────────────────
+    async function submitSurvey() {
+      const gdprConsent = document.getElementById('gdprCheck')?.checked || false;
+      const email = document.getElementById('respondentEmail')?.value.trim() || null;
+
+      // Del 4: contest entry
+      const contestGdpr = document.getElementById('contestGdprCheck')?.checked || false;
+      const contestEmail = document.getElementById('contestEmail')?.value.trim() || null;
+
+      document.getElementById('questionsContainer').innerHTML = `
+        <div class="text-center py-12">
+          <div class="text-4xl mb-4 animate-pulse">📤</div>
+          <p class="text-text-soft">Skickar in ditt svar…</p>
+        </div>`;
+
+      try {
+        const res = await fetch(`/api/surveys/responses/${responseId}/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            gdpr_consent: gdprConsent,
+            respondent_email: email || contestEmail, // contest email doubles as respondent email
+            contest_gdpr_consent: contestGdpr,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        // Mark cookie as submitted
+        setCookieToken(cookieToken);
+
+        document.getElementById('questionsContainer').classList.add('hidden');
+        document.getElementById('progressLabel').classList.add('hidden');
+        document.getElementById('progressBar').style.width = '100%';
+
+        document.getElementById('thankYouTitle').textContent = data.thank_you_message || 'Tack!';
+        document.getElementById('thankYouMsg').textContent = '';
+
+        // Del 4: contest confirmation
+        if (data.contest_entered) {
+          const msg = document.getElementById('contestConfirmMsg');
+          if (data.contest_closes_at) {
+            msg.textContent = `Vinnaren kontaktas via e-post senast ${formatDate(data.contest_closes_at)}`;
+          }
+          document.getElementById('contestConfirmBox').classList.remove('hidden');
+        }
+
+        // Del 4: target-tag specific CTAs
+        const tag = (data.target_tag || '').toLowerCase();
+        if (tag.includes('b') || tag.includes('inaktiv')) {
+          // Grupp B — registered but inactive
+          document.getElementById('reactivateCta').classList.remove('hidden');
+          document.getElementById('thankYouEmoji').textContent = '👋';
+        } else if (tag.includes('c') || tag.includes('inte registrerade') || tag.includes('registrerade')) {
+          // Grupp C — unregistered visitors (more specific check for "inte registrerade")
+          if (tag.includes('inte')) {
+            document.getElementById('conversionCta').classList.remove('hidden');
+            document.getElementById('thankYouEmoji').textContent = '🚀';
+          }
+        }
+
+        if (data.thank_you_cta_text && data.thank_you_cta_url) {
+          document.getElementById('thankYouCtaLink').textContent = data.thank_you_cta_text;
+          document.getElementById('thankYouCtaLink').href = data.thank_you_cta_url;
+          document.getElementById('thankYouCta').classList.remove('hidden');
+        }
+        document.getElementById('thankYouState').classList.remove('hidden');
+      } catch (e) {
+        document.getElementById('questionsContainer').innerHTML = `
+          <div class="text-center py-12">
+            <div class="text-4xl mb-4">❌</div>
+            <p class="text-red-500 font-semibold mb-4">Kunde inte skicka in svaret. Försök igen.</p>
+            <button onclick="submitSurvey()" class="px-6 py-3 bg-gold text-navy font-bold rounded-2xl">Försök igen</button>
+          </div>`;
+      }
+    }
+
+    // ── Error helper ────────────────────────────────────────────────────────
+    function showError(title, msg) {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('errorTitle').textContent = title;
+      document.getElementById('errorMsg').textContent = msg;
+      document.getElementById('errorState').classList.remove('hidden');
+    }
+
+    // ── Cookie token (duplicate detection) ──────────────────────────────────
+    function getCookieToken() {
+      const match = document.cookie.match(/survey_token=([^;]+)/);
+      if (match) return match[1];
+      const token = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      // Set for 1 year
+      document.cookie = `survey_token=${token}; max-age=${365*24*3600}; path=/; SameSite=Lax`;
+      return token;
+    }
+
+    function setCookieToken(token) {
+      document.cookie = `survey_token=${token}; max-age=${365*24*3600}; path=/; SameSite=Lax`;
+    }
+
+    // ── Fingerprint ─────────────────────────────────────────────────────────
+    async function generateFingerprint() {
+      try {
+        const data = [navigator.userAgent, navigator.language, screen.width, screen.height, Intl.DateTimeFormat().resolvedOptions().timeZone].join('|');
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('').slice(0,32);
+      } catch (_) {
+        return Math.random().toString(36).slice(2);
+      }
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function msUntil(iso) {
+      return new Date(iso) - new Date();
+    }
+
+    function formatDate(iso) {
+      return new Date(iso).toLocaleString('sv-SE', { dateStyle: 'medium', timeStyle: 'short' });
+    }
+  </script>
+</body>
+</html>

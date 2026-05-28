@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Min Stjärndag V2.0 — Mockup</title>
+
+  <!-- Fonts: Syne for display, Satoshi for body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── Reset & Variables ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --amber:     #F5A623;
+      --amber-dk:  #D4891A;
+      --amber-lt:  #FFF0CC;
+      --amber-glow:rgba(245,166,35,0.18);
+      --navy:      #0E1628;
+      --navy-2:    #162035;
+      --navy-3:    #1E2D48;
+      --cream:     #FBF8F2;
+      --cream-2:   #F4F0E6;
+      --warm-white:#FEFCF7;
+      --text:      #0E1628;
+      --text-2:    #4A566B;
+      --text-3:    #8A96AB;
+      --coral:     #FF6B52;
+      --mint:      #22C98A;
+      --purple:    #7C4DDB;
+      --border:    rgba(14,22,40,0.08);
+      --border-lt: rgba(255,255,255,0.12);
+      --r-sm:      10px;
+      --r-md:      18px;
+      --r-lg:      28px;
+      --r-xl:      40px;
+
+      /* Satoshi via system fallback for demo */
+      --font-body: 'Syne', system-ui, sans-serif;
+      --font-display: 'Instrument Serif', Georgia, serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--text);
+      background: var(--cream);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ── Utility ── */
+    .container {
+      width: min(1160px, 100%);
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .badge-amber {
+      background: var(--amber-lt);
+      color: var(--amber-dk);
+      border: 1px solid rgba(212,137,26,0.2);
+    }
+
+    .badge-dark {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    /* ── Star shape (CSS) ── */
+    .star-shape {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+      background: var(--amber);
+    }
+
+    .star-shape.sm { font-size: 14px; }
+    .star-shape.md { font-size: 22px; }
+    .star-shape.lg { font-size: 36px; }
+    .star-shape.xl { font-size: 56px; }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      padding: 1rem 0;
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(251,248,242,0.88);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 0.75rem 1.5rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      text-decoration: none;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: var(--navy);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-mark .star-shape {
+      font-size: 18px;
+    }
+
+    .logo-text {
+      font-family: var(--font-body);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-2);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.4rem;
+      border-radius: var(--r-md);
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-2);
+    }
+
+    .btn-ghost:hover {
+      color: var(--text);
+      background: rgba(14,22,40,0.05);
+    }
+
+    .btn-amber {
+      background: var(--amber);
+      color: var(--navy);
+      box-shadow: 0 2px 12px rgba(245,166,35,0.35);
+    }
+
+    .btn-amber:hover {
+      background: var(--amber-dk);
+      box-shadow: 0 4px 20px rgba(245,166,35,0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-navy {
+      background: var(--navy);
+      color: white;
+      box-shadow: 0 2px 12px rgba(14,22,40,0.2);
+    }
+
+    .btn-navy:hover {
+      background: var(--navy-2);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(14,22,40,0.3);
+    }
+
+    .btn-lg {
+      padding: 0.9rem 2rem;
+      font-size: 1rem;
+      border-radius: var(--r-md);
+    }
+
+    .btn-xl {
+      padding: 1.1rem 2.4rem;
+      font-size: 1.05rem;
+      border-radius: var(--r-lg);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      padding: 7rem 0 5rem;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245,166,35,0.12) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 40% at 85% 60%, rgba(124,77,219,0.07) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-dots {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(14,22,40,0.06) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+    }
+
+    /* Floating star decorations */
+    .hero-star-1 {
+      position: absolute;
+      top: 18%;
+      right: 8%;
+      opacity: 0.15;
+      animation: float1 6s ease-in-out infinite;
+    }
+    .hero-star-1 .star-shape { font-size: 80px; background: var(--amber); }
+
+    .hero-star-2 {
+      position: absolute;
+      top: 65%;
+      left: 5%;
+      opacity: 0.1;
+      animation: float2 8s ease-in-out infinite;
+    }
+    .hero-star-2 .star-shape { font-size: 52px; background: var(--purple); }
+
+    .hero-star-3 {
+      position: absolute;
+      top: 30%;
+      left: 12%;
+      opacity: 0.08;
+      animation: float1 10s ease-in-out infinite reverse;
+    }
+    .hero-star-3 .star-shape { font-size: 36px; }
+
+    @keyframes float1 {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-16px) rotate(8deg); }
+    }
+
+    @keyframes float2 {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(12px) rotate(-6deg); }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 720px;
+    }
+
+    .hero-pretag {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .hero-pretag .star-shape { font-size: 16px; }
+
+    .hero-pretag-text {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--amber-dk);
+    }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 7vw, 5.5rem);
+      line-height: 1.07;
+      letter-spacing: -0.02em;
+      color: var(--navy);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--amber-dk);
+    }
+
+    .hero-sub {
+      font-size: 1.2rem;
+      color: var(--text-2);
+      line-height: 1.65;
+      max-width: 520px;
+      margin-bottom: 2.5rem;
+      font-weight: 400;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-social-proof {
+      margin-top: 3.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .avatar-stack {
+      display: flex;
+    }
+
+    .avatar-stack .av {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2.5px solid var(--cream);
+      margin-left: -10px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--cream-2);
+    }
+
+    .avatar-stack .av:first-child { margin-left: 0; }
+
+    .social-proof-text {
+      font-size: 0.85rem;
+      color: var(--text-2);
+    }
+
+    .social-proof-text strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    /* ── App preview window ── */
+    .hero-visual {
+      position: absolute;
+      right: -2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: min(540px, 48vw);
+      z-index: 1;
+    }
+
+    @media (max-width: 900px) {
+      .hero-visual { display: none; }
+      .hero-content { max-width: 100%; }
+    }
+
+    .app-window {
+      background: var(--navy);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      box-shadow:
+        0 40px 80px rgba(14,22,40,0.35),
+        0 0 0 1px rgba(255,255,255,0.06),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+      transform: rotate(2deg);
+    }
+
+    .app-window-bar {
+      background: var(--navy-2);
+      padding: 0.9rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .win-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+    .win-dot.red   { background: #FF5F57; }
+    .win-dot.yellow{ background: #FEBC2E; }
+    .win-dot.green { background: #28C840; }
+
+    .win-url {
+      margin-left: 0.75rem;
+      background: rgba(255,255,255,0.06);
+      border-radius: 6px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.35);
+      flex: 1;
+      text-align: center;
+    }
+
+    .app-window-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* Mock dashboard content */
+    .mock-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mock-greeting {
+      color: rgba(255,255,255,0.5);
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .mock-title {
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-top: 0.2rem;
+    }
+
+    .mock-date-chip {
+      background: rgba(245,166,35,0.15);
+      border: 1px solid rgba(245,166,35,0.25);
+      color: var(--amber);
+      padding: 0.3rem 0.7rem;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .mock-child-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .mock-child-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 1rem;
+    }
+
+    .mock-child-top {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.7rem;
+    }
+
+    .mock-emoji {
+      font-size: 1.4rem;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.07);
+      border-radius: 10px;
+    }
+
+    .mock-child-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: white;
+    }
+
+    .mock-stars {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+      color: var(--amber);
+      font-weight: 700;
+    }
+
+    .mock-progress-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .mock-progress-bar {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .mock-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--amber), #FFD166);
+      border-radius: 100px;
+    }
+
+    .mock-progress-pct {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.4);
+      font-weight: 600;
+      min-width: 28px;
+      text-align: right;
+    }
+
+    .mock-activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .mock-activity {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .mock-check {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .mock-check.done {
+      background: var(--mint);
+    }
+
+    .mock-check.pending {
+      border: 1.5px solid rgba(255,255,255,0.15);
+    }
+
+    .mock-check.done::after {
+      content: '✓';
+      font-size: 9px;
+      color: white;
+      font-weight: 700;
+    }
+
+    /* ── Section: Feature bento ── */
+    .section {
+      padding: 6rem 0;
+    }
+
+    .section-tag {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .section-tag .star-shape { font-size: 13px; }
+
+    .section-tag-text {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--amber-dk);
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--navy);
+      margin-bottom: 1rem;
+    }
+
+    .section-sub {
+      font-size: 1.05rem;
+      color: var(--text-2);
+      max-width: 480px;
+      line-height: 1.65;
+    }
+
+    /* ── Bento grid ── */
+    .bento {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      grid-template-rows: auto;
+      gap: 1.25rem;
+      margin-top: 4rem;
+    }
+
+    .bento-card {
+      background: white;
+      border-radius: var(--r-lg);
+      padding: 2rem;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .bento-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 40px rgba(14,22,40,0.1);
+    }
+
+    .bento-card-1 { grid-column: 1 / 6; }
+    .bento-card-2 { grid-column: 6 / 9; }
+    .bento-card-3 { grid-column: 9 / 13; }
+    .bento-card-4 { grid-column: 1 / 5; }
+    .bento-card-5 { grid-column: 5 / 9; }
+    .bento-card-6 { grid-column: 9 / 13; }
+
+    @media (max-width: 900px) {
+      .bento { grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+      .bento-card-1,
+      .bento-card-2,
+      .bento-card-3,
+      .bento-card-4,
+      .bento-card-5,
+      .bento-card-6 { grid-column: span 2; }
+      .bento-card-2,
+      .bento-card-3 { grid-column: span 1; }
+    }
+
+    @media (max-width: 560px) {
+      .bento { grid-template-columns: 1fr; }
+      .bento-card-1,
+      .bento-card-2,
+      .bento-card-3,
+      .bento-card-4,
+      .bento-card-5,
+      .bento-card-6 { grid-column: span 1; }
+    }
+
+    .bento-card-dark {
+      background: var(--navy);
+      border-color: transparent;
+    }
+
+    .bento-card-amber {
+      background: var(--amber);
+      border-color: transparent;
+    }
+
+    .bento-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+      font-size: 1.5rem;
+    }
+
+    .bento-icon-amber { background: var(--amber-lt); }
+    .bento-icon-navy  { background: rgba(255,255,255,0.08); }
+    .bento-icon-white { background: rgba(255,255,255,0.25); }
+    .bento-icon-mint  { background: rgba(34,201,138,0.12); }
+
+    .bento-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 0.5rem;
+    }
+
+    .bento-card-dark .bento-label { color: rgba(255,255,255,0.4); }
+    .bento-card-amber .bento-label { color: rgba(14,22,40,0.5); }
+
+    .bento-heading {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      line-height: 1.2;
+      color: var(--navy);
+      margin-bottom: 0.5rem;
+    }
+
+    .bento-card-dark .bento-heading { color: white; }
+    .bento-card-amber .bento-heading { color: var(--navy); }
+
+    .bento-body {
+      font-size: 0.875rem;
+      color: var(--text-2);
+      line-height: 1.6;
+    }
+
+    .bento-card-dark .bento-body { color: rgba(255,255,255,0.55); }
+    .bento-card-amber .bento-body { color: rgba(14,22,40,0.65); }
+
+    /* Schedule mock inside bento */
+    .mini-schedule {
+      margin-top: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .mini-sched-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 10px;
+      background: var(--cream);
+    }
+
+    .mini-sched-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .mini-sched-text {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-2);
+      flex: 1;
+    }
+
+    .mini-sched-time {
+      font-size: 0.7rem;
+      color: var(--text-3);
+    }
+
+    /* Stars display */
+    .star-display {
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+      margin-top: 1rem;
+    }
+
+    .star-big-num {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      line-height: 1;
+      color: var(--navy);
+    }
+
+    .star-unit {
+      font-size: 0.875rem;
+      color: var(--text-3);
+      font-weight: 500;
+    }
+
+    .stars-row {
+      display: flex;
+      gap: 0.25rem;
+      margin-top: 0.5rem;
+    }
+
+    .stars-row .star-shape { font-size: 16px; }
+    .stars-row .star-shape.empty { background: var(--cream-2); }
+
+    /* ── Social proof section ── */
+    .testimonials-section {
+      background: var(--navy);
+      padding: 6rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .testimonials-section::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: var(--cream);
+      clip-path: ellipse(55% 100% at 50% 0%);
+    }
+
+    .testimonials-section::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: var(--cream);
+      clip-path: ellipse(55% 100% at 50% 100%);
+    }
+
+    .testimonials-section .section-title { color: white; }
+    .testimonials-section .section-sub   { color: rgba(255,255,255,0.55); }
+    .testimonials-section .section-tag-text { color: var(--amber); }
+
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      margin-top: 3.5rem;
+    }
+
+    @media (max-width: 800px) {
+      .testimonials-grid { grid-template-columns: 1fr; }
+    }
+
+    .testimonial-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--r-lg);
+      padding: 1.75rem;
+    }
+
+    .testimonial-stars {
+      display: flex;
+      gap: 0.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .testimonial-stars .star-shape { font-size: 13px; }
+
+    .testimonial-text {
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.7;
+      margin-bottom: 1.25rem;
+      font-style: italic;
+    }
+
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .testimonial-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .testimonial-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: white;
+    }
+
+    .testimonial-role {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* ── Pricing ── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-top: 4rem;
+      align-items: start;
+    }
+
+    @media (max-width: 800px) {
+      .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 4rem auto 0; }
+    }
+
+    .pricing-card {
+      border-radius: var(--r-lg);
+      padding: 2.25rem;
+      border: 1px solid var(--border);
+      background: white;
+      position: relative;
+    }
+
+    .pricing-card.featured {
+      background: var(--navy);
+      border-color: transparent;
+      box-shadow: 0 24px 60px rgba(14,22,40,0.2);
+    }
+
+    .pricing-featured-badge {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--amber);
+      color: var(--navy);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.9rem;
+      border-radius: 100px;
+    }
+
+    .pricing-tier {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 0.75rem;
+    }
+
+    .pricing-card.featured .pricing-tier { color: rgba(255,255,255,0.45); }
+
+    .pricing-price {
+      display: flex;
+      align-items: baseline;
+      gap: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .price-amt {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      line-height: 1;
+      color: var(--navy);
+    }
+
+    .pricing-card.featured .price-amt { color: white; }
+
+    .price-currency {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-3);
+      align-self: flex-start;
+      margin-top: 0.4rem;
+    }
+
+    .pricing-card.featured .price-currency { color: rgba(255,255,255,0.5); }
+
+    .price-period {
+      font-size: 0.82rem;
+      color: var(--text-3);
+    }
+
+    .pricing-card.featured .price-period { color: rgba(255,255,255,0.4); }
+
+    .pricing-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1.5rem 0;
+    }
+
+    .pricing-card.featured .pricing-divider { background: rgba(255,255,255,0.08); }
+
+    .pricing-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-bottom: 2rem;
+    }
+
+    .pricing-features li {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.875rem;
+      color: var(--text-2);
+    }
+
+    .pricing-card.featured .pricing-features li { color: rgba(255,255,255,0.65); }
+
+    .feature-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      background: var(--mint);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .feature-check::after {
+      content: '✓';
+      font-size: 10px;
+      color: white;
+      font-weight: 700;
+    }
+
+    .feature-check.dim {
+      background: var(--cream-2);
+    }
+
+    .feature-check.dim::after {
+      color: var(--text-3);
+    }
+
+    /* ── CTA Banner ── */
+    .cta-banner {
+      background: var(--navy);
+      border-radius: var(--r-xl);
+      padding: 5rem 4rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      margin: 4rem 0;
+    }
+
+    .cta-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(245,166,35,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-star-bg {
+      position: absolute;
+      right: 5%;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.06;
+    }
+
+    .cta-star-bg .star-shape { font-size: 280px; }
+
+    .cta-banner h2 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      color: white;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    .cta-banner p {
+      font-size: 1.05rem;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 2.5rem;
+      position: relative;
+    }
+
+    .cta-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      position: relative;
+    }
+
+    .btn-white {
+      background: white;
+      color: var(--navy);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+
+    .btn-white:hover {
+      background: var(--cream);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .btn-ghost-white {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.8);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .btn-ghost-white:hover {
+      background: rgba(255,255,255,0.12);
+      color: white;
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 4rem 0 2.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 3rem;
+      margin-bottom: 3rem;
+    }
+
+    @media (max-width: 700px) {
+      .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
+      .footer-grid > :first-child { grid-column: 1 / -1; }
+    }
+
+    .footer-brand-desc {
+      font-size: 0.875rem;
+      color: var(--text-2);
+      line-height: 1.65;
+      margin-top: 0.75rem;
+      max-width: 260px;
+    }
+
+    .footer-heading {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 1rem;
+    }
+
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .footer-links a {
+      font-size: 0.875rem;
+      color: var(--text-2);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--text); }
+
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-copyright {
+      font-size: 0.8rem;
+      color: var(--text-3);
+    }
+
+    /* ── Design badge ── */
+    .v2-badge {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--amber);
+      color: var(--navy);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 0.5rem 0.9rem;
+      border-radius: 100px;
+      box-shadow: 0 4px 16px rgba(245,166,35,0.4);
+      z-index: 999;
+      text-transform: uppercase;
+    }
+
+    /* ── Nav links for mock pages ── */
+    .page-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .page-nav-link {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-2);
+      text-decoration: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      transition: all 0.15s;
+    }
+
+    .page-nav-link:hover,
+    .page-nav-link.active {
+      background: var(--navy);
+      color: white;
+      border-color: transparent;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      nav { padding: 0.75rem; }
+      .nav-links { display: none; }
+      .section { padding: 4rem 0; }
+      .cta-banner { padding: 3rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Design version badge -->
+<div class="v2-badge">V2.0 Mockup</div>
+
+<!-- Navigation -->
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="/V2.0" class="logo">
+        <div class="logo-mark">
+          <div class="star-shape"></div>
+        </div>
+        <span class="logo-text">Min Stjärndag</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#features">Funktioner</a></li>
+        <li><a href="#testimonials">Omdömen</a></li>
+        <li><a href="#pricing">Priser</a></li>
+      </ul>
+
+      <div class="nav-cta">
+        <!-- Page links for mock navigation -->
+        <div class="page-nav-links">
+          <a href="/V2.0" class="page-nav-link active">Landing</a>
+          <a href="/V2.0/dashboard.html" class="page-nav-link">Föräldrapanel</a>
+          <a href="/V2.0/child.html" class="page-nav-link">Barnvy</a>
+        </div>
+        <a href="/login" class="btn btn-ghost">Logga in</a>
+        <a href="/register" class="btn btn-amber">Prova gratis →</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-dots"></div>
+
+  <!-- Decorative stars -->
+  <div class="hero-star-1"><div class="star-shape"></div></div>
+  <div class="hero-star-2"><div class="star-shape"></div></div>
+  <div class="hero-star-3"><div class="star-shape"></div></div>
+
+  <div class="container" style="position: relative;">
+    <div class="hero-content">
+      <div class="hero-pretag">
+        <div class="star-shape sm"></div>
+        <span class="hero-pretag-text">Ny version — renare, snabbare, roligare</span>
+      </div>
+
+      <h1>
+        Varje dag ett<br>
+        <em>litet äventyr</em><br>
+        för ditt barn
+      </h1>
+
+      <p class="hero-sub">
+        Visuella scheman och stjärnbelöningar som faktiskt fungerar — utan tjat.
+        Barn älskar det. Föräldrar andas ut.
+      </p>
+
+      <div class="hero-actions">
+        <a href="/register" class="btn btn-amber btn-xl">
+          <div class="star-shape sm"></div>
+          Starta gratis idag
+        </a>
+        <a href="#features" class="btn btn-navy btn-xl">Se hur det funkar</a>
+      </div>
+
+      <div class="hero-social-proof">
+        <div class="avatar-stack">
+          <div class="av">👩</div>
+          <div class="av">👨</div>
+          <div class="av">👩‍🦱</div>
+          <div class="av">👨‍🦳</div>
+        </div>
+        <p class="social-proof-text">
+          <strong>1 200+ familjer</strong> har redan hittat morgonron
+        </p>
+      </div>
+    </div>
+
+    <!-- App preview window -->
+    <div class="hero-visual">
+      <div class="app-window">
+        <div class="app-window-bar">
+          <div class="win-dot red"></div>
+          <div class="win-dot yellow"></div>
+          <div class="win-dot green"></div>
+          <div class="win-url">mystarday.se/dashboard</div>
+        </div>
+        <div class="app-window-body">
+          <div class="mock-header">
+            <div>
+              <div class="mock-greeting">God morgon, Sara!</div>
+              <div class="mock-title">Min panel</div>
+            </div>
+            <div class="mock-date-chip">⭐ Måndag 4 maj</div>
+          </div>
+
+          <div class="mock-child-cards">
+            <!-- Child: Anna -->
+            <div class="mock-child-card">
+              <div class="mock-child-top">
+                <div class="mock-emoji">🌸</div>
+                <div class="mock-child-name">Anna</div>
+                <div class="mock-stars">★ 8 stjärnor</div>
+              </div>
+              <div class="mock-progress-row">
+                <div class="mock-progress-bar">
+                  <div class="mock-progress-fill" style="width: 65%"></div>
+                </div>
+                <div class="mock-progress-pct">65%</div>
+              </div>
+              <div class="mock-activity-list">
+                <div class="mock-activity">
+                  <div class="mock-check done"></div> Borsta tänderna
+                </div>
+                <div class="mock-activity">
+                  <div class="mock-check done"></div> Klä på sig
+                </div>
+                <div class="mock-activity">
+                  <div class="mock-check pending"></div> Packa väskan
+                </div>
+              </div>
+            </div>
+
+            <!-- Child: Erik -->
+            <div class="mock-child-card">
+              <div class="mock-child-top">
+                <div class="mock-emoji">🦄</div>
+                <div class="mock-child-name">Erik</div>
+                <div class="mock-stars">★ 12 stjärnor</div>
+              </div>
+              <div class="mock-progress-row">
+                <div class="mock-progress-bar">
+                  <div class="mock-progress-fill" style="width: 88%"></div>
+                </div>
+                <div class="mock-progress-pct">88%</div>
+              </div>
+              <div class="mock-activity-list">
+                <div class="mock-activity">
+                  <div class="mock-check done"></div> Frukost
+                </div>
+                <div class="mock-activity">
+                  <div class="mock-check done"></div> Borsta tänderna
+                </div>
+                <div class="mock-activity">
+                  <div class="mock-check done"></div> Sätta på skor
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features / Bento section -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-tag">
+      <div class="star-shape sm"></div>
+      <span class="section-tag-text">Funktioner</span>
+    </div>
+    <h2 class="section-title">
+      Allt ditt barn<br>behöver för en<br><em style="font-style:italic; color: var(--amber-dk);">strukturerad dag</em>
+    </h2>
+    <p class="section-sub">
+      Enkelt nog för ett 4-årigt barn. Kraftfullt nog för en förälder med tre barn och ett hektiskt morgonschema.
+    </p>
+
+    <div class="bento">
+      <!-- Card 1: Schedule -->
+      <div class="bento-card bento-card-1">
+        <div class="bento-icon bento-icon-amber">📅</div>
+        <div class="bento-label">Schema</div>
+        <div class="bento-heading">Visuellt dagschema som barnen förstår</div>
+        <p class="bento-body">Drag & drop-aktiviteter, bildstöd och tydlig tidslinje — perfekt för barn med ADHD eller autism.</p>
+        <div class="mini-schedule">
+          <div class="mini-sched-item">
+            <div class="mini-sched-dot" style="background: #22C98A;"></div>
+            <span class="mini-sched-text">Frukost ✅</span>
+            <span class="mini-sched-time">07:30</span>
+          </div>
+          <div class="mini-sched-item">
+            <div class="mini-sched-dot" style="background: var(--amber);"></div>
+            <span class="mini-sched-text">Borsta tänderna</span>
+            <span class="mini-sched-time">08:00</span>
+          </div>
+          <div class="mini-sched-item">
+            <div class="mini-sched-dot" style="background: #8A96AB;"></div>
+            <span class="mini-sched-text">Klä på sig</span>
+            <span class="mini-sched-time">08:15</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Stars (dark) -->
+      <div class="bento-card bento-card-2 bento-card-dark">
+        <div class="bento-icon bento-icon-navy">⭐</div>
+        <div class="bento-label">Belöning</div>
+        <div class="bento-heading">Stjärnor som motiverar</div>
+        <p class="bento-body">Barnet samlar stjärnor för varje avklarad aktivitet.</p>
+        <div class="star-display">
+          <div class="star-big-num" style="color:white;">24</div>
+          <div class="star-unit" style="color: rgba(255,255,255,0.4);">stjärnor</div>
+        </div>
+        <div class="stars-row">
+          <div class="star-shape sm"></div>
+          <div class="star-shape sm"></div>
+          <div class="star-shape sm"></div>
+          <div class="star-shape sm"></div>
+          <div class="star-shape sm empty"></div>
+        </div>
+      </div>
+
+      <!-- Card 3: Skattkammaren (amber) -->
+      <div class="bento-card bento-card-3 bento-card-amber">
+        <div class="bento-icon bento-icon-white">🏆</div>
+        <div class="bento-label">Skattkammaren</div>
+        <div class="bento-heading">Byt stjärnor mot belöningar</div>
+        <p class="bento-body">Skapa egna belöningar. Film, glass, en extra seriebok.</p>
+      </div>
+
+      <!-- Card 4: Weekly view -->
+      <div class="bento-card bento-card-4">
+        <div class="bento-icon bento-icon-mint">📊</div>
+        <div class="bento-label">Statistik</div>
+        <div class="bento-heading">Se framstegen vecka för vecka</div>
+        <p class="bento-body">Visuella staplar visar hur barnet utvecklas — ett kraftfullt samtal för IUP eller 1177-besök.</p>
+      </div>
+
+      <!-- Card 5: Multi-child -->
+      <div class="bento-card bento-card-5">
+        <div class="bento-icon bento-icon-amber">👨‍👩‍👧‍👦</div>
+        <div class="bento-label">Familj</div>
+        <div class="bento-heading">Flera barn, ett konto</div>
+        <p class="bento-body">Hantera hela familjen från en föräldrapanel. Varje barn har sin egna vy och PIN.</p>
+      </div>
+
+      <!-- Card 6: Special days -->
+      <div class="bento-card bento-card-6 bento-card-dark">
+        <div class="bento-icon bento-icon-navy">🌟</div>
+        <div class="bento-label">Flexibilitet</div>
+        <div class="bento-heading">Specialdagar & undantag</div>
+        <p class="bento-body">Helgschema, sjukdag, skollov. Enkla avvikelser utan att förstöra ordinarie schema.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section class="testimonials-section" id="testimonials">
+  <div class="container" style="position: relative; padding-top: 2rem;">
+    <div class="section-tag">
+      <div class="star-shape sm"></div>
+      <span class="section-tag-text" style="color: var(--amber);">Vad föräldrar säger</span>
+    </div>
+    <h2 class="section-title" style="color: white;">Riktiga familjer,<br>riktiga morgnar</h2>
+    <p class="section-sub" style="color: rgba(255,255,255,0.5);">
+      Inte PR-citat — faktiska föräldrar som hittat morgonron.
+    </p>
+
+    <div class="testimonials-grid">
+      <div class="testimonial-card">
+        <div class="testimonial-stars">
+          <div class="star-shape"></div>
+          <div class="star-shape"></div>
+          <div class="star-shape"></div>
+          <div class="star-shape"></div>
+          <div class="star-shape"></div>
+        </div>
+        <p class="testimonial-text">
+          "Vi hade tjat varje morgon i 4 år. Tre veckor efter Min Stjärndag klär sig Liam på sig utan att vi ens behöver säga till."
+        </p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">👩</div>
+          <div>
+            <div class="testimonial-name">Maria S.</div>
+            <div class="testimonial-role">Mamma till Liam, 7 år</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testimonial-stars">
+          <div class="star-shape"></div>
+          <div class="star-shape"></div>
+          <div class="star-shape"></div>
+          <div class="star-shape"></div>
+          <div class="star-shape"></div>
+        </div>
+        <p class="testimonial-text">
+          "Min dotter har autism och klarar nu sin morgonrutin helt självständigt. Bildstödet är ovärderligt. Tack."
+        </p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">👨</div>
+          <div>
+            <div class="testimonial-name">Anders K.</div>
+            <div class="testimonial-role">Pappa till Tilda, 9 år</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testimonial-stars">
+          <div class="star-shape"></div>
+          <div class="star-shape"></div>
+          <div class="star-shape"></div>
+          <div class="star-shape"></div>
+          <div class="star-shape"></div>
+        </div>
+        <p class="testimonial-text">
+          "Vi är tre barn och jag som ensam förälder. Det här är det enda apptipset jag ger vidare. Genuint ändringsbart."
+        </p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">👩‍🦱</div>
+          <div>
+            <div class="testimonial-name">Emma L.</div>
+            <div class="testimonial-role">Ensamstående mamma, Göteborg</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="section" id="pricing">
+  <div class="container">
+    <div class="section-tag">
+      <div class="star-shape sm"></div>
+      <span class="section-tag-text">Priser</span>
+    </div>
+    <h2 class="section-title">Enkelt och<br>rättvist</h2>
+    <p class="section-sub">
+      Ingen bindningstid. Testa gratis i 14 dagar. Avsluta när som helst.
+    </p>
+
+    <div class="pricing-grid">
+      <!-- Free -->
+      <div class="pricing-card">
+        <div class="pricing-tier">Gratis</div>
+        <div class="pricing-price">
+          <span class="price-amt">0</span>
+          <span class="price-currency">kr</span>
+        </div>
+        <div class="price-period">för alltid</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-features">
+          <li><span class="feature-check"></span>1 barn</li>
+          <li><span class="feature-check"></span>Dagliga scheman</li>
+          <li><span class="feature-check"></span>Stjärnbelöning</li>
+          <li><span class="feature-check dim"></span>Statistik (begränsad)</li>
+          <li><span class="feature-check dim"></span>Skattkammaren</li>
+        </ul>
+        <a href="/register" class="btn btn-navy" style="width: 100%; justify-content: center;">Kom igång</a>
+      </div>
+
+      <!-- Premium (featured) -->
+      <div class="pricing-card featured">
+        <div class="pricing-featured-badge">⭐ Mest populär</div>
+        <div class="pricing-tier">Premium</div>
+        <div class="pricing-price">
+          <span class="price-amt">79</span>
+          <span class="price-currency">kr</span>
+        </div>
+        <div class="price-period">per månad</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-features">
+          <li><span class="feature-check"></span>Upp till 4 barn</li>
+          <li><span class="feature-check"></span>Obegränsade scheman</li>
+          <li><span class="feature-check"></span>Skattkammaren</li>
+          <li><span class="feature-check"></span>Veckostatistik</li>
+          <li><span class="feature-check"></span>Specialdagar</li>
+          <li><span class="feature-check"></span>Push-notiser</li>
+        </ul>
+        <a href="/register" class="btn btn-amber" style="width: 100%; justify-content: center;">Starta 14 dagar gratis</a>
+      </div>
+
+      <!-- Family -->
+      <div class="pricing-card">
+        <div class="pricing-tier">Familjeplan</div>
+        <div class="pricing-price">
+          <span class="price-amt">129</span>
+          <span class="price-currency">kr</span>
+        </div>
+        <div class="price-period">per månad</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-features">
+          <li><span class="feature-check"></span>Obegränsat antal barn</li>
+          <li><span class="feature-check"></span>Delad föräldrapanel</li>
+          <li><span class="feature-check"></span>Allt i Premium</li>
+          <li><span class="feature-check"></span>Prioriterad support</li>
+          <li><span class="feature-check"></span>Exportera data</li>
+        </ul>
+        <a href="/register" class="btn btn-navy" style="width: 100%; justify-content: center;">Kom igång</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Banner -->
+<section class="section" style="padding-top: 0;">
+  <div class="container">
+    <div class="cta-banner">
+      <div class="cta-star-bg"><div class="star-shape"></div></div>
+      <h2>Klar att prova?</h2>
+      <p>Det tar 2 minuter att sätta upp. Ditt barn kan börja samla stjärnor redan ikväll.</p>
+      <div class="cta-actions">
+        <a href="/register" class="btn btn-amber btn-xl">
+          <div class="star-shape sm" style="background: var(--navy);"></div>
+          Skapa konto gratis
+        </a>
+        <a href="/login" class="btn btn-ghost-white btn-xl">Logga in</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="/V2.0" class="logo" style="margin-bottom: 0.75rem; display: inline-flex;">
+          <div class="logo-mark">
+            <div class="star-shape"></div>
+          </div>
+          <span class="logo-text" style="margin-left: 0.55rem;">Min Stjärndag</span>
+        </a>
+        <p class="footer-brand-desc">
+          Visuella scheman och stjärnbelöningar för barn — utan tjat.
+        </p>
+      </div>
+      <div>
+        <div class="footer-heading">Produkt</div>
+        <ul class="footer-links">
+          <li><a href="#features">Funktioner</a></li>
+          <li><a href="#pricing">Priser</a></li>
+          <li><a href="/register">Skapa konto</a></li>
+          <li><a href="/login">Logga in</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-heading">Mockup-vyer</div>
+        <ul class="footer-links">
+          <li><a href="/V2.0">Landing</a></li>
+          <li><a href="/V2.0/dashboard.html">Föräldrapanel</a></li>
+          <li><a href="/V2.0/child.html">Barnvy</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-heading">Juridik</div>
+        <ul class="footer-links">
+          <li><a href="/privacy">Integritetspolicy</a></li>
+          <li><a href="/privacy">Villkor</a></li>
+          <li><a href="/privacy">Cookies</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copyright">© 2026 Min Stjärndag. Alla rättigheter förbehållna.</p>
+      <p class="footer-copyright">Byggt med ❤️ för svenska familjer</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

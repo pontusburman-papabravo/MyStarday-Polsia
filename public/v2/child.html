@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Min Stjärndag V2.0 — Barnvy Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --amber:     #F5A623;
+      --amber-dk:  #D4891A;
+      --amber-lt:  #FFF0CC;
+      --navy:      #0E1628;
+      --navy-2:    #162035;
+      --cream:     #FBF8F2;
+      --mint:      #22C98A;
+      --mint-lt:   #D4F7E9;
+      --coral:     #FF6B52;
+      --coral-lt:  #FFE8E3;
+      --purple:    #7C4DDB;
+      --purple-lt: #EDE7FF;
+      --sky:       #3B9EFF;
+      --sky-lt:    #E0F0FF;
+      --text:      #0E1628;
+      --text-2:    #4A566B;
+      --text-3:    #8A96AB;
+      --border:    rgba(14,22,40,0.08);
+      --r-sm:      12px;
+      --r-md:      18px;
+      --r-lg:      24px;
+      --r-xl:      32px;
+      --r-round:   100px;
+      --font-body: 'Syne', system-ui, sans-serif;
+      --font-display: 'Instrument Serif', Georgia, serif;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--navy);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      max-width: 430px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Full-bleed dark bg behind the phone-frame */
+    html {
+      background: #06090f;
+    }
+
+    /* ── Star shape ── */
+    .star-shape {
+      display: inline-block;
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    }
+
+    .star-amber { background: var(--amber); }
+    .star-white { background: rgba(255,255,255,0.9); }
+    .star-navy  { background: rgba(255,255,255,0.08); }
+
+    /* ── Hero gradient background ── */
+    .screen {
+      height: 100vh;
+      overflow-y: auto;
+      background:
+        radial-gradient(ellipse 100% 60% at 50% -10%, rgba(245,166,35,0.22) 0%, transparent 60%),
+        linear-gradient(180deg, #0E1628 0%, #162035 100%);
+      padding-bottom: 90px;
+    }
+
+    /* Scrollbar hidden */
+    .screen::-webkit-scrollbar { display: none; }
+    .screen { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* ── Top bar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem 0.5rem;
+    }
+
+    .topbar-greeting {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    .topbar-name {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      color: white;
+      margin-top: 0.1rem;
+      line-height: 1;
+    }
+
+    .topbar-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: rgba(245,166,35,0.15);
+      border: 1.5px solid rgba(245,166,35,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+    }
+
+    /* ── Star count hero ── */
+    .star-hero {
+      text-align: center;
+      padding: 2rem 1.25rem 1.5rem;
+      position: relative;
+    }
+
+    /* Animated star decorations */
+    .star-dec {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .star-dec-1 {
+      top: 10px;
+      left: 20px;
+      animation: sparkle 3s ease-in-out infinite;
+    }
+
+    .star-dec-1 .star-shape {
+      width: 14px;
+      height: 14px;
+      display: block;
+    }
+
+    .star-dec-2 {
+      top: 30px;
+      right: 30px;
+      animation: sparkle 4s ease-in-out infinite 1s;
+    }
+
+    .star-dec-2 .star-shape {
+      width: 10px;
+      height: 10px;
+      display: block;
+    }
+
+    .star-dec-3 {
+      bottom: 20px;
+      left: 40px;
+      animation: sparkle 5s ease-in-out infinite 0.5s;
+    }
+
+    .star-dec-3 .star-shape {
+      width: 8px;
+      height: 8px;
+      display: block;
+    }
+
+    @keyframes sparkle {
+      0%, 100% { opacity: 0.2; transform: scale(1) rotate(0deg); }
+      50% { opacity: 0.8; transform: scale(1.3) rotate(15deg); }
+    }
+
+    .star-number-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(245,166,35,0.12);
+      border: 1px solid rgba(245,166,35,0.25);
+      padding: 0.8rem 1.8rem;
+      border-radius: var(--r-round);
+      margin-bottom: 0.5rem;
+    }
+
+    .star-big {
+      font-family: var(--font-display);
+      font-size: 3.5rem;
+      line-height: 1;
+      color: var(--amber);
+    }
+
+    .star-big-icon {
+      width: 36px;
+      height: 36px;
+      display: block;
+    }
+
+    .star-subtitle {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: 600;
+    }
+
+    /* ── Progress ring (CSS) ── */
+    .progress-section {
+      padding: 0 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .progress-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-label {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.55);
+      font-weight: 600;
+    }
+
+    .progress-fraction {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.35);
+    }
+
+    .prog-bar {
+      height: 10px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .prog-fill {
+      height: 100%;
+      border-radius: 100px;
+      background: linear-gradient(90deg, var(--amber) 0%, #FFD166 100%);
+      box-shadow: 0 0 12px rgba(245,166,35,0.5);
+      transition: width 0.5s ease;
+    }
+
+    /* ── Section heading ── */
+    .section-heading {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      padding: 0 1.25rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-heading::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.06);
+    }
+
+    /* ── Activity list ── */
+    .activities-list {
+      padding: 0 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-bottom: 2rem;
+    }
+
+    .activity-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--r-lg);
+      padding: 1rem 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .activity-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      border-radius: 3px 0 0 3px;
+      background: transparent;
+      transition: background 0.2s;
+    }
+
+    .activity-card:hover {
+      background: rgba(255,255,255,0.07);
+      transform: translateX(2px);
+    }
+
+    .activity-card.done {
+      background: rgba(34,201,138,0.06);
+      border-color: rgba(34,201,138,0.15);
+    }
+
+    .activity-card.done::before { background: var(--mint); }
+
+    .activity-card.active {
+      background: rgba(245,166,35,0.08);
+      border-color: rgba(245,166,35,0.2);
+    }
+
+    .activity-card.active::before { background: var(--amber); }
+
+    .act-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--r-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .act-icon-amber  { background: rgba(245,166,35,0.15); }
+    .act-icon-mint   { background: rgba(34,201,138,0.12); }
+    .act-icon-purple { background: rgba(124,77,219,0.12); }
+    .act-icon-sky    { background: rgba(59,158,255,0.12); }
+    .act-icon-coral  { background: rgba(255,107,82,0.12); }
+
+    .act-content {
+      flex: 1;
+    }
+
+    .act-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: white;
+      line-height: 1.2;
+    }
+
+    .activity-card.done .act-name {
+      text-decoration: line-through;
+      color: rgba(255,255,255,0.4);
+    }
+
+    .act-meta {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.35);
+      margin-top: 0.15rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .act-time {
+      background: rgba(255,255,255,0.06);
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+    }
+
+    .act-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.4rem;
+    }
+
+    .act-check-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .activity-card.done .act-check-circle {
+      background: var(--mint);
+      border-color: transparent;
+    }
+
+    .activity-card.done .act-check-circle::after {
+      content: '✓';
+      font-size: 13px;
+      color: white;
+      font-weight: 800;
+    }
+
+    .act-stars-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--amber);
+      background: rgba(245,166,35,0.1);
+      padding: 0.15rem 0.4rem;
+      border-radius: 5px;
+    }
+
+    /* ── Treasure section ── */
+    .treasure-section {
+      padding: 0 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .treasure-card {
+      background: linear-gradient(135deg, rgba(124,77,219,0.2) 0%, rgba(124,77,219,0.08) 100%);
+      border: 1px solid rgba(124,77,219,0.25);
+      border-radius: var(--r-xl);
+      padding: 1.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .treasure-card::before {
+      content: '🏆';
+      position: absolute;
+      right: -0.5rem;
+      bottom: -0.5rem;
+      font-size: 4rem;
+      opacity: 0.12;
+      transform: rotate(-15deg);
+    }
+
+    .treasure-heading {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 0.5rem;
+    }
+
+    .treasure-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      color: white;
+      margin-bottom: 0.75rem;
+    }
+
+    .treasure-rewards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .treasure-item {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      background: rgba(255,255,255,0.05);
+      border-radius: var(--r-md);
+      padding: 0.7rem 0.9rem;
+    }
+
+    .treasure-emoji {
+      font-size: 1.3rem;
+    }
+
+    .treasure-name {
+      flex: 1;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .treasure-cost {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--amber);
+    }
+
+    .treasure-cost .star-shape {
+      width: 10px;
+      height: 10px;
+      display: inline-block;
+    }
+
+    .treasure-btn {
+      background: var(--purple);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-family: var(--font-body);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .treasure-btn:hover { background: #9B6FEF; }
+    .treasure-btn:disabled {
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.3);
+      cursor: not-allowed;
+    }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 430px;
+      padding: 0.75rem 1.5rem 1.25rem;
+      background: rgba(14,22,40,0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      cursor: pointer;
+      padding: 0.25rem 0.75rem;
+      border-radius: var(--r-sm);
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+
+    .nav-item:hover { background: rgba(255,255,255,0.06); }
+
+    .nav-item.active .nav-icon { opacity: 1; }
+    .nav-item.active .nav-label { color: var(--amber); }
+
+    .nav-icon {
+      font-size: 1.3rem;
+      opacity: 0.45;
+      transition: opacity 0.15s;
+    }
+
+    .nav-item.active .nav-icon { opacity: 1; }
+
+    .nav-label {
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: rgba(255,255,255,0.35);
+      text-transform: uppercase;
+    }
+
+    /* Center add button */
+    .nav-add {
+      width: 52px;
+      height: 52px;
+      background: var(--amber);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(245,166,35,0.45);
+      transition: all 0.15s;
+      margin-top: -12px;
+    }
+
+    .nav-add:hover {
+      background: var(--amber-dk);
+      transform: scale(1.05);
+    }
+
+    .nav-add-icon {
+      font-size: 1.5rem;
+      color: var(--navy);
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    /* ── Confetti animation when done ── */
+    @keyframes pop-in {
+      0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+      70%  { transform: scale(1.1) rotate(5deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg);  opacity: 1; }
+    }
+
+    .done-stamp {
+      animation: pop-in 0.3s ease forwards;
+    }
+
+    /* ── V2 badge ── */
+    .v2-badge {
+      position: fixed;
+      bottom: 5.5rem;
+      right: 0;
+      background: var(--amber);
+      color: var(--navy);
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 0.35rem 0.7rem;
+      border-radius: 8px 0 0 8px;
+      box-shadow: -4px 0 12px rgba(245,166,35,0.3);
+      z-index: 999;
+      text-transform: uppercase;
+    }
+
+    /* ── Page nav links ── */
+    .page-nav-strip {
+      display: flex;
+      gap: 0.35rem;
+      padding: 0.5rem 1.25rem;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      background: rgba(14,22,40,0.6);
+    }
+
+    .pnl {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.35);
+      text-decoration: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+
+    .pnl:hover, .pnl.active {
+      background: rgba(245,166,35,0.15);
+      color: var(--amber);
+    }
+  </style>
+</head>
+<body>
+
+<div class="v2-badge">V2.0 Mockup</div>
+
+<div class="screen">
+
+  <!-- Page navigation strip -->
+  <div class="page-nav-strip">
+    <a href="/V2.0" class="pnl">Landing</a>
+    <a href="/V2.0/dashboard.html" class="pnl">Föräldrapanel</a>
+    <a href="/V2.0/child.html" class="pnl active">Barnvy</a>
+  </div>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-greeting">Hej igen,</div>
+      <div class="topbar-name">Anna! 🌸</div>
+    </div>
+    <div class="topbar-avatar">🌸</div>
+  </div>
+
+  <!-- Star count hero -->
+  <div class="star-hero">
+    <!-- Floating stars -->
+    <div class="star-dec star-dec-1">
+      <div class="star-shape star-amber" style="width:14px;height:14px;display:block;"></div>
+    </div>
+    <div class="star-dec star-dec-2">
+      <div class="star-shape star-white" style="width:10px;height:10px;display:block;"></div>
+    </div>
+    <div class="star-dec star-dec-3">
+      <div class="star-shape star-amber" style="width:8px;height:8px;display:block;"></div>
+    </div>
+
+    <div class="star-number-wrap">
+      <div class="star-shape star-amber" style="width:36px;height:36px;display:block;"></div>
+      <div class="star-big">8</div>
+    </div>
+    <div class="star-subtitle">Stjärnor totalt idag</div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-section">
+    <div class="progress-label-row">
+      <span class="progress-label">Dagens framsteg</span>
+      <span class="progress-fraction">11 av 17 aktiviteter</span>
+    </div>
+    <div class="prog-bar">
+      <div class="prog-fill" style="width: 65%;"></div>
+    </div>
+  </div>
+
+  <!-- Activities: Morning -->
+  <div class="section-heading">Morgon</div>
+
+  <div class="activities-list">
+    <!-- Done -->
+    <div class="activity-card done">
+      <div class="act-icon act-icon-mint">🪥</div>
+      <div class="act-content">
+        <div class="act-name">Borsta tänderna</div>
+        <div class="act-meta">
+          <span class="act-time">07:30</span>
+          <span>Klar ✓</span>
+        </div>
+      </div>
+      <div class="act-right">
+        <div class="act-check-circle done-stamp"></div>
+        <div class="act-stars-badge">★ +1</div>
+      </div>
+    </div>
+
+    <!-- Done -->
+    <div class="activity-card done">
+      <div class="act-icon act-icon-mint">👕</div>
+      <div class="act-content">
+        <div class="act-name">Klä på sig</div>
+        <div class="act-meta">
+          <span class="act-time">07:45</span>
+          <span>Klar ✓</span>
+        </div>
+      </div>
+      <div class="act-right">
+        <div class="act-check-circle done-stamp"></div>
+        <div class="act-stars-badge">★ +2</div>
+      </div>
+    </div>
+
+    <!-- Active / next up -->
+    <div class="activity-card active">
+      <div class="act-icon act-icon-amber">🎒</div>
+      <div class="act-content">
+        <div class="act-name">Packa väskan</div>
+        <div class="act-meta">
+          <span class="act-time">08:00</span>
+          <span style="color: var(--amber);">Nu! →</span>
+        </div>
+      </div>
+      <div class="act-right">
+        <div class="act-check-circle"></div>
+        <div class="act-stars-badge">★ +1</div>
+      </div>
+    </div>
+
+    <!-- Pending -->
+    <div class="activity-card">
+      <div class="act-icon act-icon-sky">🥛</div>
+      <div class="act-content">
+        <div class="act-name">Frukost</div>
+        <div class="act-meta">
+          <span class="act-time">08:15</span>
+        </div>
+      </div>
+      <div class="act-right">
+        <div class="act-check-circle"></div>
+        <div class="act-stars-badge">★ +2</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activities: After school -->
+  <div class="section-heading">Eftermiddag</div>
+
+  <div class="activities-list">
+    <div class="activity-card">
+      <div class="act-icon act-icon-purple">📚</div>
+      <div class="act-content">
+        <div class="act-name">Läxa</div>
+        <div class="act-meta">
+          <span class="act-time">15:30</span>
+        </div>
+      </div>
+      <div class="act-right">
+        <div class="act-check-circle"></div>
+        <div class="act-stars-badge">★ +3</div>
+      </div>
+    </div>
+
+    <div class="activity-card">
+      <div class="act-icon act-icon-coral">🧹</div>
+      <div class="act-content">
+        <div class="act-name">Städa rummet</div>
+        <div class="act-meta">
+          <span class="act-time">16:00</span>
+        </div>
+      </div>
+      <div class="act-right">
+        <div class="act-check-circle"></div>
+        <div class="act-stars-badge">★ +2</div>
+      </div>
+    </div>
+
+    <div class="activity-card done">
+      <div class="act-icon act-icon-mint">🦷</div>
+      <div class="act-content">
+        <div class="act-name">Kvällstandborstning</div>
+        <div class="act-meta">
+          <span class="act-time">19:30</span>
+          <span>Klar ✓</span>
+        </div>
+      </div>
+      <div class="act-right">
+        <div class="act-check-circle done-stamp"></div>
+        <div class="act-stars-badge">★ +1</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Treasure chamber -->
+  <div class="treasure-section">
+    <div class="section-heading">Skattkammaren</div>
+    <div class="treasure-card">
+      <div class="treasure-heading">Dina belöningar</div>
+      <div class="treasure-title">Vad vill du spara till?</div>
+      <div class="treasure-rewards">
+        <div class="treasure-item">
+          <div class="treasure-emoji">🍦</div>
+          <div class="treasure-name">Glass</div>
+          <div class="treasure-cost">
+            <div class="star-shape star-amber" style="width:10px;height:10px;display:inline-block;"></div>
+            5 stjärnor
+          </div>
+          <button class="treasure-btn">Lös in</button>
+        </div>
+
+        <div class="treasure-item">
+          <div class="treasure-emoji">📺</div>
+          <div class="treasure-name">Extra TV-tid</div>
+          <div class="treasure-cost">
+            <div class="star-shape star-amber" style="width:10px;height:10px;display:inline-block;"></div>
+            10 stjärnor
+          </div>
+          <button class="treasure-btn" disabled>10 ★</button>
+        </div>
+
+        <div class="treasure-item">
+          <div class="treasure-emoji">🎮</div>
+          <div class="treasure-name">Spelkväll</div>
+          <div class="treasure-cost">
+            <div class="star-shape star-amber" style="width:10px;height:10px;display:inline-block;"></div>
+            20 stjärnor
+          </div>
+          <button class="treasure-btn" disabled>20 ★</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /screen -->
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <a href="#" class="nav-item active">
+    <div class="nav-icon">✅</div>
+    <div class="nav-label">Schema</div>
+  </a>
+
+  <a href="#" class="nav-item">
+    <div class="nav-icon">⭐</div>
+    <div class="nav-label">Stjärnor</div>
+  </a>
+
+  <div class="nav-add">
+    <div class="nav-add-icon">+</div>
+  </div>
+
+  <a href="#" class="nav-item">
+    <div class="nav-icon">🏆</div>
+    <div class="nav-label">Skatt</div>
+  </a>
+
+  <a href="#" class="nav-item">
+    <div class="nav-icon">👤</div>
+    <div class="nav-label">Profil</div>
+  </a>
+</nav>
+
+</body>
+</html>

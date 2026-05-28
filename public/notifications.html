@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Min Stjärndag — Notis-arkiv">
+  <meta property="og:description" content="Dina senaste meddelanden och notiser">
+  <meta property="og:type" content="website">
+  <title>Notis-arkiv - Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623', 'gold-light': '#FFF3D6', navy: '#1B2340', 'navy-soft': '#2A3458',
+            sky: '#E8F0FE', lavender: '#EDE7F6', mint: '#E0F5EC', coral: '#FDEAE7', 'text-soft': '#5A6178',
+          },
+          fontFamily: { heading: ['Outfit', 'sans-serif'], body: ['Plus Jakarta Sans', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="/css/theme.css?v=2.12.0">
+  <link rel="stylesheet" href="/css/mobile-nav.css?v=2.12.0">
+  <script src="/js/theme.js?v=2.12.0"></script>
+  <script src="/js/auth.js?v=2.13.0"></script>
+  <script src="/js/i18n.js?v=2.12.0"></script>
+  <!-- PWA / Favicon -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Min Stjärndag">
+  <script src="/js/app-consent.js?v=2.12.0"></script>
+</head>
+<body class="bg-white font-body text-navy dark:bg-navy dark:text-white">
+  <div class="min-h-screen flex flex-col md:flex-row">
+
+    <!-- Sidebar -->
+    <nav class="w-full md:w-64 bg-navy text-white p-4 md:p-6 md:min-h-screen">
+      <a href="/dashboard" class="flex items-center gap-3 mb-8 no-underline text-white hover:text-white">
+        <span class="text-2xl">⭐</span>
+        <h1 class="text-xl font-heading font-bold">Min Stjärndag</h1>
+      </a>
+      <ul class="space-y-2">
+        <li><a href="/dashboard" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Översikt</a></li>
+        <li><a href="/daily-log" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Daglig logg</a></li>
+        <li><a href="/schedule" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Veckoschema</a></li>
+        <li><a href="/library" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Bibliotek</a></li>
+        <li><a href="/skattkammaren" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors" style="color:#F5A623;font-weight:600;">🏆 Skattkammaren</a></li>
+        <li><a href="/notifications" class="block px-4 py-3 rounded-lg bg-gold text-navy font-semibold">🔔 Notis-arkiv</a></li>
+        <li><a href="/family" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Familjen &amp; inställningar</a></li>
+      </ul>
+      <div class="mt-8 pt-4 border-t border-navy-soft space-y-2">
+        <button onclick="toggleDarkMode()" class="w-full px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors text-left flex items-center gap-2">
+          <span>🌙</span> Mörkt läge
+        </button>
+        <button id="logoutBtn" class="w-full px-4 py-2 bg-coral hover:bg-red-200 text-navy rounded-lg font-semibold transition-colors">Logga ut</button>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="flex-1 flex flex-col">
+      <!-- Header -->
+      <div class="bg-sky border-b border-lavender p-4 md:p-6 flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-heading font-bold text-navy">🔔 Notis-arkiv</h2>
+          <p class="text-sm text-text-soft mt-1">Dina senaste 7 dagarnas meddelanden</p>
+        </div>
+        <button id="markAllReadBtn"
+          class="hidden px-4 py-2 text-sm bg-navy text-white rounded-lg hover:bg-navy-soft transition-colors font-semibold">
+          Markera alla som lästa
+        </button>
+      </div>
+
+      <!-- Content -->
+      <div class="flex-1 p-4 md:p-8 max-w-2xl w-full">
+
+        <!-- Loading state -->
+        <div id="loadingState" class="flex flex-col items-center justify-center py-16 text-text-soft">
+          <div class="w-8 h-8 border-4 border-gold border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p class="text-sm">Hämtar meddelanden…</p>
+        </div>
+
+        <!-- Error state -->
+        <div id="errorState" class="hidden bg-coral rounded-xl p-4 text-sm text-navy">
+          Kunde inte ladda meddelanden. Försök igen om en stund.
+        </div>
+
+        <!-- Empty state -->
+        <div id="emptyState" class="hidden flex flex-col items-center justify-center py-16 text-center">
+          <div class="text-5xl mb-4">🔔</div>
+          <p class="text-lg font-heading font-bold text-navy mb-2">Inga meddelanden</p>
+          <p class="text-sm text-text-soft">Inga meddelanden de senaste 7 dagarna.<br>Push-notiser sparas här när du tar emot dem.</p>
+        </div>
+
+        <!-- Notification list -->
+        <ul id="notificationList" class="hidden space-y-3">
+        </ul>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile bottom nav -->
+  <script src="/js/feature-check.js?v=2.13.0"></script>
+  <script src="/js/mobile-nav.js?v=2.13.0"></script>
+
+  <script>
+    // ── Type label/emoji mapping ─────────────────────────────
+    const TYPE_META = {
+      activity:  { emoji: '✅', label: 'Aktivitet' },
+      nyhet:     { emoji: '📰', label: 'Nyhet' },
+      library:   { emoji: '📚', label: 'Bibliotek' },
+      reminder:  { emoji: '⏰', label: 'Påminnelse' },
+      reward:    { emoji: '🏆', label: 'Belöning' },
+      general:   { emoji: '🔔', label: 'Notis' },
+    };
+
+    function typeMeta(type) {
+      return TYPE_META[type] || TYPE_META.general;
+    }
+
+    // ── Date formatting ──────────────────────────────────────
+    function formatDate(isoStr) {
+      const d = new Date(isoStr);
+      const now = new Date();
+      const diffMs = now - d;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1)  return 'Just nu';
+      if (diffMins < 60) return `${diffMins} min sedan`;
+      if (diffHours < 24) return `${diffHours} tim sedan`;
+      if (diffDays === 1) return 'Igår';
+      if (diffDays < 7)  return `${diffDays} dagar sedan`;
+
+      return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+    }
+
+    // ── Build notification card HTML ─────────────────────────
+    function buildCard(n) {
+      const meta = typeMeta(n.type);
+      const isUnread = !n.is_read;
+      const unreadDot = isUnread
+        ? '<span class="w-2.5 h-2.5 rounded-full bg-gold flex-shrink-0 mt-1" aria-label="Oläst"></span>'
+        : '<span class="w-2.5 h-2.5 flex-shrink-0"></span>';
+      const cardBg = isUnread
+        ? 'bg-gold-light border border-gold/30'
+        : 'bg-white dark:bg-navy-soft border border-lavender dark:border-navy-soft';
+
+      const linkStart = n.url
+        ? `<a href="${encodeURI(n.url)}" class="block no-underline">`
+        : '<div>';
+      const linkEnd = n.url ? '</a>' : '</div>';
+
+      return `
+        <li id="notif-${n.id}"
+            data-id="${n.id}"
+            data-read="${n.is_read}"
+            class="rounded-xl overflow-hidden shadow-sm transition-all duration-200 ${cardBg}">
+          ${linkStart}
+          <div class="p-4 flex gap-3 items-start cursor-pointer notification-card" data-id="${n.id}">
+            ${unreadDot}
+            <div class="text-xl leading-none pt-0.5 select-none">${meta.emoji}</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2 mb-0.5">
+                <span class="text-xs font-semibold text-text-soft uppercase tracking-wide">${meta.label}</span>
+                <span class="text-xs text-text-soft whitespace-nowrap">${formatDate(n.created_at)}</span>
+              </div>
+              <p class="font-semibold text-sm text-navy dark:text-white leading-snug mb-0.5">${escapeHtml(n.title)}</p>
+              ${n.body ? `<p class="text-sm text-text-soft dark:text-gray-300 leading-snug">${escapeHtml(n.body)}</p>` : ''}
+            </div>
+          </div>
+          ${linkEnd}
+        </li>`;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Mark single notification as read ────────────────────
+    async function markRead(id) {
+      const item = document.getElementById(`notif-${id}`);
+      if (!item || item.dataset.read === 'true') return;
+      item.dataset.read = 'true';
+
+      // Visual: remove unread dot + gold background immediately
+      const dot = item.querySelector('[aria-label="Oläst"]');
+      if (dot) {
+        dot.removeAttribute('aria-label');
+        dot.classList.remove('bg-gold');
+      }
+      item.classList.remove('bg-gold-light', 'border-gold/30');
+      item.classList.add('bg-white', 'border-lavender');
+
+      try {
+        await Auth.api(`/api/notifications/${id}/read`, { method: 'PUT' });
+      } catch (_) { /* best-effort */ }
+
+      updateMarkAllBtn();
+    }
+
+    // ── Mark all as read ─────────────────────────────────────
+    async function markAllRead() {
+      document.querySelectorAll('#notificationList li[data-read="false"]').forEach(item => {
+        item.dataset.read = 'true';
+        const dot = item.querySelector('[aria-label="Oläst"]');
+        if (dot) {
+          dot.removeAttribute('aria-label');
+          dot.classList.remove('bg-gold');
+        }
+        item.classList.remove('bg-gold-light', 'border-gold/30');
+        item.classList.add('bg-white', 'border-lavender');
+      });
+      updateMarkAllBtn();
+      try {
+        await Auth.api('/api/notifications/read-all', { method: 'PUT' });
+      } catch (_) { /* best-effort */ }
+    }
+
+    function updateMarkAllBtn() {
+      const hasUnread = document.querySelectorAll('#notificationList li[data-read="false"]').length > 0;
+      document.getElementById('markAllReadBtn').classList.toggle('hidden', !hasUnread);
+    }
+
+    // ── Load and render ──────────────────────────────────────
+    async function loadNotifications() {
+      const loading = document.getElementById('loadingState');
+      const error   = document.getElementById('errorState');
+      const empty   = document.getElementById('emptyState');
+      const list    = document.getElementById('notificationList');
+
+      loading.classList.remove('hidden');
+      error.classList.add('hidden');
+      empty.classList.add('hidden');
+      list.classList.add('hidden');
+
+      let notifications;
+      try {
+        notifications = await Auth.api('/api/notifications');
+      } catch (err) {
+        loading.classList.add('hidden');
+        error.classList.remove('hidden');
+        return;
+      }
+
+      loading.classList.add('hidden');
+
+      if (!notifications || notifications.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      list.innerHTML = notifications.map(buildCard).join('');
+      list.classList.remove('hidden');
+
+      updateMarkAllBtn();
+
+      // Click to mark as read
+      list.addEventListener('click', (e) => {
+        const card = e.target.closest('.notification-card');
+        if (card) markRead(card.dataset.id);
+      });
+    }
+
+    // ── Init ─────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Auth guard
+      if (!Auth.isLoggedIn()) {
+        window.location.href = '/login';
+        return;
+      }
+
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        Auth.logout();
+        window.location.href = '/login';
+      });
+
+      document.getElementById('markAllReadBtn').addEventListener('click', markAllRead);
+
+      await loadNotifications();
+    });
+  </script>
+</body>
+</html>

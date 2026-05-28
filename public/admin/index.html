@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623',
+            'gold-light': '#FFF3D6',
+            navy: '#1B2340',
+            'navy-soft': '#2A3458',
+            sky: '#E8F0FE',
+            lavender: '#EDE7F6',
+            mint: '#E0F5EC',
+            coral: '#FDEAE7',
+            'text-soft': '#5A6178',
+          },
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            body: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <script src="/js/auth.js?v=2.13.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+  <style>
+    /* Mobile admin sidebar */
+    @media (max-width: 767px) {
+      .admin-sidebar-links { display: none; }
+      .admin-sidebar-links.open { display: block; }
+      .admin-sidebar-logout { display: none; }
+      .admin-sidebar-links.open + .admin-sidebar-logout { display: block; }
+      /* Wrap action buttons */
+      .action-btns { flex-wrap: wrap; }
+      /* Contact messages: hide duplicate section heading on mobile */
+      #messagesSection > .flex.items-center.gap-3 { display: none; }
+      /* Contact messages: fix card overflow on mobile */
+      #messagesContainer .flex.gap-2.items-center { flex-wrap: wrap; }
+      /* Contact messages: reduce card padding on mobile for more space */
+      #messagesContainer .p-6 { padding: 1rem; }
+      /* Ensure messages are scrollable on mobile */
+      #messagesSection { overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2rem; }
+    }
+    /* DnD styles */
+    .sortable-ghost { opacity: 0.3; }
+    .sortable-chosen { box-shadow: 0 8px 25px rgba(0,0,0,0.15); transform: scale(1.02); }
+    .drag-handle { cursor: grab; touch-action: none; }
+    .drag-handle:active { cursor: grabbing; }
+  </style>
+</head>
+<body class="bg-white font-body text-navy">
+  <div class="min-h-screen flex flex-col md:flex-row">
+    <!-- Sidebar -->
+    <nav class="w-full md:w-72 bg-navy text-white p-4 md:p-6 md:min-h-screen">
+      <div class="flex items-center justify-between gap-3 mb-4 md:mb-8">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">&#11088;</span>
+          <h1 class="text-xl font-heading font-bold">Admin</h1>
+        </div>
+        <button id="adminMenuToggle" class="md:hidden p-2 rounded-lg hover:bg-navy-soft transition-colors" aria-label="Meny">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+      <ul class="admin-sidebar-links space-y-2" id="adminSidebarLinks">
+        <li><a href="#overview" onclick="showSection('overview');closeMobileMenu()" class="nav-item block px-4 py-2 rounded-lg bg-gold text-navy font-semibold" data-section="overview">Översikt</a></li>
+        <li><a href="#families" onclick="showSection('families');closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="families">Familjer</a></li>
+        <li><a href="#messages" onclick="showSection('messages');closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors flex items-center justify-between gap-2" data-section="messages">Meddelanden <span id="messagesBadge" class="bg-gold text-navy text-xs font-bold rounded-full px-2 py-0.5 hidden" style="min-width: 20px; text-align: center;"></span></a></li>
+        <li><a href="/admin/development" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors">Funktioner ↗</a></li>
+        <li><a href="#defaults" onclick="showSection('defaults');closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="defaults">Bibliotek</a></li>
+        <li><a href="#anvandning" onclick="showSection('anvandning');closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="anvandning">Användning</a></li>
+        <li><a href="#retention" onclick="showSection('retention');loadRetentionData();closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="retention">Retention</a></li>
+        <li><a href="#dagensnyhet" onclick="showSection('dagensnyhet');loadNyheter();closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="dagensnyhet">Dagens nyhet</a></li>
+        <li><a href="#landning" onclick="showSection('landning');loadLandingNews();closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="landning">🌐 Landningssida</a></li>
+        <li><a href="#bildbank" onclick="showSection('bildbank');loadAdminImages();closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="bildbank">🖼️ Bildbank</a></li>
+        <li><a href="#nyhetsbrev" onclick="showSection('nyhetsbrev');loadNewsletterSubscribers();closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="nyhetsbrev">Nyhetsbrev</a></li>
+        <li><a href="#valkomstmail" onclick="showSection('valkomstmail');loadWelcomeEmailTemplate();closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="valkomstmail">Välkomstmail</a></li>
+        <li><a href="#analytics" onclick="showSection('analytics');loadAnalytics();closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="analytics">📊 Analytics</a></li>
+        <li><a href="#anvandarstatistik" onclick="showSection('anvandarstatistik');closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="anvandarstatistik">👥 Användarstatistik</a></li>
+        <li><a href="#undersokningar" onclick="showSection('undersokningar');loadSurveys();closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="undersokningar">📋 Undersökningar</a></li>
+        <li><a href="#emailmallar" onclick="showSection('emailmallar');loadEmailTemplates();closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="emailmallar">📧 Email-mallar</a></li>
+        <li><a href="#emaillog" onclick="showSection('emaillog');loadEmailLog();closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="emaillog">📤 Email-logg</a></li>
+        <li><a href="#intresseanmalningar" onclick="showSection('intresseanmalningar');loadInterests();closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="intresseanmalningar">🎓 Intresseanmälningar</a></li>
+        <li><a href="#waitlist" onclick="showSection('waitlist');closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="waitlist">📋 Waitlist</a></li>
+        <li><a href="#prenumeration" onclick="showSection('prenumeration');closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="prenumeration">💳 Prenumeration</a></li>
+        <li><a href="#password" onclick="showSection('password');closeMobileMenu()" class="nav-item block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors" data-section="password">Konto</a></li>
+      </ul>
+      <div class="admin-sidebar-logout mt-8 pt-4 border-t border-navy-soft">
+        <button id="logoutBtn" class="w-full px-4 py-2 bg-coral hover:bg-red-200 text-navy rounded-lg font-semibold transition-colors">Logga ut</button>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="flex-1 flex flex-col overflow-auto">
+      <div class="bg-sky border-b border-lavender p-4 md:p-6 sticky top-0 z-10">
+        <h2 class="text-xl md:text-2xl font-heading font-bold text-navy" id="pageTitle">Admin Panel</h2>
+      </div>
+
+      <div class="p-4 md:p-8">
+        <!-- Access Denied -->
+        <div id="accessDenied" class="hidden bg-coral border-l-4 border-red-500 p-6 rounded-lg text-center mb-8">
+          <h3 class="text-lg font-heading font-bold text-navy mb-2">Åtkomst nekad</h3>
+          <p class="text-text-soft mb-4">Du har inte behörighet att se denna sida</p>
+          <a href="/dashboard" class="text-gold font-semibold hover:underline">Gå till min panel</a>
+        </div>
+
+        <!-- OVERVIEW -->
+        <div id="overviewSection" class="mb-8">
+          <h3 class="text-2xl font-heading font-bold text-navy mb-6">Statistik</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="bg-sky rounded-2xl p-6 border-2 border-lavender">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-text-soft text-sm font-semibold mb-1">FAMILJER</p>
+                  <p id="familiesCount" class="text-3xl font-heading font-bold text-navy">&mdash;</p>
+                </div>
+                <span class="text-4xl">&#128104;&#8205;&#128105;&#8205;&#128103;</span>
+              </div>
+            </div>
+            <div class="bg-mint rounded-2xl p-6 border-2 border-mint">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-text-soft text-sm font-semibold mb-1">FÖRÄLDRAR</p>
+                  <p id="parentsCount" class="text-3xl font-heading font-bold text-navy">&mdash;</p>
+                </div>
+                <span class="text-4xl">&#128105;&#8205;&#128188;</span>
+              </div>
+            </div>
+            <div class="bg-lavender rounded-2xl p-6 border-2 border-lavender">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-text-soft text-sm font-semibold mb-1">BARN</p>
+                  <p id="childrenCount" class="text-3xl font-heading font-bold text-navy">&mdash;</p>
+                </div>
+                <span class="text-4xl">&#128103;</span>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-coral rounded-2xl p-6 border-2 border-coral">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-text-soft text-sm font-semibold mb-1">OLÄSTA MEDDELANDEN</p>
+                  <p id="unreadMessagesCount" class="text-3xl font-heading font-bold text-navy">&mdash;</p>
+                  <p class="text-text-soft text-xs mt-1"><span id="totalMessagesCount">&mdash;</span> totalt</p>
+                </div>
+                <span class="text-4xl">&#128172;</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Login Stats with Time Filter -->
+          <div class="mt-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <h3 class="text-2xl font-heading font-bold text-navy">Inloggningar</h3>
+              <div class="flex gap-2" id="loginPeriodFilter">
+                <button onclick="setLoginPeriod('24h')" data-period="24h" class="login-period-btn px-3 py-1.5 rounded-lg text-sm font-semibold border-2 border-lavender text-text-soft hover:border-gold hover:text-navy transition-colors">24h</button>
+                <button onclick="setLoginPeriod('7d')" data-period="7d" class="login-period-btn px-3 py-1.5 rounded-lg text-sm font-semibold border-2 border-gold bg-gold-light text-navy transition-colors">7 dagar</button>
+                <button onclick="setLoginPeriod('30d')" data-period="30d" class="login-period-btn px-3 py-1.5 rounded-lg text-sm font-semibold border-2 border-lavender text-text-soft hover:border-gold hover:text-navy transition-colors">1 månad</button>
+                <button onclick="setLoginPeriod('365d')" data-period="365d" class="login-period-btn px-3 py-1.5 rounded-lg text-sm font-semibold border-2 border-lavender text-text-soft hover:border-gold hover:text-navy transition-colors">1 år</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-lavender rounded-2xl p-6 border-2 border-lavender">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-text-soft text-sm font-semibold mb-1">BARN — INLOGGNINGAR</p>
+                    <p id="overviewLoginChildTotal" class="text-3xl font-heading font-bold text-navy">&mdash;</p>
+                  </div>
+                  <span class="text-4xl">&#128103;</span>
+                </div>
+              </div>
+              <div class="bg-mint rounded-2xl p-6 border-2 border-mint">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-text-soft text-sm font-semibold mb-1">FÖRÄLDRAR — INLOGGNINGAR</p>
+                    <p id="overviewLoginParentTotal" class="text-3xl font-heading font-bold text-navy">&mdash;</p>
+                  </div>
+                  <span class="text-4xl">&#128105;&#8205;&#128188;</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FAMILIES (Grouped Cards) -->
+        <div id="familiesSection" class="mb-8 hidden">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h3 class="text-2xl font-heading font-bold text-navy">Familjer</h3>
+            <button id="exportEmailsBtn" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-navy rounded-lg font-semibold transition-colors text-sm">
+              📧 Exportera mailadresser
+            </button>
+          </div>
+          <div class="mb-4">
+            <input type="text" id="familySearch" placeholder="🔍 Sök familj, förälder eller e-post..."
+              class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-sm"
+              oninput="filterFamilies(this.value)">
+          </div>
+          <div id="familiesContainer" class="space-y-6">
+            <div class="text-center text-text-soft py-8">Laddar...</div>
+          </div>
+
+          <!-- Archived Families -->
+          <div class="mt-8">
+            <button onclick="toggleArchivedSection()" class="flex items-center gap-2 text-text-soft hover:text-navy font-semibold text-sm mb-4 transition-colors">
+              <svg id="archivedChevron" class="w-4 h-4 transition-transform -rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+              Visa arkiverade familjer
+            </button>
+            <div id="archivedFamiliesWrapper" class="hidden">
+              <div id="archivedFamiliesContainer" class="space-y-4">
+                <div class="text-center text-text-soft py-4">Laddar...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FAMILY DELETE MODAL -->
+        <div id="familyDeleteModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-2xl">
+            <h3 class="text-xl font-heading font-bold text-navy mb-2">⚠️ Radera familj permanent</h3>
+            <p class="text-text-soft mb-2">Radera <strong id="familyDeleteTargetName" class="text-navy"></strong>?</p>
+            <p class="text-red-600 text-sm font-semibold mb-6">All data försvinner permanent — föräldrakonton, barn, scheman, stjärnor, belöningar, loggar och mer. Kan inte ångras.</p>
+            <div class="flex gap-3 justify-end">
+              <button onclick="cancelFamilyDelete()" class="px-4 py-2 bg-sky hover:bg-lavender text-navy rounded-lg font-semibold transition-colors">Avbryt</button>
+              <button onclick="confirmFamilyDelete()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors">Radera permanent</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTACT MESSAGES -->
+        <div id="messagesSection" class="mb-8 hidden">
+          <div class="flex items-center gap-3 mb-4">
+            <h3 class="text-2xl font-heading font-bold text-navy">Kontaktmeddelanden</h3>
+            <span id="sectionUnreadBadge" class="bg-gold text-navy text-sm font-bold rounded-full px-3 py-1 hidden" style="min-width: 28px; text-align: center;"></span>
+          </div>
+          <div class="mb-4 flex flex-col sm:flex-row gap-3">
+            <input type="text" id="messagesSearch" placeholder="Sök meddelanden..." class="flex-1 sm:flex-none sm:w-64 px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+            <select id="messagesTypeFilter" onchange="loadMessages()" class="px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors bg-white text-navy font-semibold">
+              <option value="">Alla typer</option>
+              <option value="bug">Buggrapport</option>
+              <option value="feedback">Feedback</option>
+              <option value="contact">Kontakt</option>
+            </select>
+          </div>
+          <div id="messagesContainer" class="space-y-4">
+            <div class="text-center text-text-soft py-8">Laddar...</div>
+          </div>
+        </div>
+
+        <!-- FUNKTIONER removed: now served at /admin/development -->
+
+        <!-- BIBLIOTEK (activities + rewards) -->
+        <div id="defaultsSection" class="mb-8 hidden">
+          <h3 class="text-2xl font-heading font-bold text-navy mb-2">Bibliotek</h3>
+          <p class="text-text-soft text-sm mb-6">Standardinnehåll som skapas för nya familjer vid registrering.</p>
+
+          <!-- Main library tabs -->
+          <div class="flex gap-2 mb-6 border-b border-lavender pb-2 flex-wrap">
+            <button id="libTabActivities" onclick="switchLibTab('activities')" class="px-5 py-2.5 rounded-xl font-heading font-bold text-sm transition-colors bg-gold text-navy">📋 Aktiviteter</button>
+            <button id="libTabRewards" onclick="switchLibTab('rewards')" class="px-5 py-2.5 rounded-xl font-heading font-bold text-sm transition-colors bg-lavender text-text-soft hover:bg-sky">🏆 Belöningsbibliotek</button>
+            <button id="libTabSchedules" onclick="switchLibTab('schedules')" class="px-5 py-2.5 rounded-xl font-heading font-bold text-sm transition-colors bg-lavender text-text-soft hover:bg-sky">📅 Standardscheman</button>
+          </div>
+
+          <!-- ── AKTIVITETER tab ─────────────────────────────── -->
+          <div id="libActivitiesPanel">
+            <!-- Apply default schema toggle -->
+            <div class="bg-sky rounded-2xl p-4 mb-6 flex items-center justify-between gap-4">
+              <div>
+                <p class="font-heading font-bold text-navy text-sm">Applicera på nya barn automatiskt</p>
+                <p class="text-text-soft text-xs mt-0.5">Barn 2–5 år &#8594; Förskola-schemat. Barn 6+ år &#8594; Skola-schemat. Befintliga barn påverkas <strong>aldrig</strong>. Standardaktiviteter seedas till nya familjer vid registrering.</p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="applyDefaultSchemaToggle" class="sr-only peer" onchange="toggleApplyDefaultSchema(this.checked)">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold"></div>
+              </label>
+            </div>
+            <div id="applyDefaultSchemaMsg" class="text-xs min-h-[1.2em] mb-4 -mt-2 text-text-soft"></div>
+
+
+            <div class="flex justify-end mb-4">
+              <button onclick="openAddDefaultModal()" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm transition-colors">+ Ny aktivitet</button>
+            </div>
+            <div id="defaultTemplatesList" class="space-y-2">
+              <p class="text-text-soft text-center py-8">Laddar...</p>
+            </div>
+          </div>
+
+          <!-- ── BELÖNINGSBIBLIOTEK tab ──────────────────────── -->
+          <div id="libRewardsPanel" class="hidden">
+            <div class="bg-gold-light rounded-2xl p-4 mb-6 border border-gold/30">
+              <p class="font-heading font-bold text-navy text-sm">🏆 Standardbelöningar</p>
+              <p class="text-text-soft text-xs mt-0.5">Dessa belöningar seedas automatiskt till NYA familjer vid registrering. Admin-ändringar på belöningar som föräldern <strong>inte rört</strong> synkroniseras ut till alla familjer. Om en familj ändrat en belöning skyddas deras version.</p>
+            </div>
+            <div class="flex justify-end mb-4">
+              <button onclick="openAddDefaultRewardModal()" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm transition-colors">+ Ny belöning</button>
+            </div>
+            <div id="defaultRewardsList" class="space-y-2">
+              <p class="text-text-soft text-center py-8">Laddar...</p>
+            </div>
+          </div>
+
+          <!-- ── STANDARDSCHEMAN tab ──────────────────────────── -->
+          <div id="libSchedulesPanel" class="hidden">
+            <div class="bg-sky rounded-2xl p-4 mb-6 border border-blue-100">
+              <p class="font-heading font-bold text-navy text-sm">📅 Standardscheman</p>
+              <p class="text-text-soft text-xs mt-0.5">Dagscheman som föräldrar kan kopiera till sina barns veckoscheman. Varje schema innehåller aktiviteter sorterade i morgon/dag/kväll.</p>
+            </div>
+            <div class="flex justify-end mb-4">
+              <button onclick="openAddDefaultScheduleModal()" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm transition-colors">+ Nytt schema</button>
+            </div>
+            <div id="defaultSchedulesList" class="space-y-3">
+              <p class="text-text-soft text-center py-8">Laddar...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Default Schedule Modal -->
+        <div id="defaultScheduleModal" class="fixed inset-0 bg-black/50 flex items-start overflow-y-auto justify-center z-50 hidden">
+          <div class="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-2xl w-full my-auto">
+            <div class="flex justify-between items-center mb-4">
+              <h3 id="dsModalTitle" class="text-lg font-heading font-bold text-navy">Nytt standardschema</h3>
+              <button onclick="closeDefaultScheduleModal()" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+            </div>
+            <input type="hidden" id="dsId">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Namn *</label>
+                <input type="text" id="dsName" maxlength="200" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none" placeholder="T.ex. Förskola vardag">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Beskrivning</label>
+                <input type="text" id="dsDescription" maxlength="500" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none" placeholder="T.ex. Typisk dag med förskola">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Ikon</label>
+                <input type="text" id="dsIcon" maxlength="20" value="📋" class="w-20 px-3 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none text-2xl text-center">
+              </div>
+              <div class="flex gap-3">
+                <button onclick="closeDefaultScheduleModal()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold hover:border-navy transition-colors">Avbryt</button>
+                <button onclick="submitDefaultSchedule()" id="dsSubmitBtn" class="flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold transition-colors">Spara</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Schedule Item Edit Modal -->
+        <div id="scheduleItemModal" class="fixed inset-0 bg-black/50 flex items-start overflow-y-auto justify-center z-[70] hidden">
+          <div class="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-2xl w-full my-auto">
+            <div class="flex justify-between items-center mb-4">
+              <h3 id="siModalTitle" class="text-lg font-heading font-bold text-navy">Redigera aktivitet</h3>
+              <button onclick="closeScheduleItemModal()" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+            </div>
+            <input type="hidden" id="siScheduleId">
+            <input type="hidden" id="siItemId">
+            <div class="space-y-4">
+              <div class="grid grid-cols-4 gap-3">
+                <div class="col-span-1">
+                  <label class="block text-sm font-semibold text-navy mb-1">Ikon</label>
+                  <input type="text" id="siIcon" value="📌" maxlength="50"
+                    class="w-full px-3 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none text-center text-2xl">
+                </div>
+                <div class="col-span-3">
+                  <label class="block text-sm font-semibold text-navy mb-1">Namn *</label>
+                  <input type="text" id="siName" maxlength="200" placeholder="T.ex. Borsta tänderna"
+                    class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-semibold text-navy mb-1">Sektion</label>
+                  <select id="siSection" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none bg-white">
+                    <option value="morgon">🌅 Morgon</option>
+                    <option value="dag">☀️ Dag</option>
+                    <option value="kvall">🌙 Kväll</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-navy mb-1">Stjärnvärde</label>
+                  <input type="number" id="siStarValue" value="1" min="1" max="5"
+                    class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none">
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Delsteg (valfritt)</label>
+                <p class="text-xs text-text-soft mb-2">Visuell vägledning för barnet.</p>
+                <div id="siSubStepsList" class="space-y-1 mb-2"></div>
+                <button type="button" onclick="addSiSubStep()" class="text-xs font-semibold text-navy bg-sky hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">+ Delsteg</button>
+              </div>
+              <div id="siMsg" class="text-sm min-h-[1.2em]"></div>
+              <div class="flex gap-3">
+                <button type="button" onclick="closeScheduleItemModal()" class="flex-1 py-3 bg-lavender hover:bg-sky text-navy rounded-xl font-semibold text-sm transition-colors">Avbryt</button>
+                <button type="button" onclick="submitScheduleItem()" id="siSubmitBtn" class="flex-1 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-heading font-bold text-sm transition-colors">Spara</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Default Template Modal -->
+        <div id="defaultTemplateModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-2xl w-full">
+            <div class="flex justify-between items-center mb-4">
+              <h3 id="dtModalTitle" class="text-lg font-heading font-bold text-navy">Ny standardaktivitet</h3>
+              <button onclick="closeDefaultModal()" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+            </div>
+            <input type="hidden" id="dtId">
+            <input type="hidden" id="dtSchemaType" value="">
+            <input type="hidden" id="dtCategory" value="">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Namn *</label>
+                <input type="text" id="dtName" required maxlength="200" placeholder="T.ex. Borsta tänderna"
+                  class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-navy mb-1">Ikon</label>
+                  <input type="text" id="dtIcon" value="📌" maxlength="50"
+                    class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-center text-2xl">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-navy mb-1">Stjärnvärde</label>
+                  <input type="number" id="dtStarValue" value="1" min="1" max="5"
+                    class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Delsteg (valfritt)</label>
+                <p class="text-xs text-text-soft mb-2">Visuell vägledning för barnet. Ikon + namn per steg.</p>
+                <div id="dtSubStepsList" class="space-y-1 mb-2"></div>
+                <button type="button" onclick="addDtSubStep()" class="text-xs font-semibold text-navy bg-sky hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">+ Delsteg</button>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Sorteringsordning</label>
+                <input type="number" id="dtSortOrder" value="0" min="0"
+                  class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+              </div>
+              <div id="dtMsg" class="text-sm min-h-[1.2em]"></div>
+              <div class="flex gap-3">
+                <button type="button" onclick="closeDefaultModal()" class="flex-1 py-3 bg-lavender hover:bg-sky text-navy rounded-xl font-semibold text-sm transition-colors">Avbryt</button>
+                <button type="button" onclick="submitDefaultTemplate()" class="flex-1 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-heading font-bold text-sm transition-colors">Spara</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Default Reward Modal -->
+        <div id="defaultRewardModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-2xl w-full">
+            <div class="flex justify-between items-center mb-4">
+              <h3 id="drModalTitle" class="text-lg font-heading font-bold text-navy">Ny standardbelöning</h3>
+              <button onclick="closeDefaultRewardModal()" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+            </div>
+            <input type="hidden" id="drId">
+            <div class="space-y-4">
+              <div class="grid grid-cols-4 gap-3">
+                <div class="col-span-1">
+                  <label class="block text-sm font-semibold text-navy mb-1">Emoji</label>
+                  <input type="text" id="drIcon" value="🎁" maxlength="50"
+                    class="w-full px-3 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-center text-2xl">
+                </div>
+                <div class="col-span-3">
+                  <label class="block text-sm font-semibold text-navy mb-1">Namn *</label>
+                  <input type="text" id="drName" required maxlength="200" placeholder="T.ex. Extra saga vid läggdags"
+                    class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Stjärnkostnad *</label>
+                <input type="number" id="drStarCost" value="100" min="1"
+                  class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+              </div>
+              <div id="drMsg" class="text-sm min-h-[1.2em]"></div>
+              <div class="flex gap-3">
+                <button type="button" onclick="closeDefaultRewardModal()" class="flex-1 py-3 bg-lavender hover:bg-sky text-navy rounded-xl font-semibold text-sm transition-colors">Avbryt</button>
+                <button type="button" onclick="submitDefaultReward()" class="flex-1 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-heading font-bold text-sm transition-colors">Spara</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ANVÄNDNING — Login statistics per family/user (admin only) -->
+        <div id="anvandningSection" class="mb-8 hidden">
+          <h3 class="text-2xl font-heading font-bold text-navy mb-6">Inloggningsstatistik</h3>
+
+          <!-- Overview totals -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div class="bg-lavender rounded-2xl p-6 border-2 border-lavender">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-text-soft text-sm font-semibold mb-1">BARN — TOTALT INLOGGNINGAR</p>
+                  <p id="loginStatChildTotal" class="text-3xl font-heading font-bold text-navy">&mdash;</p>
+                </div>
+                <span class="text-4xl">&#128103;</span>
+              </div>
+            </div>
+            <div class="bg-mint rounded-2xl p-6 border-2 border-mint">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-text-soft text-sm font-semibold mb-1">FÖRÄLDRAR — TOTALT INLOGGNINGAR</p>
+                  <p id="loginStatParentTotal" class="text-3xl font-heading font-bold text-navy">&mdash;</p>
+                </div>
+                <span class="text-4xl">&#128105;&#8205;&#128188;</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Per-family expandable list -->
+          <div id="loginStatsFamiliesContainer" class="space-y-4">
+            <div class="text-center text-text-soft py-8">Laddar...</div>
+          </div>
+        </div>
+
+        <!-- RETENTION & AKTIVITETSSTATISTIK -->
+        <div id="retentionSection" class="mb-8 hidden">
+          <h3 class="text-2xl font-heading font-bold text-navy mb-2">Churn-risk per familj</h3>
+          <p class="text-text-soft text-sm mb-6">Sorterat efter aktivitetsnivå — röda familjer har störst risk att churna.</p>
+
+          <!-- Status legend -->
+          <div class="flex flex-wrap gap-4 mb-6">
+            <span class="flex items-center gap-2 text-sm font-semibold"><span class="inline-block w-3 h-3 rounded-full bg-green-500"></span>Aktiv (senaste 24h)</span>
+            <span class="flex items-center gap-2 text-sm font-semibold"><span class="inline-block w-3 h-3 rounded-full bg-yellow-400"></span>Varnande (24–72h sedan)</span>
+            <span class="flex items-center gap-2 text-sm font-semibold"><span class="inline-block w-3 h-3 rounded-full bg-red-500"></span>Risk för churn (&gt;72h eller aldrig)</span>
+          </div>
+
+          <!-- Export button -->
+          <div class="flex justify-end mb-4">
+            <button onclick="exportRetentionCSV()" class="flex items-center gap-2 px-4 py-2 bg-navy text-white rounded-xl font-semibold text-sm hover:bg-navy-soft transition-colors">
+              📥 Exportera CSV
+            </button>
+          </div>
+
+          <!-- Retention summary cards -->
+          <div class="grid grid-cols-3 gap-4 mb-6" id="retentionSummary">
+            <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-4 text-center">
+              <p class="text-xs font-semibold text-red-700 mb-1">RISK FÖR CHURN</p>
+              <p id="retentionRedCount" class="text-3xl font-heading font-bold text-red-600">&mdash;</p>
+            </div>
+            <div class="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-4 text-center">
+              <p class="text-xs font-semibold text-yellow-700 mb-1">VARNANDE</p>
+              <p id="retentionYellowCount" class="text-3xl font-heading font-bold text-yellow-600">&mdash;</p>
+            </div>
+            <div class="bg-green-50 border-2 border-green-200 rounded-2xl p-4 text-center">
+              <p class="text-xs font-semibold text-green-700 mb-1">AKTIVA</p>
+              <p id="retentionGreenCount" class="text-3xl font-heading font-bold text-green-600">&mdash;</p>
+            </div>
+          </div>
+
+          <!-- Retention table -->
+          <div class="overflow-x-auto rounded-2xl border-2 border-lavender">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-sky text-text-soft text-xs font-semibold uppercase tracking-wide">
+                  <th class="px-4 py-3 text-left">Status</th>
+                  <th class="px-4 py-3 text-left">Familjenamn</th>
+                  <th class="px-4 py-3 text-left">Senaste aktivitet</th>
+                  <th class="px-4 py-3 text-right">Aktivitetsindex (7 dagar)</th>
+                </tr>
+              </thead>
+              <tbody id="retentionTableBody">
+                <tr><td colspan="4" class="text-center text-text-soft py-8">Laddar...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Activity stats -->
+          <h3 class="text-2xl font-heading font-bold text-navy mt-10 mb-2">Populära aktiviteter</h3>
+          <p class="text-text-soft text-sm mb-6">Hur ofta varje standardaktivitet används i barnens veckoscheman.</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Top 10 used -->
+            <div>
+              <h4 class="text-base font-heading font-bold text-navy mb-3">Topp 10 mest använda</h4>
+              <div class="overflow-x-auto rounded-2xl border-2 border-lavender">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-sky text-text-soft text-xs font-semibold uppercase tracking-wide">
+                      <th class="px-4 py-3 text-left">Aktivitet</th>
+                      <th class="px-4 py-3 text-right">Användningar</th>
+                    </tr>
+                  </thead>
+                  <tbody id="templatesUsedBody">
+                    <tr><td colspan="2" class="text-center text-text-soft py-6">Laddar...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Unused -->
+            <div>
+              <h4 class="text-base font-heading font-bold text-navy mb-3">Oanvända aktiviteter</h4>
+              <div id="templatesUnusedContainer" class="rounded-2xl border-2 border-lavender bg-white min-h-16 p-4">
+                <p class="text-text-soft text-center py-4">Laddar...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PASSWORD CHANGE -->
+        <!-- DAGENS NYHET -->
+        <div id="dagensnyhetSection" class="mb-8 hidden">
+          <h3 class="text-2xl font-heading font-bold text-navy mb-6">Dagens nyhet</h3>
+
+          <!-- Compose -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 mb-8 max-w-2xl">
+            <h4 class="text-lg font-heading font-bold text-navy mb-4">✍️ Publicera ny nyhet</h4>
+            <form id="nyhetForm" class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Titel <span class="text-text-soft font-normal">(max 200 tecken)</span></label>
+                <input type="text" id="nyhetTitle" maxlength="200" required
+                  class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy"
+                  placeholder="T.ex. Ny funktion: bättre notiser 🔔">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Brödtext <span class="text-text-soft font-normal">(max 280 tecken)</span></label>
+                <textarea id="nyhetBody" maxlength="280" required rows="3"
+                  class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy resize-none"
+                  placeholder="Skriv ett kort meddelande till föräldrarna..."></textarea>
+                <p class="text-xs text-text-soft mt-1"><span id="nyhetBodyCount">0</span>/280 tecken</p>
+              </div>
+              <!-- Scheduling -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-navy mb-1">⏰ Publiceras <span class="text-text-soft font-normal">(tomt = nu)</span></label>
+                  <input type="datetime-local" id="nyhetPublishAt"
+                    class="w-full px-4 py-2.5 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy text-sm">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-navy mb-1">🔕 Avpubliceras <span class="text-text-soft font-normal">(tomt = manuellt)</span></label>
+                  <input type="datetime-local" id="nyhetUnpublishAt"
+                    class="w-full px-4 py-2.5 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy text-sm">
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-3 pt-1">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" id="nyhetShowLanding" class="w-5 h-5 rounded accent-gold">
+                  <span class="text-sm font-semibold text-navy">📢 Visa på landningssidan (mystarday.se)</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" id="nyhetSendPush" class="w-5 h-5 rounded accent-gold">
+                  <span class="text-sm font-semibold text-navy">📲 Pusha till inloggade föräldrar (PWA push-notis)</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer" id="nyhetFacebookLabel">
+                  <input type="checkbox" id="nyhetPostToFacebook" class="w-5 h-5 rounded accent-gold">
+                  <span class="text-sm font-semibold text-navy">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#1877F2" style="display:inline;vertical-align:text-bottom;margin-right:3px;" aria-hidden="true"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.514c-1.491 0-1.956.93-1.956 1.884v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+                    Posta till Facebook-sidan
+                    <span id="nyhetFbStatus" class="ml-1 text-xs font-normal text-text-soft">(kontrollerar...)</span>
+                  </span>
+                </label>
+                <!-- Newsletter is now a separate flow under "Nyhetsbrev" in the menu -->
+              </div>
+              <div class="flex items-center gap-3 pt-2 flex-wrap">
+                <button type="submit" id="nyhetSubmitBtn"
+                  class="px-6 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-heading font-bold transition-colors flex items-center gap-2">
+                  <span id="nyhetSubmitLabel">🚀 Publicera</span>
+                </button>
+                <button type="button" id="nyhetDraftBtn" onclick="saveNyhetAsDraft()"
+                  class="px-5 py-3 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded-xl font-heading font-bold transition-colors flex items-center gap-2 border-2 border-yellow-300">
+                  📝 Spara som utkast
+                </button>
+                <button type="button" id="nyhetCancelEditBtn" onclick="cancelNyhetEdit()" class="hidden px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-semibold transition-colors">
+                  Avbryt
+                </button>
+                <span id="nyhetMsg" class="text-sm text-text-soft"></span>
+              </div>
+            </form>
+          </div>
+
+          <!-- History -->
+          <div class="max-w-2xl">
+            <h4 class="text-lg font-heading font-bold text-navy mb-4">📋 Historik</h4>
+            <div id="nyhetHistoryContainer" class="space-y-3">
+              <p class="text-text-soft text-sm">Laddar...</p>
+            </div>
+          </div>
+
+          <!-- Facebook Token Setup -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 mt-8 max-w-2xl" id="fbSetupPanel">
+            <h4 class="text-lg font-heading font-bold text-navy mb-1">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2" style="display:inline;vertical-align:text-bottom;margin-right:4px;" aria-hidden="true"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.514c-1.491 0-1.956.93-1.956 1.884v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+              Facebook-inställningar
+            </h4>
+            <p class="text-text-soft text-xs mb-4">Klistra in ett kortlivat User Access Token (hämtas från Meta Business Suite eller Graph API Explorer) för att generera ett long-lived Page Access Token. Sätt sedan de visade env-variablerna i Render-dashboarden.</p>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">User Access Token (kortlivat)</label>
+                <input type="text" id="fbUserToken" placeholder="EAA..." class="w-full px-4 py-2.5 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy text-sm font-mono">
+              </div>
+              <button id="fbSetupBtn" onclick="doFbSetup()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-colors">
+                Hämta Page Access Token
+              </button>
+              <div id="fbSetupResult" class="hidden bg-navy-soft rounded-xl p-4 text-sm font-mono whitespace-pre-wrap break-all text-navy"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LANDNINGSSIDA -->
+        <div id="landningSection" class="mb-8 hidden">
+          <h3 class="text-2xl font-heading font-bold text-navy mb-6">🌐 Landningssida — Nyheter & Funktionsflaggor</h3>
+          <p class="text-sm text-text-soft mb-6 max-w-xl">Lägg till nyhets- eller funktions-sektioner som visas på landningssidan (mystarday.se). Dra i raderna för att ändra ordning.</p>
+
+          <!-- Add new -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 mb-8 max-w-2xl">
+            <h4 class="text-lg font-heading font-bold text-navy mb-4">➕ Lägg till ny post</h4>
+            <form id="landingNewsForm" class="space-y-4">
+              <input type="hidden" id="lnEditingId" value="">
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Titel <span class="text-red-400">*</span></label>
+                <input type="text" id="lnTitle" required maxlength="200"
+                  class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy"
+                  placeholder="T.ex. Nyhet: Dagformulär för pedagoger ✨">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Brödtext</label>
+                <textarea id="lnBody" rows="3" maxlength="500"
+                  class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy resize-none"
+                  placeholder="Valfri brödtext..."></textarea>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Bild</label>
+                <div class="flex items-center gap-2">
+                  <input type="url" id="lnImageUrl" maxlength="500"
+                    class="flex-1 px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy"
+                    placeholder="https://pub-...r2.dev/... (eller välj från bildbank)">
+                  <button type="button" onclick="pickImageFromBank()"
+                    class="px-4 py-3 bg-sky hover:bg-lavender text-navy rounded-xl font-semibold text-sm transition-colors flex-shrink-0"
+                    title="Välj från bildbank">
+                    🖼️ Bildbank
+                  </button>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-navy mb-1">Knapp-text</label>
+                  <input type="text" id="lnButtonText" maxlength="50" value="Läs mer"
+                    class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-navy mb-1">Knapp-URL</label>
+                  <input type="url" id="lnButtonUrl" maxlength="500"
+                    class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy"
+                    placeholder="https://...">
+                </div>
+              </div>
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="lnIsActive" checked class="w-5 h-5 rounded accent-gold">
+                <span class="text-sm font-semibold text-navy">Aktiverad (syns på landningssidan)</span>
+              </label>
+              <div class="flex items-center gap-3 pt-2 flex-wrap">
+                <button type="submit" id="lnSubmitBtn"
+                  class="px-6 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-heading font-bold transition-colors">
+                  Spara
+                </button>
+                <button type="button" onclick="cancelLandingNewsEdit()"
+                  class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-navy rounded-xl font-semibold transition-colors hidden" id="lnCancelBtn">
+                  Avbryt
+                </button>
+              </div>
+              <p id="lnStatus" class="text-sm hidden"></p>
+            </form>
+          </div>
+
+          <!-- List -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 max-w-3xl">
+            <h4 class="text-lg font-heading font-bold text-navy mb-4">📋 Befintliga poster</h4>
+            <div id="landingNewsList">
+              <p class="text-text-soft text-sm italic">Laddar...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- BILDBANK -->
+        <div id="bildbankSection" class="mb-8 hidden">
+          <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+            <div>
+              <h3 class="text-2xl font-heading font-bold text-navy">🖼️ Bildbank</h3>
+              <p class="text-text-soft text-sm mt-1">Uppladdade bilder för användning i nyheter och landningssida. JPG, PNG, WebP — max 5 MB.</p>
+            </div>
+          </div>
+
+          <!-- Upload widget -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 mb-8 max-w-2xl" id="imageBankUpload">
+            <h4 class="text-lg font-heading font-bold text-navy mb-4">➕ Ladda upp bild</h4>
+            <div class="border-2 border-dashed border-lavender rounded-xl p-8 text-center hover:border-gold transition-colors cursor-pointer"
+                 id="imageBankDropzone" onclick="document.getElementById('imageBankFileInput').click()">
+              <input type="file" id="imageBankFileInput" accept="image/jpeg,image/png,image/webp" class="hidden"
+                     onchange="handleImageBankFile(this.files[0])">
+              <div id="imageBankDropzoneText">
+                <p class="text-3xl mb-2">📷</p>
+                <p class="font-semibold text-navy text-sm">Dra bild hit eller klicka för att välja</p>
+                <p class="text-xs text-text-soft mt-1">JPG, PNG, WebP — max 5 MB</p>
+              </div>
+              <div id="imageBankPreview" class="hidden">
+                <img id="imageBankPreviewImg" src="" class="max-h-40 mx-auto rounded-xl mb-3">
+                <p class="text-sm text-text-soft" id="imageBankFileName"></p>
+              </div>
+            </div>
+            <div id="imageBankDropError" class="hidden text-sm p-3 rounded-xl bg-red-50 text-red-600 mt-3"></div>
+            <button id="imageBankUploadBtn" onclick="uploadAdminImage()"
+              class="mt-4 px-6 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-heading font-bold transition-colors disabled:opacity-50"
+              disabled>
+              Ladda upp
+            </button>
+            <p id="imageBankUploadStatus" class="text-sm mt-2 hidden"></p>
+          </div>
+
+          <!-- Image grid -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 max-w-5xl">
+            <h4 class="text-lg font-heading font-bold text-navy mb-4">📋 Uppladdade bilder</h4>
+            <div id="adminImageGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <p class="text-text-soft text-sm italic col-span-full" id="adminImageEmptyState">Laddar...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- INTRESSEANMÄLNINGAR -->
+        <div id="intresseanmalningarSection" class="mb-8 hidden">
+          <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+            <div>
+              <h3 class="text-2xl font-heading font-bold text-navy">🎓 Intresseanmälningar</h3>
+              <p class="text-text-soft text-sm mt-1">Professionella som anmält intresse via pedagogsidan. Senaste anmälningar visas först.</p>
+            </div>
+            <div class="flex gap-3 items-center">
+              <button id="interestsExportCsv" class="px-4 py-2 bg-navy text-white rounded-xl text-sm font-semibold hover:bg-navy-soft transition-colors flex items-center gap-2" style="min-height:44px;">
+                ⬇ CSV
+              </button>
+              <button id="interestsRefreshBtn" class="px-4 py-2 bg-gold text-navy rounded-xl text-sm font-semibold hover:bg-yellow-400 transition-colors flex items-center gap-2" style="min-height:44px;">
+                ↺ Uppdatera
+              </button>
+            </div>
+          </div>
+          <div id="interestsContainer">
+            <p class="text-text-soft text-sm">Laddar...</p>
+          </div>
+          <div id="interestsPagination" class="flex items-center justify-between mt-4 flex-wrap gap-3"></div>
+        </div>
+
+        <!-- Professional interests delete modal -->
+        <div id="interestsDeleteModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 border-2 border-coral">
+            <h4 class="text-lg font-heading font-bold text-navy mb-2">Radera intresseanmälan?</h4>
+            <p class="text-text-soft text-sm mb-1">Du håller på att radera denna anmälan.</p>
+            <p class="text-xs text-text-soft mb-6">Detta kan inte ångras.</p>
+            <div class="flex gap-3 justify-end">
+              <button onclick="hideInterestsDeleteModal()" class="px-4 py-2 bg-gray-100 text-text-soft rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors" style="min-height:44px;">Avbryt</button>
+              <button id="interestsDeleteConfirmBtn" onclick="executeInterestsDelete()" class="px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors" style="min-height:44px;">Radera</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- WAITLIST SECTION -->
+        <div id="waitlistSection" class="mb-8 hidden">
+          <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+            <div>
+              <h3 class="text-2xl font-heading font-bold text-navy">📋 Waitlist — English Signups</h3>
+              <p class="text-text-soft text-sm mt-1">Engelska landningssidans waitlist + svar på pain-point-frågor.</p>
+            </div>
+            <div class="flex gap-3 items-center">
+              <button id="waitlistExportCsv" class="px-4 py-2 bg-navy text-white rounded-xl text-sm font-semibold hover:bg-navy-soft transition-colors flex items-center gap-2">
+                ⬇ CSV
+              </button>
+              <button id="waitlistRefreshBtn" class="px-4 py-2 bg-gold text-navy rounded-xl text-sm font-semibold hover:bg-yellow-400 transition-colors flex items-center gap-2">
+                ↺ Uppdatera
+              </button>
+            </div>
+          </div>
+
+          <!-- Stats row -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="waitlistStatsRow">
+            <div class="bg-sky rounded-2xl p-4 border-2 border-lavender">
+              <p class="text-text-soft text-xs font-semibold mb-1">TOTALT</p>
+              <p id="wlTotal" class="text-2xl font-heading font-bold text-navy">—</p>
+            </div>
+            <div class="bg-mint rounded-2xl p-4 border-2 border-mint">
+              <p class="text-text-soft text-xs font-semibold mb-1">SLUTFÖRDA</p>
+              <p id="wlCompleted" class="text-2xl font-heading font-bold text-navy">—</p>
+            </div>
+            <div class="bg-lavender rounded-2xl p-4 border-2 border-lavender">
+              <p class="text-text-soft text-xs font-semibold mb-1">ÖVERSKIPPADE</p>
+              <p id="wlSkipped" class="text-2xl font-heading font-bold text-navy">—</p>
+            </div>
+            <div class="bg-coral rounded-2xl p-4 border-2 border-coral">
+              <p class="text-text-soft text-xs font-semibold mb-1">EJ SVARAT</p>
+              <p id="wlPending" class="text-2xl font-heading font-bold text-navy">—</p>
+            </div>
+          </div>
+
+          <!-- Q1 distribution -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 mb-6 max-w-2xl" id="waitlistQ1Panel">
+            <h4 class="font-heading font-bold text-navy mb-1">📊 Q1: Största struggle</h4>
+            <p class="text-text-soft text-xs mb-4">Fördelning bland slutförda svar (flerval — summerar &gt;100%)</p>
+            <div id="wlQ1Bars" class="space-y-2"></div>
+          </div>
+
+          <!-- Q2 distribution -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 mb-6 max-w-2xl" id="waitlistQ2Panel">
+            <h4 class="font-heading font-bold text-navy mb-1">📊 Q2: Nuvarande metod</h4>
+            <p class="text-text-soft text-xs mb-4">Fördelning bland slutförda svar</p>
+            <div id="wlQ2Bars" class="space-y-2"></div>
+          </div>
+
+          <!-- Search -->
+          <div class="mb-4">
+            <input type="text" id="waitlistSearch" placeholder="🔍 Sök namn eller e-post..."
+              class="w-full sm:w-80 px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-sm">
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto rounded-2xl border-2 border-lavender">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-sky text-text-soft text-xs font-semibold uppercase tracking-wide">
+                  <th class="px-4 py-3 text-left">#</th>
+                  <th class="px-4 py-3 text-left">Namn</th>
+                  <th class="px-4 py-3 text-left">E-post</th>
+                  <th class="px-4 py-3 text-left">Datum</th>
+                  <th class="px-4 py-3 text-left">Q1 (struggle)</th>
+                  <th class="px-4 py-3 text-left">Q2 (metod)</th>
+                  <th class="px-4 py-3 text-left">Status</th>
+                  <th class="px-4 py-3 text-left">Radera</th>
+                </tr>
+              </thead>
+              <tbody id="waitlistTableBody">
+                <tr><td colspan="8" class="text-center text-text-soft py-8">Laddar...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div id="waitlistPagination" class="flex items-center justify-between mt-4 flex-wrap gap-3"></div>
+        </div>
+
+        
+        <div id="prenumerationSection" class="mb-8 hidden">
+          <h3 class="text-2xl font-heading font-bold text-navy mb-6">💳 Prenumerationsinställningar</h3>
+
+          <!-- Basic settings -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 mb-6 max-w-2xl">
+            <h4 class="text-lg font-heading font-bold text-navy mb-4">🟢 Basic (grundpaket)</h4>
+
+            <!-- Stripe product status -->
+            <div id="stripeStatusCard" class="mb-4 p-4 rounded-xl bg-gray-50 border border-gray-200">
+              <div class="flex items-center flex-wrap gap-2">
+                <div>
+                  <p class="text-sm font-semibold text-navy" id="stripeStatusLabel">Stripe-produkt: Ej skapad</p>
+                  <p class="text-xs text-text-soft mt-0.5" id="stripeStatusHint">Konfigurera betalning via Polsias instrumentpanel (inte här).</p>
+                </div>
+              </div>
+            </div>
+
+            <form id="basicSettingsForm" class="space-y-4">
+              <div class="flex items-center gap-4">
+                <label class="text-sm font-semibold text-navy whitespace-nowrap">Pris:</label>
+                <input type="number" id="basicPriceInput" min="0" step="1" class="w-24 px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none text-center">
+                <span class="text-sm text-text-soft">kr/månad</span>
+              </div>
+              <div class="flex items-center gap-4">
+                <label class="text-sm font-semibold text-navy whitespace-nowrap">Trial:</label>
+                <input type="number" id="basicTrialInput" min="0" step="1" class="w-24 px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none text-center">
+                <span class="text-sm text-text-soft">dagar</span>
+              </div>
+              <button type="submit" class="px-6 py-2 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-bold transition-colors text-sm">
+                Spara Basic-inställningar
+              </button>
+              <div id="basicSettingsMsg" class="text-sm min-h-[1.4em]"></div>
+            </form>
+          </div>
+
+          <!-- Add-ons -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 mb-6 max-w-2xl">
+            <h4 class="text-lg font-heading font-bold text-navy mb-4">🏷️ Add-ons</h4>
+            <div id="addonsList" class="space-y-4 mb-4">
+              <p class="text-text-soft text-sm italic" id="addonsEmptyMsg">Inga add-ons ännu — lägg till nedan</p>
+            </div>
+            <button id="showAddAddonFormBtn" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-bold text-sm transition-colors">
+              + Lägg till add-on
+            </button>
+            <!-- Add-on form -->
+            <form id="addAddonForm" class="space-y-3 mt-4 hidden">
+              <div>
+                <label class="block text-xs font-semibold text-navy mb-1">Namn</label>
+                <input type="text" id="addonName" required class="w-full px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none text-sm" placeholder="t.ex. Rapportering">
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="flex-1">
+                  <label class="block text-xs font-semibold text-navy mb-1">Pris (kr/månad)</label>
+                  <input type="number" id="addonPrice" required min="0" class="w-full px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none text-sm">
+                </div>
+                <div class="flex items-center gap-2 pt-5">
+                  <label class="text-xs font-semibold text-navy">Aktiverad</label>
+                  <input type="checkbox" id="addonActive" class="w-5 h-5 accent-gold">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-navy mb-1">Beskrivning (valfritt)</label>
+                <input type="text" id="addonDesc" class="w-full px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none text-sm" placeholder="Kort beskrivning...">
+              </div>
+              <div class="flex gap-2">
+                <button type="submit" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-bold text-sm transition-colors">Spara</button>
+                <button type="button" id="cancelAddAddonBtn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-navy rounded-xl font-bold text-sm transition-colors">Avbryt</button>
+              </div>
+              <div id="addAddonMsg" class="text-sm"></div>
+            </form>
+          </div>
+
+          <!-- Payment toggle -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 max-w-2xl">
+            <h4 class="text-lg font-heading font-bold text-navy mb-4">💳 Betalning aktiverad</h4>
+            <div class="flex items-center gap-4 mb-2">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="paymentEnabledToggle" class="sr-only peer">
+                <div class="w-14 h-8 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:bg-gold"></div>
+              </label>
+              <span id="paymentToggleLabel" class="text-sm font-semibold text-navy">AV</span>
+            </div>
+            <p class="text-xs text-text-soft">Av = nya användare registrerar gratis &nbsp;|&nbsp; På = 14 dagars trial → betalning</p>
+            <div id="paymentToggleMsg" class="text-sm mt-2"></div>
+          </div>
+        </div>
+
+        <div id="passwordSection" class="mb-8 hidden">
+          <h3 class="text-2xl font-heading font-bold text-navy mb-6">Kontoinställningar</h3>
+
+          <!-- Change password -->
+          <h4 class="text-xl font-heading font-bold text-navy mb-4">Byt lösenord</h4>
+          <div class="max-w-md">
+            <form id="passwordForm" class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Nuvarande lösenord</label>
+                <input type="password" id="currentPw" required class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Nytt lösenord</label>
+                <input type="password" id="newPw" required minlength="8" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Bekräfta nytt lösenord</label>
+                <input type="password" id="confirmPw" required minlength="8" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+              </div>
+              <button type="submit" class="w-full px-4 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-heading font-bold transition-colors">
+                Byt lösenord
+              </button>
+              <div id="pwMsg" class="text-sm min-h-[1.4em]"></div>
+            </form>
+          </div>
+
+          <!-- Create new admin -->
+          <div class="mt-8 pt-8 border-t border-lavender">
+            <h4 class="text-xl font-heading font-bold text-navy mb-4">Skapa ny admin</h4>
+            <div class="max-w-md">
+              <form id="createAdminForm" class="space-y-4">
+                <div>
+                  <label class="block text-sm font-semibold text-navy mb-1">E-post (obligatorisk)</label>
+                  <input type="email" id="adminEmail" required class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors" placeholder="admin@example.com">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-navy mb-1">Lösenord (obligatoriskt, minst 8 tecken)</label>
+                  <input type="password" id="adminPassword" required minlength="8" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-navy mb-1">Namn (valfritt)</label>
+                  <input type="text" id="adminName" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors" placeholder="Förnamn Efternamn">
+                </div>
+                <button type="submit" class="w-full px-4 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-heading font-bold transition-colors">
+                  Skapa admin
+                </button>
+                <div id="createAdminMsg" class="text-sm min-h-[1.4em]"></div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div id="nyhetsbrevSection" class="mb-8 hidden">
+          <h3 class="text-2xl font-heading font-bold text-navy mb-6">Nyhetsbrev</h3>
+
+          <!-- Compose new newsletter -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 mb-8 max-w-2xl">
+            <h4 class="text-lg font-heading font-bold text-navy mb-4">✍️ Skapa nytt nyhetsbrev</h4>
+            <form id="newsletterComposeForm" class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Ämnesrad <span class="text-text-soft font-normal">(max 500 tecken)</span></label>
+                <input type="text" id="newsletterSubject" maxlength="500" required
+                  class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy"
+                  placeholder="T.ex. Nytt i Min Stjärndag — maj 2026 ⭐">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">
+                  Brödtext
+                  <span class="text-text-soft font-normal">(fritext, minst 10 tecken — dubbla radbrytningar = nytt stycke, **fetstil**)</span>
+                </label>
+                <textarea id="newsletterBody" required rows="12" minlength="10"
+                  class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy resize-y font-body text-sm leading-relaxed"
+                  placeholder="Skriv ditt nyhetsbrev här...
+
+Använd dubbla radbrytningar för nya stycken.
+
+**Fetstil** fungerar med dubbla asterisker."></textarea>
+                <p class="text-xs text-text-soft mt-1"><span id="newsletterBodyCount">0</span> tecken</p>
+              </div>
+              <div class="flex items-center gap-3 pt-2">
+                <button type="submit" id="newsletterComposeBtn"
+                  class="px-6 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-heading font-bold transition-colors flex items-center gap-2">
+                  <span id="newsletterComposeLabel">📋 Spara utkast &amp; välj mottagare</span>
+                </button>
+                <span id="newsletterComposeMsg" class="text-sm text-text-soft"></span>
+              </div>
+            </form>
+          </div>
+
+          <!-- Newsletter send history -->
+          <div class="mb-10 max-w-2xl">
+            <h4 class="text-lg font-heading font-bold text-navy mb-4">📋 Skickade nyhetsbrev</h4>
+            <div id="newsletterHistoryContainer" class="space-y-3">
+              <p class="text-text-soft text-sm">Laddar historik...</p>
+            </div>
+          </div>
+
+          <!-- Subscriber stats + management -->
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-lg font-heading font-bold text-navy">👥 Prenumeranter</h4>
+              <button id="newsletterExportBtn" class="px-5 py-2.5 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-heading font-bold text-sm transition-colors flex items-center gap-2">
+                <span>⬇️</span> Exportera e-postlista (CSV)
+              </button>
+            </div>
+
+            <!-- Stats cards -->
+            <div class="grid grid-cols-3 gap-4 mb-6">
+              <div class="bg-mint rounded-2xl p-5 border-2 border-mint">
+                <p class="text-text-soft text-xs font-semibold mb-1">AKTIVA</p>
+                <p id="newsletterActiveCount" class="text-2xl font-heading font-bold text-navy">&mdash;</p>
+              </div>
+              <div class="bg-coral rounded-2xl p-5 border-2 border-coral">
+                <p class="text-text-soft text-xs font-semibold mb-1">AVSLUTADE</p>
+                <p id="newsletterInactiveCount" class="text-2xl font-heading font-bold text-navy">&mdash;</p>
+              </div>
+              <div class="bg-sky rounded-2xl p-5 border-2 border-lavender">
+                <p class="text-text-soft text-xs font-semibold mb-1">TOTALT</p>
+                <p id="newsletterTotalCount" class="text-2xl font-heading font-bold text-navy">&mdash;</p>
+              </div>
+            </div>
+
+            <!-- Filter tabs -->
+            <div class="flex gap-2 mb-4">
+              <button id="newsletterFilterActive" onclick="filterNewsletterSubs('active')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-gold text-navy">Aktiva</button>
+              <button id="newsletterFilterInactive" onclick="filterNewsletterSubs('inactive')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-100 text-text-soft hover:bg-gray-200">Avslutade</button>
+              <button id="newsletterFilterAll" onclick="filterNewsletterSubs('all')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-100 text-text-soft hover:bg-gray-200">Alla</button>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-left border-b-2 border-lavender">
+                    <th class="pb-3 pr-4 font-semibold text-text-soft">Namn</th>
+                    <th class="pb-3 pr-4 font-semibold text-text-soft">E-post</th>
+                    <th class="pb-3 pr-4 font-semibold text-text-soft cursor-pointer select-none" onclick="sortNewsletterSubs('subscribed_at')">Prenumererar sedan ↕</th>
+                    <th class="pb-3 font-semibold text-text-soft">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="newsletterTableBody">
+                  <tr><td colspan="4" class="py-8 text-center text-text-soft">Laddar...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- VÄLKOMSTMAIL SECTION -->
+        <div id="valkomstmailSection" class="mb-8 hidden">
+          <h3 class="text-2xl font-heading font-bold text-navy mb-6">Välkomstmail</h3>
+
+          <!-- Editor -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 mb-6 max-w-3xl">
+            <h4 class="text-lg font-heading font-bold text-navy mb-4">✏️ Redigera mall</h4>
+
+            <div class="space-y-4">
+              <!-- Active toggle -->
+              <div class="flex items-center gap-3">
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="welcomeEmailActive" class="sr-only peer">
+                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gold rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold"></div>
+                </label>
+                <label for="welcomeEmailActive" class="text-sm font-semibold text-navy cursor-pointer">
+                  Välkomstmail aktiverad
+                </label>
+                <span id="welcomeEmailActiveStatus" class="text-xs text-text-soft"></span>
+              </div>
+
+              <!-- Subject -->
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Rubrik</label>
+                <input type="text" id="welcomeEmailSubject"
+                  class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy"
+                  placeholder="T.ex. Välkommen till Min Stjärndag! 🌟">
+              </div>
+
+              <!-- Body -->
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">
+                  Brödtext
+                  <span class="text-text-soft font-normal ml-1">(radbrytningar och **fetstil** stöds)</span>
+                </label>
+                <textarea id="welcomeEmailBody" rows="14"
+                  class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-navy font-mono text-sm"
+                  placeholder="Skriv mailets brödtext här..."></textarea>
+                <p class="text-xs text-text-soft mt-1">
+                  Variabler: <code class="bg-sky px-1 rounded">&#123;&#123;foralderns_namn&#125;&#125;</code>
+                  <span class="ml-2">Använd <code class="bg-sky px-1 rounded">**text**</code> för fetstil.</span>
+                </p>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex gap-3 pt-2">
+                <button onclick="saveWelcomeEmailTemplate()" class="px-5 py-2.5 bg-gold text-navy rounded-xl font-semibold hover:bg-amber-400 transition-colors">
+                  💾 Spara ändringar
+                </button>
+                <button onclick="loadWelcomeEmailTemplate()" class="px-5 py-2.5 bg-sky text-navy rounded-xl font-semibold hover:bg-lavender transition-colors">
+                  ↺ Återställ
+                </button>
+              </div>
+
+              <!-- Status message -->
+              <div id="welcomeEmailStatus" class="hidden text-sm font-semibold p-3 rounded-xl"></div>
+            </div>
+          </div>
+
+          <!-- Preview -->
+          <div class="bg-white rounded-2xl border-2 border-lavender p-6 max-w-3xl">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-lg font-heading font-bold text-navy">👁️ Förhandsgranskning</h4>
+              <button onclick="updateWelcomeEmailPreview()" class="px-4 py-2 bg-sky text-navy rounded-xl text-sm font-semibold hover:bg-lavender transition-colors">
+                Uppdatera
+              </button>
+            </div>
+            <p class="text-text-soft text-sm mb-4">Förhandsgranskning med exempeldata — variabler ersätts med "Anna" och "Stjärndag".</p>
+            <div id="welcomeEmailPreview" class="bg-gray-50 rounded-xl p-4 text-sm text-text-soft border border-gray-200 min-h-48">
+              Laddar förhandsgranskning...
+            </div>
+          </div>
+        </div>
+
+        <!-- ANALYTICS SECTION -->
+        <div id="analyticsSection" class="hidden mb-8">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="text-2xl font-heading font-bold text-navy">Analytics</h3>
+              <p class="text-text-soft text-sm mt-1">KPI:er, onboarding-tratt och feature-popularitet</p>
+            </div>
+            <button onclick="triggerSnapshot()" class="px-4 py-2 bg-navy text-white rounded-xl text-sm font-semibold hover:bg-navy-soft transition-colors">
+              ↺ Uppdatera snapshot
+            </button>
+          </div>
+          <div id="analyticsContainer">
+            <p class="text-text-soft text-sm">Klicka på Analytics i menyn för att ladda data.</p>
+          </div>
+        </div>
+
+        <!-- ANVÄNDARSTATISTIK SECTION -->
+        <div id="anvandarstatistikSection" class="hidden mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-2xl font-heading font-bold text-navy">Användarstatistik</h3>
+              <p class="text-text-soft text-sm mt-1">Föräldrar · Barn · Pedagoger & Terapeuter</p>
+            </div>
+            <button onclick="loadUserStats()" class="px-4 py-2 bg-navy text-white rounded-xl text-sm font-semibold hover:bg-navy-soft transition-colors">
+              ↺ Uppdatera
+            </button>
+          </div>
+          <div id="userStatsContainer">
+            <p class="text-text-soft text-sm py-8 text-center">Laddar...</p>
+          </div>
+        </div>
+
+        <!-- SURVEYS SECTION -->
+        <div id="undersokningarSection" class="hidden mb-8">
+          <h3 class="text-2xl font-heading font-bold text-navy mb-2">Undersökningar</h3>
+          <p class="text-text-soft text-sm mb-6">Skapa och hantera enkäter. Kortlänk: mystarday.se/tyck/[slug]</p>
+
+          <!-- List view -->
+          <div id="surveysListView">
+            <div id="surveysListContainer">
+              <p class="text-text-soft text-sm">Laddar enkäter…</p>
+            </div>
+            <!-- Comparison shortcut -->
+            <div class="mt-4">
+              <button onclick="openComparison()" class="px-4 py-2 bg-lavender text-navy text-sm font-semibold rounded-xl hover:bg-sky transition">⚖️ Jämför enkäter</button>
+            </div>
+          </div>
+
+          <!-- Editor view (hidden until survey selected) -->
+          <div id="surveysEditorView" class="hidden"></div>
+
+          <!-- Rapport view (hidden until rapport opened) -->
+          <div id="surveysRapportView" class="hidden">
+            <div class="mb-6 flex items-center gap-3">
+              <button onclick="closeRapport()" class="p-2 rounded-xl hover:bg-sky transition text-navy">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <h4 class="font-heading font-bold text-navy text-xl">Rapport</h4>
+            </div>
+            <div id="rapportContainer"></div>
+          </div>
+
+          <!-- Comparison view (hidden until opened) -->
+          <div id="surveysComparisonView" class="hidden">
+            <div class="mb-6 flex items-center gap-3">
+              <button onclick="closeComparison()" class="p-2 rounded-xl hover:bg-sky transition text-navy">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <h4 class="font-heading font-bold text-navy text-xl">Jämförelsevy</h4>
+            </div>
+            <div id="comparisonContainer"></div>
+          </div>
+        </div>
+
+        <!-- EMAIL TEMPLATES SECTION -->
+        <div id="emailmallarSection" class="hidden mb-8">
+          <h3 class="text-2xl font-heading font-bold text-navy mb-2">📧 Email-mallar</h3>
+          <p class="text-text-soft text-sm mb-6">Redigera de fyra inbyggda emailmallarna. Stöder <code class="bg-lavender px-1 rounded text-xs">**fetstil**</code> och variabelsubstitution.</p>
+          <div id="emailTemplatesContainer">
+            <p class="text-text-soft text-sm">Laddar mallar…</p>
+          </div>
+        </div>
+
+        <!-- EMAIL LOG SECTION -->
+        <div id="emaillogSection" class="hidden mb-8">
+          <h3 class="text-2xl font-heading font-bold text-navy mb-2">📤 Email-logg</h3>
+          <p class="text-text-soft text-sm mb-6">Historik över alla skickade mejl och väntande godkännanden för win-back.</p>
+          <div id="emailLogContainer">
+            <p class="text-text-soft text-sm">Laddar logg…</p>
+          </div>
+        </div>
+
+        <!-- SURVEY META MODAL -->
+        <div id="surveyMetaModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-heading font-bold text-navy mb-4">Enkätinfo</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="text-sm font-semibold text-navy mb-1 block">Titel *</label>
+                <input id="surveyMetaTitle" type="text" placeholder="Aktiva användare — din upplevelse"
+                  class="w-full border border-lavender rounded-xl px-4 py-2 focus:outline-none focus:border-gold">
+              </div>
+              <div>
+                <label class="text-sm font-semibold text-navy mb-1 block">Slug * (URL-del)</label>
+                <input id="surveyMetaSlug" type="text" placeholder="aktiva-anvandare"
+                  class="w-full border border-lavender rounded-xl px-4 py-2 focus:outline-none focus:border-gold font-mono text-sm">
+                <p class="text-xs text-text-soft mt-1">mystarday.se/tyck/[slug]</p>
+              </div>
+              <div>
+                <label class="text-sm font-semibold text-navy mb-1 block">Beskrivning</label>
+                <textarea id="surveyMetaDesc" rows="2" placeholder="Kort beskrivning visas för respondenten"
+                  class="w-full border border-lavender rounded-xl px-4 py-2 focus:outline-none focus:border-gold resize-none"></textarea>
+              </div>
+              <div>
+                <label class="text-sm font-semibold text-navy mb-1 block">Målgrupp-tagg</label>
+                <input id="surveyMetaTag" type="text" placeholder="Målgrupp A — Aktiva användare"
+                  class="w-full border border-lavender rounded-xl px-4 py-2 focus:outline-none focus:border-gold">
+              </div>
+              <div>
+                <label class="text-sm font-semibold text-navy mb-1 block">Stängs automatiskt (valfritt)</label>
+                <input id="surveyMetaClosesAt" type="datetime-local"
+                  class="w-full border border-lavender rounded-xl px-4 py-2 focus:outline-none focus:border-gold">
+              </div>
+              <hr class="border-lavender">
+              <p class="text-sm font-semibold text-navy">Tack-sida</p>
+              <div>
+                <label class="text-sm text-text-soft mb-1 block">Meddelande</label>
+                <textarea id="surveyMetaThankyou" rows="2" placeholder="Tack för ditt svar!"
+                  class="w-full border border-lavender rounded-xl px-4 py-2 focus:outline-none focus:border-gold resize-none"></textarea>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-sm text-text-soft mb-1 block">CTA-knapptext</label>
+                  <input id="surveyMetaCtaText" type="text" placeholder="Gå till appen"
+                    class="w-full border border-lavender rounded-xl px-4 py-2 focus:outline-none focus:border-gold text-sm">
+                </div>
+                <div>
+                  <label class="text-sm text-text-soft mb-1 block">CTA-länk</label>
+                  <input id="surveyMetaCtaUrl" type="text" placeholder="/dashboard"
+                    class="w-full border border-lavender rounded-xl px-4 py-2 focus:outline-none focus:border-gold text-sm">
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-3 justify-end mt-6">
+              <button onclick="closeMetaModal()" class="px-4 py-2 bg-sky text-navy rounded-xl font-semibold hover:bg-lavender transition">Avbryt</button>
+              <button onclick="saveMetaModal()" class="px-5 py-2 bg-gold text-navy rounded-xl font-semibold hover:bg-gold/80 transition">Spara</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- QUESTION EDITOR MODAL -->
+        <div id="questionModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-heading font-bold text-navy mb-4">Redigera fråga</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="text-sm font-semibold text-navy mb-1 block">Frågetext *</label>
+                <textarea id="qModalText" rows="3" placeholder="Skriv din fråga här…"
+                  class="w-full border border-lavender rounded-xl px-4 py-2 focus:outline-none focus:border-gold resize-none"></textarea>
+              </div>
+              <div>
+                <label class="text-sm font-semibold text-navy mb-1 block">Frågetyp</label>
+                <select id="qModalType" onchange="updateQuestionModalUI(this.value)"
+                  class="w-full border border-lavender rounded-xl px-4 py-2 focus:outline-none focus:border-gold bg-white">
+                  <option value="radio">Välj ett (radio)</option>
+                  <option value="checkbox">Flerval (checkbox)</option>
+                  <option value="text_short">Kort fritext</option>
+                  <option value="text_long">Lång fritext</option>
+                  <option value="scale">Skala 1–5</option>
+                </select>
+              </div>
+              <label class="flex items-center gap-2 text-sm text-navy cursor-pointer">
+                <input type="checkbox" id="qModalRequired" checked class="w-4 h-4"> Obligatorisk fråga
+              </label>
+
+              <!-- Options (radio/checkbox) -->
+              <div id="qModalOptionsSection">
+                <label class="text-sm font-semibold text-navy mb-2 block">Svarsalternativ</label>
+                <div id="qModalOptions" class="space-y-2 mb-3"></div>
+                <button type="button" onclick="addOptionRow()" class="text-sm text-gold font-semibold hover:underline">+ Lägg till alternativ</button>
+              </div>
+
+              <!-- Scale config -->
+              <div id="qModalScaleSection" class="hidden">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-xs text-text-soft mb-1 block">Min-värde</label>
+                    <input id="qModalScaleMin" type="number" value="1" min="1" max="3"
+                      class="w-full border border-lavender rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gold">
+                  </div>
+                  <div>
+                    <label class="text-xs text-text-soft mb-1 block">Max-värde</label>
+                    <input id="qModalScaleMax" type="number" value="5" min="3" max="10"
+                      class="w-full border border-lavender rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gold">
+                  </div>
+                  <div>
+                    <label class="text-xs text-text-soft mb-1 block">Min-etikett</label>
+                    <input id="qModalScaleMinLabel" type="text" placeholder="t.ex. Inte alls"
+                      class="w-full border border-lavender rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gold">
+                  </div>
+                  <div>
+                    <label class="text-xs text-text-soft mb-1 block">Max-etikett</label>
+                    <input id="qModalScaleMaxLabel" type="text" placeholder="t.ex. Absolut"
+                      class="w-full border border-lavender rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gold">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-3 justify-end mt-6">
+              <button onclick="closeQuestionModal()" class="px-4 py-2 bg-sky text-navy rounded-xl font-semibold hover:bg-lavender transition">Avbryt</button>
+              <button onclick="saveQuestionModal()" class="px-5 py-2 bg-gold text-navy rounded-xl font-semibold hover:bg-gold/80 transition">Spara fråga</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- QR MODAL -->
+        <div id="qrModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl text-center">
+            <h3 class="text-xl font-heading font-bold text-navy mb-4">QR-kod</h3>
+            <img id="qrImage" src="" alt="QR-kod" class="mx-auto mb-4 rounded-xl w-48 h-48 border border-lavender">
+            <p id="qrUrl" class="text-xs text-text-soft font-mono mb-4 break-all"></p>
+            <div class="flex gap-3 justify-center">
+              <a id="qrDownloadLink" href="" download="qr.png" class="px-4 py-2 bg-gold text-navy rounded-xl font-semibold text-sm hover:bg-gold/80 transition">⬇ Ladda ner</a>
+              <button onclick="closeQRModal()" class="px-4 py-2 bg-sky text-navy rounded-xl font-semibold text-sm hover:bg-lavender transition">Stäng</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESPONSES MODAL -->
+        <div id="responsesModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-heading font-bold text-navy">Inskickade svar</h3>
+              <button onclick="closeResponsesModal()" class="text-text-soft hover:text-navy">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div id="responsesContainer" class="overflow-y-auto flex-1"></div>
+          </div>
+        </div>
+
+        <!-- BILDBANK PICKER MODAL (for landing news) -->
+        <div id="imageBankModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-2xl p-6 max-w-3xl w-full mx-4 shadow-2xl max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-heading font-bold text-navy">🖼️ Välj bild</h3>
+              <button onclick="closeImageBankModal()" class="text-text-soft hover:text-navy">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <p class="text-sm text-text-soft mb-4">Klicka på en bild för att välja den. <a href="#bildbank" onclick="closeImageBankModal()" class="text-gold hover:underline">Ladda upp fler →</a></p>
+            <div id="imageBankPickerGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-3 overflow-y-auto flex-1">
+              <p class="text-text-soft text-sm col-span-full">Laddar...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- DELETE CONFIRMATION MODAL -->
+        <div id="deleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-2xl">
+            <h3 class="text-xl font-heading font-bold text-navy mb-2">Bekräfta borttagning</h3>
+            <p class="text-text-soft mb-6">Är du säker på att du vill ta bort <strong id="deleteTargetName" class="text-navy"></strong>? Detta går inte att ångra.</p>
+            <div class="flex gap-3 justify-end">
+              <button onclick="cancelDelete()" class="px-4 py-2 bg-sky hover:bg-lavender text-navy rounded-lg font-semibold transition-colors">Avbryt</button>
+              <button onclick="confirmDelete()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors">Ta bort</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/admin/admin-core.js"></script>
+  <script src="/admin/admin-families.js?v=2.1.0"></script>
+  <script src="/admin/admin-subscription-settings.js"></script>
+  <script src="/admin/admin-library.js"></script>
+
+  <script src="/admin/admin-retention.js"></script>
+  <script src="/admin/admin-dagensnyhet.js?v=2.0.0"></script>
+  <script src="/admin/admin-landing-news.js"></script>
+  <script src="/admin/admin-images.js"></script>
+  <script src="/admin/admin-newsletter.js"></script>
+
+  <!-- Chart.js for analytics charts and sparklines -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="/admin/admin-analytics.js"></script>
+  <script src="/admin/admin-user-stats.js"></script>
+
+  <script src="/admin/admin-surveys.js"></script>
+  <script src="/admin/admin-survey-rapport.js"></script>
+  <script src="/admin/admin-email-templates.js"></script>
+  <script src="/admin/admin-email-log.js"></script>
+
+  <!-- Waitlist admin -->
+  <script src="/admin/admin-waitlist.js"></script>
+
+  <!-- Professional interests handled by inline script in body -->
+
+  <!-- Waitlist delete modal -->
+  <div id="waitlistDeleteModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 border-2 border-coral">
+      <h4 class="text-lg font-heading font-bold text-navy mb-2">Radera waitlist-anmälan?</h4>
+      <p class="text-text-soft text-sm mb-1">Du håller på att radera denna anmälan.</p>
+      <p class="text-xs text-text-soft mb-6">Detta kan inte ångras.</p>
+      <div class="flex gap-3 justify-end">
+        <button onclick="hideWaitlistDeleteModal()" class="px-4 py-2 bg-gray-100 text-text-soft rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors" style="min-height:44px;">Avbryt</button>
+        <button id="waitlistDeleteConfirmBtn" onclick="executeWaitlistDelete()" class="px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors" style="min-height:44px;">Ta bort</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contextual help bubble -->
+  <script>window.HELP_PAGE = 'admin';</script>
+  <script src="/js/help-bubble.js?v=2.12.0"></script>
+
+  <!-- Intresseanmälningar -->
+  <script>
+    // ─── State ─────────────────────────────────────────────────────
+    let intEntries = [];
+    let intTotal = 0;
+    let intOffset = 0;
+    let intLimit = 50;
+    let intPendingDeleteId = null;
+
+    // ─── Load ──────────────────────────────────────────────────────
+    async function loadInterests() {
+      intOffset = 0;
+      fetchInterestsData();
+    }
+
+    async function fetchInterestsData() {
+      const container = document.getElementById('interestsContainer');
+      if (!container) return;
+      container.innerHTML = '<p class="text-text-soft text-sm">Laddar...</p>';
+      try {
+        const params = new URLSearchParams({ limit: intLimit, offset: intOffset });
+        const data = await Auth.api(`/api/admin/professional-interests?${params}`);
+        intEntries = data.interests || [];
+        intTotal = data.total || 0;
+        const badge = document.getElementById('interestsBadge');
+        if (badge) {
+          badge.textContent = intTotal;
+          badge.classList.remove('hidden');
+        }
+        renderInterestsTable(intEntries);
+        renderInterestsPagination(intTotal, intLimit, intOffset);
+      } catch (err) {
+        if (container) container.innerHTML = '<p class="text-red-500 text-sm">Kunde inte ladda intresseanmälningar: ' + esc(err.message || 'Okänt fel') + '</p>';
+      }
+    }
+
+    // ─── Table renderer ─────────────────────────────────────────────
+    function renderInterestsTable(entries) {
+      const container = document.getElementById('interestsContainer');
+      if (!container) return;
+      if (!entries.length) {
+        container.innerHTML = '<p class="text-text-soft text-sm italic">Inga intresseanmälningar ännu.</p>';
+        return;
+      }
+      container.innerHTML = `
+        <div class="overflow-x-auto rounded-2xl border-2 border-lavender mb-4">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-sky text-text-soft text-xs font-semibold uppercase tracking-wide">
+                <th class="px-4 py-3 text-left">#</th>
+                <th class="px-4 py-3 text-left">Namn</th>
+                <th class="px-4 py-3 text-left">E-post</th>
+                <th class="px-4 py-3 text-left">Roll</th>
+                <th class="px-4 py-3 text-left">Organisation</th>
+                <th class="px-4 py-3 text-left">Datum</th>
+                <th class="px-4 py-3 text-left">Radera</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${entries.map((e, i) => `
+                <tr class="border-b border-lavender/50 hover:bg-sky/50 transition-colors">
+                  <td class="px-4 py-3 text-text-soft">${intOffset + i + 1}</td>
+                  <td class="px-4 py-3 font-semibold text-navy">${esc(e.name || '')}</td>
+                  <td class="px-4 py-3"><a href="mailto:${esc(e.email || '')}" class="text-gold hover:underline text-sm">${esc(e.email || '')}</a></td>
+                  <td class="px-4 py-3 text-sm text-text-soft">${esc(e.role || '')}</td>
+                  <td class="px-4 py-3 text-sm text-text-soft">${esc(e.organization || '—')}</td>
+                  <td class="px-4 py-3 text-sm text-text-soft">${e.created_at ? new Date(e.created_at).toLocaleDateString('sv-SE', { year:'numeric', month:'short', day:'numeric' }) : '—'}</td>
+                  <td class="px-4 py-3">
+                    <button onclick="showInterestsDeleteModal(${e.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-semibold transition-colors border border-red-200" style="min-height:32px;min-width:44px;">
+                      🗑 Radera
+                    </button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    function renderInterestsPagination(total, limit, offset) {
+      const container = document.getElementById('interestsPagination');
+      if (!container) return;
+      if (total <= limit) {
+        container.innerHTML = `<p class="text-text-soft text-sm">Visar ${total} av ${total}</p>`;
+        return;
+      }
+      const totalPages = Math.ceil(total / limit);
+      const currentPage = Math.floor(offset / limit) + 1;
+      container.innerHTML = `
+        <p class="text-text-soft text-sm">Visar ${offset + 1}–${Math.min(offset + limit, total)} av ${total}</p>
+        <div class="flex gap-2">
+          <button onclick="intGoPage(${currentPage - 2})" class="px-3 py-2 bg-navy text-white rounded-xl text-sm font-semibold transition-colors" ${currentPage <= 1 ? 'disabled' : ''}>← Föregående</button>
+          <button onclick="intGoPage(${currentPage})" class="px-3 py-2 bg-navy text-white rounded-xl text-sm font-semibold transition-colors" ${currentPage >= totalPages ? 'disabled' : ''}>Nästa →</button>
+        </div>`;
+    }
+
+    function intGoPage(pageIndex) {
+      intOffset = pageIndex * intLimit;
+      fetchInterestsData();
+    }
+
+    // ─── CSV Export ─────────────────────────────────────────────────
+    async function exportInterestsCsv() {
+      try {
+        const data = await Auth.api('/api/admin/professional-interests?limit=9999&offset=0');
+        const entries = data.interests || [];
+        const headers = ['#', 'Namn', 'E-post', 'Roll', 'Organisation', 'Meddelande', 'Datum'];
+        const rows = entries.map((e, i) => [
+          i + 1,
+          e.name || '',
+          e.email || '',
+          e.role || '',
+          e.organization || '',
+          e.message || '',
+          e.created_at ? new Date(e.created_at).toISOString().split('T')[0] : '',
+        ]);
+        const csvContent =
+          headers.join(',') + '\n' + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `intresseanmalningar-${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('Kunde inte exportera: ' + (err.message || 'Okänt fel'));
+      }
+    }
+
+    // ─── Delete ─────────────────────────────────────────────────────
+    function showInterestsDeleteModal(id) {
+      intPendingDeleteId = id;
+      const modal = document.getElementById('interestsDeleteModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function hideInterestsDeleteModal() {
+      intPendingDeleteId = null;
+      const modal = document.getElementById('interestsDeleteModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function executeInterestsDelete() {
+      if (!intPendingDeleteId) return;
+      const btn = document.getElementById('interestsDeleteConfirmBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Tar bort...'; }
+      try {
+        await Auth.api(`/api/admin/professional-interests/${intPendingDeleteId}`, { method: 'DELETE' });
+        hideInterestsDeleteModal();
+        fetchInterestsData();
+      } catch (err) {
+        alert('Kunde inte ta bort: ' + (err.message || 'Okänt fel'));
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Ta bort'; }
+      }
+    }
+
+    // ─── Init ──────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+      const exportBtn = document.getElementById('interestsExportCsv');
+      if (exportBtn) exportBtn.addEventListener('click', exportInterestsCsv);
+      const refreshBtn = document.getElementById('interestsRefreshBtn');
+      if (refreshBtn) refreshBtn.addEventListener('click', loadInterests);
+    });
+  </script>
+</body>
+</html>

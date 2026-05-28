@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:title" content="Min Stjärndag — Förenkla vardagen för hela familjen">
+    <meta property="og:description" content="Skapa och följ dagliga scheman, aktiviteter och belöningar">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://mystarday.se/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://mystarday.se/og-image.png">
+  <title>Kalender - Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623', 'gold-light': '#FFF3D6', navy: '#1B2340', 'navy-soft': '#2A3458',
+            sky: '#E8F0FE', lavender: '#EDE7F6', mint: '#E0F5EC', coral: '#FDEAE7', 'text-soft': '#5A6178',
+          },
+          fontFamily: { heading: ['Outfit', 'sans-serif'], body: ['Plus Jakarta Sans', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="/css/theme.css?v=2.12.0">
+  <link rel="stylesheet" href="/css/mobile-nav.css?v=2.12.0">
+  <script src="/js/theme.js?v=2.12.0"></script>
+  <script src="/js/auth.js?v=2.13.0"></script>
+  <script src="/js/feedback.js?v=2.12.0"></script>
+  <script src="/js/i18n.js?v=2.12.0"></script>
+  <style>
+    html, body { overflow-x: hidden; max-width: 100vw; }
+    * { box-sizing: border-box; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.3s ease forwards; }
+
+    /* Day column */
+    .day-col {
+      min-width: 0;
+      border-radius: 12px;
+      background: white;
+      border: 1px solid #E5E7EB;
+      overflow: hidden;
+      transition: box-shadow 0.15s;
+    }
+    .dark .day-col {
+      background: #2A3458;
+      border-color: #374166;
+    }
+    .day-col.today {
+      border-color: #F5A623;
+      border-width: 2px;
+      box-shadow: 0 0 0 2px rgba(245,166,35,0.15);
+    }
+    .day-col.past-day {
+      opacity: 0.85;
+    }
+    .day-col.special-day-col {
+      border-color: #F59E0B;
+      border-width: 2px;
+    }
+    .dark .day-col.special-day-col {
+      border-color: #D97706;
+    }
+
+    /* Day header */
+    .day-header {
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid #E5E7EB;
+    }
+    .dark .day-header {
+      border-bottom-color: #374166;
+    }
+    .today .day-header {
+      background: #FFF3D6;
+    }
+    .dark .today .day-header {
+      background: rgba(245,166,35,0.15);
+    }
+
+    /* Activity item */
+    .act-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .act-item.completed-item .act-name {
+      text-decoration: line-through;
+      color: #9CA3AF;
+    }
+    .dark .act-item.completed-item .act-name {
+      color: #6B7280;
+    }
+
+    /* Section label */
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 8px 2px;
+      color: #9AA0B8;
+    }
+
+    /* Completion dot */
+    .status-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .status-dot.done { background: #22c55e; }
+    .status-dot.not-done { background: #FCA5A5; }
+    .status-dot.planned { background: #BFDBFE; }
+
+    /* Child tab */
+    .child-tab {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+    .child-tab.active {
+      background: #F5A623;
+      color: #1B2340;
+      font-weight: 600;
+    }
+    .child-tab:not(.active) {
+      background: white;
+      color: #5A6178;
+      border-color: #E5E7EB;
+    }
+    .dark .child-tab:not(.active) {
+      background: #2A3458;
+      color: #CBD5E1;
+      border-color: #374166;
+    }
+    .child-tab:not(.active):hover {
+      border-color: #F5A623;
+      color: #1B2340;
+    }
+    .dark .child-tab:not(.active):hover {
+      color: #F5A623;
+    }
+
+    /* Nav button */
+    .nav-btn {
+      min-width: 40px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      border: 1px solid #E5E7EB;
+      background: white;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      color: #1B2340;
+    }
+    .dark .nav-btn {
+      background: #2A3458;
+      border-color: #374166;
+      color: white;
+    }
+    .nav-btn:hover {
+      background: #FFF3D6;
+      border-color: #F5A623;
+    }
+    .dark .nav-btn:hover {
+      background: rgba(245,166,35,0.15);
+    }
+
+    /* Progress bar */
+    .prog-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: #E5E7EB;
+      overflow: hidden;
+    }
+    .dark .prog-bar {
+      background: #374166;
+    }
+    .prog-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: #22c55e;
+      transition: width 0.4s ease;
+    }
+
+    /* Paused day badge */
+    .paused-badge {
+      font-size: 11px;
+      background: #FEF3C7;
+      color: #92400E;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .dark .paused-badge {
+      background: rgba(251,191,36,0.2);
+      color: #FCD34D;
+    }
+
+    /* Mobile swipe area */
+    @media (max-width: 640px) {
+      .cal-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .day-col {
+        min-width: 100%;
+      }
+    }
+
+    @media (min-width: 641px) {
+      .cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 8px;
+        align-items: start;
+      }
+    }
+
+    /* Empty state */
+    .empty-day {
+      padding: 12px 8px;
+      text-align: center;
+      font-size: 12px;
+      color: #9AA0B8;
+    }
+  </style>
+  <!-- PWA / Favicon -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Min Stjärndag">
+</head>
+<body class="bg-white font-body text-navy dark:bg-navy dark:text-white">
+  <div class="min-h-screen flex flex-col md:flex-row">
+
+    <!-- Mobile Top Bar -->
+    <div class="md:hidden bg-navy text-white p-4 flex items-center justify-between sticky top-0 z-20">
+      <a href="/dashboard" class="flex items-center gap-2 no-underline text-white hover:text-white">
+        <span class="text-xl">⭐</span>
+        <h1 class="text-lg font-heading font-bold">Min Stjärndag</h1>
+      </a>
+      <div class="flex items-center gap-1">
+        <button onclick="toggleDarkMode()" class="p-2 hover:bg-navy-soft rounded-lg transition-colors text-lg" title="Mörkt läge">🌙</button>
+        <button id="menuToggle" class="p-2 hover:bg-navy-soft rounded-lg transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <nav id="sidebar" class="hidden md:block w-full md:w-64 bg-navy text-white p-4 md:p-6 md:min-h-screen">
+      <a href="/dashboard" class="hidden md:flex items-center gap-3 mb-8 no-underline text-white hover:text-white">
+        <span class="text-2xl">⭐</span>
+        <h1 class="text-xl font-heading font-bold">Min Stjärndag</h1>
+      </a>
+      <ul class="space-y-2">
+        <li><a href="/dashboard" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Min panel</a></li>
+        <li><a href="/skattkammaren" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors" style="color:#F5A623;font-weight:600;">🏆 Skattkammaren</a></li>
+        <li><a href="/family" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Familj</a></li>
+        <li><a href="/daily-log" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Daglig logg</a></li>
+        <li><a href="/library" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Bibliotek</a></li>
+        <li><a href="/schedule" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Veckoschema</a></li>
+        <li><a href="/calendar" class="block px-4 py-3 rounded-lg bg-gold text-navy font-semibold">Kalender</a></li>
+        <li><a href="/settings" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Inställningar</a></li>
+      </ul>
+      <div class="mt-8 pt-4 border-t border-navy-soft space-y-2">
+        <button id="darkModeToggle" onclick="toggleDarkMode()" class="w-full px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors text-left flex items-center gap-2">
+          <span id="darkModeIcon">🌙</span> <span id="darkModeLabel">Mörkt läge</span>
+        </button>
+        <button onclick="logout()" class="w-full px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors text-left">
+          Logga ut
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="flex-1 p-4 md:p-8 overflow-x-hidden">
+
+      <!-- Page title -->
+      <div class="mb-6">
+        <h2 class="text-2xl font-heading font-bold text-navy dark:text-white">📅 Kalender</h2>
+        <p class="text-text-soft dark:text-slate-400 text-sm mt-1">Se ditt barns schema vecka för vecka</p>
+      </div>
+
+      <!-- Loading state -->
+      <div id="loadingState" class="text-center py-12">
+        <div class="text-4xl mb-4 animate-pulse">📅</div>
+        <p class="text-text-soft dark:text-slate-400">Laddar kalender…</p>
+      </div>
+
+      <!-- Error state -->
+      <div id="errorState" class="hidden text-center py-12">
+        <div class="text-4xl mb-4">😕</div>
+        <p class="text-text-soft dark:text-slate-400" id="errorMsg">Något gick fel. Försök igen.</p>
+        <button onclick="loadCalendar()" class="mt-4 px-4 py-2 bg-gold text-navy font-semibold rounded-lg text-sm">Försök igen</button>
+      </div>
+
+      <!-- Calendar UI -->
+      <div id="calendarUI" class="hidden fade-in">
+
+        <!-- Child selector -->
+        <div id="childTabs" class="flex flex-wrap gap-2 mb-5"></div>
+
+        <!-- Week nav -->
+        <div class="flex items-center justify-between mb-5 gap-3 flex-wrap">
+          <div class="flex items-center gap-2">
+            <button class="nav-btn" onclick="changeWeek(-1)" title="Föregående vecka">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <div class="text-center">
+              <div id="weekLabel" class="font-semibold text-navy dark:text-white text-sm md:text-base whitespace-nowrap"></div>
+              <div id="weekSubLabel" class="text-xs text-text-soft dark:text-slate-400"></div>
+            </div>
+            <button class="nav-btn" onclick="changeWeek(1)" title="Nästa vecka">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+          <button onclick="goToToday()" class="px-4 py-2 text-sm font-semibold rounded-lg border border-gold text-gold hover:bg-gold-light transition-colors whitespace-nowrap">
+            Idag
+          </button>
+        </div>
+
+        <!-- Calendar grid -->
+        <div class="cal-grid" id="calGrid"></div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile sidebar overlay -->
+  <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-10 md:hidden" onclick="closeSidebar()"></div>
+
+  <script>
+    // ─── State ────────────────────────────────────────────────
+    let children = [];
+    let selectedChildId = null;
+    let weekOffset = 0;
+    let currentData = null;
+
+    // ─── Init ─────────────────────────────────────────────────
+    async function init() {
+      await requireAuth();
+      await loadChildren();
+    }
+
+    async function loadChildren() {
+      try {
+        const data = await apiFetch('/api/children');
+        children = Array.isArray(data) ? data : (data.children || []);
+
+        // Sort children by sort_order / name
+        children.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+        if (children.length === 0) {
+          showError('Inga barn hittades. Lägg till ett barn under Familj-sidan.');
+          return;
+        }
+
+        // Restore last selected child or pick first
+        const saved = localStorage.getItem('calendar_selectedChild');
+        if (saved && children.find(c => c.id === saved)) {
+          selectedChildId = saved;
+        } else {
+          selectedChildId = children[0].id;
+        }
+
+        renderChildTabs();
+        await loadCalendar();
+      } catch (err) {
+        console.error('[CALENDAR] loadChildren error:', err);
+        showError('Kunde inte ladda barn. Kontrollera din anslutning.');
+      }
+    }
+
+    function renderChildTabs() {
+      const container = document.getElementById('childTabs');
+      container.innerHTML = '';
+      for (const child of children) {
+        const btn = document.createElement('button');
+        btn.className = 'child-tab' + (child.id === selectedChildId ? ' active' : '');
+        btn.textContent = (child.emoji ? child.emoji + ' ' : '') + child.name;
+        btn.onclick = () => selectChild(child.id);
+        container.appendChild(btn);
+      }
+    }
+
+    async function selectChild(childId) {
+      selectedChildId = childId;
+      localStorage.setItem('calendar_selectedChild', childId);
+      renderChildTabs();
+      await loadCalendar();
+    }
+
+    async function loadCalendar() {
+      if (!selectedChildId) return;
+
+      document.getElementById('loadingState').classList.remove('hidden');
+      document.getElementById('errorState').classList.add('hidden');
+      document.getElementById('calendarUI').classList.add('hidden');
+
+      try {
+        const data = await apiFetch(`/api/children/${selectedChildId}/calendar-week?weekOffset=${weekOffset}`);
+        currentData = data;
+        renderCalendar(data);
+
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('calendarUI').classList.remove('hidden');
+      } catch (err) {
+        console.error('[CALENDAR] load error:', err);
+        document.getElementById('loadingState').classList.add('hidden');
+        showError('Kunde inte ladda kalender. Försök igen.');
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('errorMsg').textContent = msg;
+      document.getElementById('errorState').classList.remove('hidden');
+      document.getElementById('loadingState').classList.add('hidden');
+    }
+
+    function changeWeek(delta) {
+      weekOffset += delta;
+      loadCalendar();
+    }
+
+    function goToToday() {
+      weekOffset = 0;
+      loadCalendar();
+    }
+
+    // ─── Render ───────────────────────────────────────────────
+
+    function renderCalendar(data) {
+      renderWeekHeader(data);
+      renderGrid(data);
+    }
+
+    function renderWeekHeader(data) {
+      const weekLabel = document.getElementById('weekLabel');
+      const weekSubLabel = document.getElementById('weekSubLabel');
+
+      const startDate = parseDate(data.weekStart);
+      const endDate = parseDate(data.weekEnd);
+
+      const startStr = formatDateShort(startDate);
+      const endStr = formatDateShort(endDate);
+
+      weekLabel.textContent = `${startStr} – ${endStr}`;
+
+      if (weekOffset === 0) {
+        weekSubLabel.textContent = 'Denna vecka';
+      } else if (weekOffset === -1) {
+        weekSubLabel.textContent = 'Förra veckan';
+      } else if (weekOffset === 1) {
+        weekSubLabel.textContent = 'Nästa vecka';
+      } else if (weekOffset < 0) {
+        weekSubLabel.textContent = `${Math.abs(weekOffset)} veckor sedan`;
+      } else {
+        weekSubLabel.textContent = `Om ${weekOffset} veckor`;
+      }
+    }
+
+    function renderGrid(data) {
+      const grid = document.getElementById('calGrid');
+      grid.innerHTML = '';
+
+      for (const day of data.days) {
+        const col = document.createElement('div');
+        col.className = 'day-col' +
+          (day.isToday ? ' today' : '') +
+          (day.isPast && !day.isToday ? ' past-day' : '') +
+          (day.isSpecialDay ? ' special-day-col' : '');
+
+        const date = parseDate(day.date);
+        const dayNumStr = date.getUTCDate();
+        const monthStr = formatMonthShort(date);
+
+        // Special day badge
+        const specialBadge = day.isSpecialDay
+          ? `<span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 rounded-full px-1.5 py-0.5 ml-1" title="${day.specialDayNote ? day.specialDayNote : 'Specialdag'}">🌟${day.specialDayNote ? ' ' + day.specialDayNote.slice(0,12) : ''}</span>`
+          : '';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'day-header' + (day.isSpecialDay ? ' bg-amber-50 dark:bg-amber-900/20' : '');
+        header.innerHTML = `
+          <div class="flex items-center justify-between gap-1 mb-1">
+            <div class="min-w-0">
+              <div class="font-heading font-bold text-sm leading-tight ${day.isToday ? 'text-gold' : 'text-navy dark:text-white'} flex items-center flex-wrap gap-1">
+                ${day.dayName.slice(0, 3)}
+                ${day.isToday ? '<span class="inline-block w-2 h-2 bg-gold rounded-full align-middle"></span>' : ''}
+                ${specialBadge}
+              </div>
+              <div class="text-xs text-text-soft dark:text-slate-400">${dayNumStr} ${monthStr}</div>
+            </div>
+            <div class="text-right flex-shrink-0">
+              ${day.isPaused ? `<span class="paused-badge">Pausad</span>` : ''}
+              ${day.hasLog && !day.isPaused && day.totalCount > 0
+                ? `<div class="text-xs font-semibold ${day.completedCount === day.totalCount ? 'text-green-600' : 'text-text-soft dark:text-slate-400'}">${day.completedCount}/${day.totalCount} ⭐</div>`
+                : ''}
+            </div>
+          </div>
+          ${day.hasLog && !day.isPaused && day.totalCount > 0 ? `
+          <div class="prog-bar mt-1">
+            <div class="prog-fill" style="width: ${day.totalCount > 0 ? Math.round(day.completedCount / day.totalCount * 100) : 0}%"></div>
+          </div>` : ''}
+        `;
+        col.appendChild(header);
+
+        // Body
+        const body = document.createElement('div');
+        body.className = 'p-2';
+
+        if (day.isPaused) {
+          body.innerHTML = `<div class="empty-day">😴 Ledig / sjuk</div>`;
+        } else if (day.activities.length === 0) {
+          body.innerHTML = `<div class="empty-day">Inget schema</div>`;
+        } else {
+          // Group by section
+          const sections = {};
+          for (const act of day.activities) {
+            const sec = act.section || 'dag';
+            if (!sections[sec]) sections[sec] = [];
+            sections[sec].push(act);
+          }
+
+          const sectionOrder = ['morgon', 'dag', 'kvall', 'natt'];
+          const sectionInfo = {
+            morgon: { label: 'Morgon', icon: '🌅' },
+            dag:    { label: 'Dag',    icon: '☀️'  },
+            kvall:  { label: 'Kväll',  icon: '🌆'  },
+            natt:   { label: 'Natt',   icon: '🌙'  },
+          };
+
+          for (const secKey of sectionOrder) {
+            if (!sections[secKey]) continue;
+            const info = sectionInfo[secKey];
+            const acts = sections[secKey];
+
+            // Section label (only show if activities exist)
+            const secLabel = document.createElement('div');
+            secLabel.className = 'section-label';
+            secLabel.textContent = info.icon + ' ' + info.label;
+            body.appendChild(secLabel);
+
+            for (const act of acts) {
+              const item = document.createElement('div');
+              const isDone = act.completed === true;
+              const isNotDone = act.completed === false; // past log, not done
+              const isPlanned = act.source === 'template'; // future, no log
+
+              item.className = 'act-item' + (isDone ? ' completed-item' : '');
+
+              // Status indicator
+              let dotHtml = '';
+              if (isDone) {
+                dotHtml = `<div class="status-dot done flex-shrink-0">
+                  <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+                    <path d="M2 5l2.5 2.5L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>`;
+              } else if (isNotDone) {
+                dotHtml = `<div class="status-dot not-done flex-shrink-0"></div>`;
+              } else {
+                // Template / planned
+                dotHtml = `<div class="status-dot planned flex-shrink-0"></div>`;
+              }
+
+              // Exception marker prep (Task 2 — visual slot reserved)
+              const exceptHtml = act.is_exception
+                ? `<span class="ml-auto text-xs">✨</span>`
+                : '';
+
+              item.innerHTML = `
+                ${dotHtml}
+                <span class="act-name flex-1 leading-tight">${escapeHtml(act.icon ? act.icon + ' ' : '') + escapeHtml(act.name)}</span>
+                ${exceptHtml}
+              `;
+              body.appendChild(item);
+            }
+          }
+        }
+
+        col.appendChild(body);
+        grid.appendChild(col);
+      }
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────
+
+    function parseDate(str) {
+      // YYYY-MM-DD → UTC date
+      const [y, m, d] = str.split('-').map(Number);
+      return new Date(Date.UTC(y, m - 1, d));
+    }
+
+    const MONTHS_SHORT_SV = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+    const DAYS_SHORT_SV = ['Sön','Mån','Tis','Ons','Tor','Fre','Lör'];
+
+    function formatDateShort(date) {
+      return `${DAYS_SHORT_SV[date.getUTCDay()]} ${date.getUTCDate()} ${MONTHS_SHORT_SV[date.getUTCMonth()]}`;
+    }
+
+    function formatMonthShort(date) {
+      return MONTHS_SHORT_SV[date.getUTCMonth()];
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ─── Mobile sidebar ───────────────────────────────────────
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    if (menuToggle) {
+      menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('hidden');
+        overlay.classList.toggle('hidden');
+      });
+    }
+
+    function closeSidebar() {
+      sidebar.classList.add('hidden');
+      overlay.classList.add('hidden');
+    }
+
+    // ─── Dark mode label sync ─────────────────────────────────
+    function updateDarkModeLabel() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const icon = document.getElementById('darkModeIcon');
+      const label = document.getElementById('darkModeLabel');
+      if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+      if (label) label.textContent = isDark ? 'Ljust läge' : 'Mörkt läge';
+    }
+    updateDarkModeLabel();
+    document.addEventListener('darkModeChanged', updateDarkModeLabel);
+
+    // ─── Start ────────────────────────────────────────────────
+    init();
+  </script>
+<script src="/js/feature-check.js?v=2.13.0"></script>
+<script src="/js/mobile-nav.js?v=2.13.0"></script>
+<!-- Contextual help bubble -->
+<script src="/js/help-bubble.js?v=2.12.0"></script>
+
+  <!-- Service Worker Registration (update detection in /js/sw-register.js) -->
+  <script src="/js/sw-register.js?v=2.12.0"></script>
+</body>
+</html>

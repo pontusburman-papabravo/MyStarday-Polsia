@@ -1,0 +1,53 @@
+---
+description: Forbid reading large files (>2500 tokens) without grep + chunk-read.
+alwaysApply: true
+---
+
+# Stjarndag — Large File Handling
+
+**Never** read files >2500 tokens with a plain `read`. Grep first, then chunk-read with `offset` + `limit`.
+
+## Token estimation
+`tokens ≈ characters ÷ 4`
+
+## Critical files — DO NOT read entire file (≥10k tokens)
+
+These are off-limits for full reads:
+- `public/js/schedule.js` (~42k tokens)
+- `public/js/dashboard.js` (~40k tokens)
+- `public/index.html` (~28k tokens)
+- `public/js/child-dashboard.js` (~27k tokens)
+- `public/admin/index.html` (~25k tokens)
+- `public/dashboard.html` (~21k tokens)
+- `public/en.html`, `public/pedagoger-och-terapeuter.html` (~19k tokens)
+- `public/schedule.html` (~17k tokens)
+- `src/routes/auth.js` (~16k tokens)
+
+## Roadmap-relevant files — grep + chunk only (2.5k–16k tokens)
+
+- `src/routes/onboarding.js`
+- `public/js/onboarding.js`
+- `public/js/mobile-nav.js`
+- `src/lib/email.js`
+- `public/js/reports.js`
+- `public/js/child-settings.js`
+
+## Chunk-read rules
+
+1. Always `grep` first — find the symbol/region you need
+2. Use `read file offset=X limit=80–200` — never a full read
+3. Max **1 large file** per turn
+4. New features go in their own small files (e.g. `dashboard-cta.js`, `win-back-scheduler.js`)
+
+## ❌/✅ Examples
+
+❌ Wrong:
+```
+read public/js/dashboard.js  (entire file)
+```
+
+✅ Correct:
+```
+grep "inviteCoParent|cta_invite" public/js/dashboard.js
+read public/js/dashboard.js offset=1200 limit=80
+```

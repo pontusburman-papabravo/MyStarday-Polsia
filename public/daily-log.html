@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:title" content="Min Stjärndag — Förenkla vardagen för hela familjen">
+    <meta property="og:description" content="Skapa och följ dagliga scheman, aktiviteter och belöningar">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://mystarday.se/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://mystarday.se/og-image.png">
+  <title>Daglig logg - Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623', 'gold-light': '#FFF3D6', navy: '#1B2340', 'navy-soft': '#2A3458',
+            sky: '#E8F0FE', lavender: '#EDE7F6', mint: '#E0F5EC', coral: '#FDEAE7', 'text-soft': '#5A6178',
+          },
+          fontFamily: { heading: ['Outfit', 'sans-serif'], body: ['Plus Jakarta Sans', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="/css/theme.css?v=2.12.0">
+  <link rel="stylesheet" href="/css/mobile-nav.css?v=2.12.0">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+  <script src="/js/theme.js?v=2.12.0"></script>
+  <script src="/js/auth.js?v=2.13.0"></script>
+  <script src="/js/feedback.js?v=2.12.0"></script>
+  <script src="/js/i18n.js?v=2.12.0"></script>
+  <script src="/js/toast.js?v=2.12.0"></script>
+  <script src="/js/birthday-picker.js?v=2.12.0"></script>
+  <style>
+    .activity-card {
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    }
+    .activity-card:active {
+      transform: scale(0.98);
+    }
+    .activity-card.completed {
+      background: #F0FDF4;
+    }
+    .dark .activity-card.completed {
+      background: #14532d33;
+    }
+    .activity-card.completed .activity-name {
+      text-decoration: line-through;
+      color: #9CA3AF;
+    }
+    /* Color coding — category accent strips */
+    .activity-card.cc-hygien  { border-left: 4px solid #60A5FA; }
+    .activity-card.cc-mat     { border-left: 4px solid #FBBF24; }
+    .activity-card.cc-lek     { border-left: 4px solid #34D399; }
+    .activity-card.cc-skola   { border-left: 4px solid #A78BFA; }
+    .activity-card.cc-rorelse { border-left: 4px solid #F87171; }
+    .activity-card.cc-vila    { border-left: 4px solid #94A3B8; }
+    .activity-card.cc-social  { border-left: 4px solid #FB923C; }
+    /* Bump-time bar */
+    .bump-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .bump-btn {
+      min-height: 36px;
+      padding: 0 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      transition: background 0.15s, transform 0.1s;
+      cursor: pointer;
+    }
+    .bump-btn:active { transform: scale(0.95); }
+    .check-btn {
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      border: 2px solid #EDE7F6;
+      background: white;
+      transition: background 0.15s, border-color 0.15s;
+      cursor: pointer;
+    }
+    .check-btn.checked {
+      background: #22c55e;
+      border-color: #22c55e;
+      color: white;
+    }
+    .check-btn:hover:not(.checked) {
+      border-color: #F5A623;
+    }
+    .nav-btn {
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      margin-bottom: 4px;
+    }
+    .sortable-ghost {
+      opacity: 0.3;
+    }
+    .sortable-chosen {
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      transform: scale(1.02);
+    }
+    .drag-handle {
+      cursor: grab;
+      touch-action: none;
+    }
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+
+    /* ── Mobile: hide drag handle, show ↑/↓ reorder buttons ── */
+    .dl-move-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 6px; border: none;
+      background: #EDE7F6; color: #1B2340; font-size: 10px;
+      cursor: pointer; transition: background 0.1s;
+    }
+    .dl-move-btn:active { background: #F5A623; color: white; }
+    @media (min-width: 640px) {
+      .dl-reorder-mobile { display: none !important; }
+      .dl-drag-desktop { display: flex !important; }
+    }
+    @media (max-width: 639px) {
+      .dl-drag-desktop { display: none !important; }
+      .dl-reorder-mobile { display: flex !important; }
+    }
+
+    /* ── Main content: bottom padding so FAB doesn't cover last item ── */
+    main { padding-bottom: max(80px, calc(env(safe-area-inset-bottom, 0px) + 80px)); }
+    .paused-overlay {
+      background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 8px,
+        rgba(245, 166, 35, 0.08) 8px,
+        rgba(245, 166, 35, 0.08) 16px
+      );
+      border: 2px solid #F5A623;
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .progress-bar-fill {
+      transition: width 0.4s ease;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #EDE7F6; border-radius: 3px; }
+    .hidden-print { display: none; }
+    .print-checkbox { display: none; }
+
+    /* ── Print styles ────────────────────────────────── */
+    @media print {
+      @page { size: A4 portrait; margin: 12mm; }
+      html, body { font-size: 12px; background: white !important; color: #1B2340 !important; }
+
+      /* Hide navigation, sidebar, action buttons — NOT content */
+      nav,
+      aside,
+      #logoutBtn, #logoutBtn2,
+      #printBtn, #printDropdown,
+      .paused-overlay,
+      .check-btn,
+      .drag-handle,
+      button[onclick*="togglePause"],
+      button[onclick*="navigateDate"],
+      button[onclick*="openParentRating"],
+      .nav-btn,
+      #datePicker,
+      .rating-btn-group,
+      /* Hide child selector tabs and tips section in print */
+      #childTabs,
+      #childTabs + div,
+      .bg-sky.border.border-lavender,
+      /* Hide date nav row */
+      .date-nav-row,
+      /* Hide mobile topbar/hamburger */
+      .mobile-topbar,
+      .mobile-dropdown { display: none !important; }
+
+      /* Hide the header bar (bg-sky) but not content with bg-sky */
+      main > .bg-sky { display: none !important; }
+
+      /* Show only main content area — override flex layout */
+      body, main, .flex-1, .min-w-0, .min-h-screen { display: block !important; width: 100% !important; max-width: 100% !important; }
+
+      /* Dark mode reset — force white background everywhere */
+      .dark\:bg-navy, .dark\:bg-navy-soft, [class*="dark:bg-navy"] {
+        background: white !important; color: #1B2340 !important;
+      }
+
+      /* Print header */
+      .print-header {
+        display: flex !important;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #1B2340;
+      }
+
+      /* Activity cards - black & white friendly */
+      .activity-card {
+        border: 1px solid #ccc !important;
+        background: white !important;
+        box-shadow: none !important;
+        padding: 10px 12px !important;
+        margin-bottom: 8px !important;
+        page-break-inside: avoid;
+        color: #1B2340 !important;
+      }
+      .activity-card .text-3xl,
+      .activity-card .text-2xl { font-size: 18px; }
+
+      /* Checkbox squares for manual checking */
+      .print-checkbox {
+        display: inline-block !important;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #333;
+        border-radius: 3px;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+
+      /* Sections — clear dividers between time blocks */
+      .section-header {
+        border-bottom: 2px solid #1B2340;
+        padding: 8px 0 4px;
+        margin-bottom: 8px;
+        margin-top: 12px;
+        font-size: 14px;
+      }
+      .section-header:first-of-type { margin-top: 0; }
+
+      /* Section spacing */
+      .space-y-2 { margin-bottom: 16px; page-break-inside: avoid; }
+      .space-y-4 > .space-y-2:last-child { margin-bottom: 0; }
+
+      /* Stars display - use text */
+      .activity-card span[class*='text-gold'],
+      .activity-card span[title*='stjärna'],
+      [class*='star-count'] {
+        font-weight: bold;
+      }
+
+      /* Progress bar - solid grey */
+      .progress-bar-fill {
+        background: #666 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .progress-bar-fill[style*="width:100%"] {
+        background: #333 !important;
+      }
+
+      /* Links */
+      a { text-decoration: none; color: inherit; }
+
+      /* Ensure dark text on white bg */
+      .text-navy { color: #1B2340 !important; }
+      .text-text-soft { color: #555 !important; }
+      * { color-scheme: light !important; }
+    }
+  </style>
+  <!-- PWA / Favicon -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Min Stjärndag">
+</head>
+<body class="bg-white font-body text-navy dark:bg-navy dark:text-white">
+  <div class="min-h-screen flex flex-col md:flex-row">
+
+    <!-- ── Sidebar ─────────────────────────────────────────── -->
+    <nav class="w-full md:w-64 bg-navy text-white p-4 md:p-6 md:min-h-screen">
+      <a href="/dashboard" class="flex items-center gap-3 mb-8 no-underline text-white hover:text-white">
+        <span class="text-2xl">⭐</span>
+        <h1 class="text-xl font-heading font-bold">Min Stjärndag</h1>
+      </a>
+      <ul class="space-y-2">
+        <li><a href="/dashboard" class="block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors">Översikt</a></li>
+        <li><a href="/daily-log" class="block px-4 py-2 rounded-lg bg-gold text-navy font-semibold">Daglig logg</a></li>
+        <li><a href="/schedule" class="block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors">Veckoschema</a></li>
+        <li><a href="/reports" data-feature="klinisk_rapportering" class="block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors">📊 Rapporter</a></li>
+        <li><a href="/library" class="block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors">Bibliotek</a></li>
+        <li><a href="/skattkammaren" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors" style="color:#F5A623;font-weight:600;">🏆 Skattkammaren</a></li>
+        <li><a href="/family" class="block px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors">Familjen &amp; inställningar</a></li>
+      </ul>
+      <div class="mt-8 pt-4 border-t border-navy-soft space-y-2">
+        <button onclick="Theme.toggleDark()" class="w-full px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors text-left flex items-center gap-2">
+          <span>🌙</span> Mörkt läge
+        </button>
+        <button id="logoutBtn" class="w-full px-4 py-2 bg-coral hover:bg-red-200 text-navy rounded-lg font-semibold transition-colors">Logga ut</button>
+      </div>
+    </nav>
+
+    <!-- ── Main ───────────────────────────────────────────── -->
+    <main class="flex-1 flex flex-col min-w-0">
+
+      <!-- Header -->
+      <div class="bg-sky border-b border-lavender p-4 md:p-6 flex justify-between items-center">
+        <h2 class="text-xl font-heading font-bold text-navy">Daglig logg</h2>
+        <div class="flex items-center gap-2">
+          <div class="relative" id="printDropdown">
+            <button onclick="togglePrintMenu()" id="printBtn" class="px-4 py-2 bg-white border-2 border-gold text-navy font-semibold rounded-xl hover:bg-gold-light transition-colors text-sm flex items-center gap-2">
+              🖨️ Skriv ut ▾
+            </button>
+            <div id="printMenu" class="hidden absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-lavender overflow-hidden z-30 min-w-[180px]">
+              <button onclick="printDay(); closePrintMenu()" class="w-full px-4 py-3 text-left text-sm font-semibold text-navy hover:bg-gold-light transition-colors flex items-center gap-2">
+                📄 Skriv ut dag
+              </button>
+              <button onclick="printWeek(); closePrintMenu()" class="w-full px-4 py-3 text-left text-sm font-semibold text-navy hover:bg-gold-light transition-colors flex items-center gap-2 border-t border-lavender">
+                📅 Skriv ut vecka
+              </button>
+            </div>
+          </div>
+          <!-- Logga ut removed from main view — only in hamburger menu -->
+        </div>
+      </div>
+
+      <!-- Toast -->
+      <div id="toast" class="hidden fixed top-4 right-4 z-50 bg-navy text-white px-6 py-3 rounded-xl shadow-lg font-semibold text-sm max-w-xs"></div>
+
+      <div class="flex-1 p-4 md:p-8 overflow-auto space-y-6">
+
+        <!-- Child selector -->
+        <div>
+          <h3 class="text-sm font-semibold text-text-soft uppercase tracking-wide mb-3">Välj barn</h3>
+          <div id="childTabs" class="flex gap-2 flex-wrap">
+            <div class="text-text-soft text-sm">Laddar…</div>
+          </div>
+        </div>
+
+        <!-- Log content -->
+        <div id="logContent">
+          <div class="text-center py-16 text-text-soft">
+            <p class="text-4xl mb-3">📋</p>
+            <p class="font-semibold">Välj ett barn ovan för att se loggen</p>
+          </div>
+        </div>
+
+        <!-- Tips section -->
+        <div class="bg-sky border border-lavender rounded-2xl p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg">💡</span>
+            <span class="font-semibold text-navy text-sm">Tips: Följ aktiviteter i daglig logg</span>
+          </div>
+          <ul class="text-xs text-text-soft space-y-1.5">
+            <li>• Markera aktiviteter som klara — barnet ser dem i realtid i sin vy</li>
+            <li>• Aktiviteter bockas av i barnvyn med ett tryck och ger stjärnor direkt</li>
+            <li>• Bläddra bakåt med datumväljaren för att se hur barnet presterat</li>
+            <li>• Pausa en dag om rutinerna är annorlunda — inga stjärnor förloras</li>
+          </ul>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/daily-log.js?v=2.14.0"></script>
+
+  <!-- Parent Rating Modal -->
+  <div id="parentRatingModal" class="hidden fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-heading font-bold text-navy">Betygsätt aktivitet</h3>
+        <button onclick="closeParentRating()" class="text-text-soft hover:text-navy text-2xl">&times;</button>
+      </div>
+      <p class="text-sm text-text-soft mb-4" id="parentRatingName"></p>
+
+      <!-- Stars -->
+      <div class="flex justify-center gap-3 mb-3">
+        <button class="parent-star-btn text-4xl" data-star="1" onclick="selectParentStar(1)" style="filter:grayscale(0.7)">⭐</button>
+        <button class="parent-star-btn text-4xl" data-star="2" onclick="selectParentStar(2)" style="filter:grayscale(0.7)">⭐</button>
+        <button class="parent-star-btn text-4xl" data-star="3" onclick="selectParentStar(3)" style="filter:grayscale(0.7)">⭐</button>
+        <button class="parent-star-btn text-4xl" data-star="4" onclick="selectParentStar(4)" style="filter:grayscale(0.7)">⭐</button>
+        <button class="parent-star-btn text-4xl" data-star="5" onclick="selectParentStar(5)" style="filter:grayscale(0.7)">⭐</button>
+      </div>
+      <p class="text-center text-sm font-semibold text-gold mb-4 min-h-[1.4em]" id="parentRatingLabel"></p>
+
+      <textarea id="parentRatingComment" placeholder="Kommentar (valfritt)..." rows="2"
+        class="w-full px-3 py-2 border-2 border-lavender rounded-xl text-sm focus:border-gold outline-none transition-colors resize-none mb-4"></textarea>
+
+      <div class="flex gap-3">
+        <button onclick="closeParentRating()" class="flex-1 py-3 bg-lavender hover:bg-sky text-navy rounded-xl font-semibold text-sm transition-colors">Avbryt</button>
+        <button onclick="submitParentRating()" id="parentRatingSubmit" class="flex-1 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-heading font-bold text-sm transition-colors" disabled>Spara</button>
+      </div>
+    </div>
+  </div>
+
+<script src="/js/feature-check.js?v=2.13.0"></script>
+<script src="/js/mobile-nav.js?v=2.13.0"></script>
+<!-- Contextual help bubble -->
+<script src="/js/help-bubble.js?v=2.12.0"></script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uppgradera – Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623',
+            'gold-light': '#FFF3D6',
+            navy: '#1B2340',
+            'navy-soft': '#2A3458',
+            sky: '#E8F0FE',
+            lavender: '#EDE7F6',
+            mint: '#E0F5EC',
+            coral: '#FDEAE7',
+            'text-soft': '#5A6178',
+          },
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            body: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="/css/theme.css?v=2.12.0">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Min Stjärndag">
+  <style>
+    body { background: linear-gradient(135deg, #FFF8F0 0%, #F5F0FF 100%); }
+  </style>
+</head>
+<body class="font-body text-navy min-h-screen flex flex-col">
+  <!-- Top nav -->
+  <nav class="w-full px-4 py-4 flex items-center justify-between max-w-5xl mx-auto">
+    <a href="/" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+      <div class="w-9 h-9 bg-gold rounded-full flex items-center justify-center shadow">
+        <span class="text-lg">⭐</span>
+      </div>
+      <span class="font-heading font-bold text-navy text-xl">Min Stjärndag</span>
+    </a>
+    <a href="/login" class="text-sm text-text-soft hover:text-navy transition-colors">Logga in</a>
+  </nav>
+
+  <!-- Main content -->
+  <main class="flex-1 flex items-center justify-center px-4 py-10">
+    <div class="w-full max-w-lg text-center">
+
+      <!-- Icon + heading -->
+      <div class="mb-6">
+        <div class="w-20 h-20 bg-gradient-to-br from-amber-100 to-yellow-200 rounded-3xl flex items-center justify-center mx-auto shadow-lg">
+          <span class="text-4xl">⭐</span>
+        </div>
+      </div>
+
+      <h1 class="text-3xl font-heading font-bold text-navy mb-3">
+        Fortsätt använda My Starday
+      </h1>
+      <p class="text-text-soft text-lg mb-8 leading-relaxed">
+        Hjälp oss att hålla utvecklingen igång — en liten avgift för en stor hjälp i vardagen.
+      </p>
+
+      <!-- Pricing card -->
+      <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 mb-8">
+        <div class="flex items-center justify-center gap-3 mb-2">
+          <span class="text-5xl font-heading font-bold text-navy">59</span>
+          <span class="text-2xl font-medium text-text-soft">kr</span>
+        </div>
+        <p class="text-text-soft text-sm mb-6">per månad · betalas månadsvis</p>
+
+        <ul class="text-left space-y-3 mb-8">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span class="text-navy text-sm">Obegränsat antal barn och aktiviteter</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span class="text-navy text-sm">Stjärnor, belöningar och sträckor</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span class="text-navy text-sm">Schemaläggning och påminnelser</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span class="text-navy text-sm">Barnvy och föräldradashboard</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span class="text-navy text-sm">Rapporter för pedagog &amp; föräldrar</span>
+          </li>
+        </ul>
+
+        <!-- Upgrade button — creates Stripe Checkout session -->
+        <button id="upgradeBtn"
+           class="block w-full bg-gold hover:bg-yellow-600 text-white font-semibold text-lg py-4 px-8 rounded-xl transition-all shadow-lg shadow-amber-200 hover:shadow-xl active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed">
+          Starta prenumeration — 59 kr/månad
+        </button>
+        <p class="text-text-soft text-xs mt-3">Betalning via Stripe · Avsluta när som helst</p>
+      </div>
+
+  <script>
+    (function () {
+      var btn = document.getElementById('upgradeBtn');
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        btn.textContent = 'Laddar...';
+        fetch('/api/stripe/create-checkout-session', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.url) {
+            window.location.href = data.url;
+          } else {
+            btn.disabled = false;
+            btn.textContent = 'Starta prenumeration — 59 kr/månad';
+            alert(data.error || 'Något gick fel. Försök igen.');
+          }
+        })
+        .catch(function () {
+          btn.disabled = false;
+          btn.textContent = 'Starta prenumeration — 59 kr/månad';
+          alert('Något gick fel. Försök igen.');
+        });
+      });
+    })();
+  </script>
+
+      <!-- Questions? -->
+      <p class="text-text-soft text-sm">
+        Frågor? Skriv till <a href="mailto:info@mystarday.se" class="text-navy font-medium underline hover:no-underline">info@mystarday.se</a>
+      </p>
+
+    </div>
+  </main>
+</body>
+</html>

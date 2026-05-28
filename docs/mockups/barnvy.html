@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barnvy — Min Stjärndag Mockup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --gold: #F5A623; --gold-light: #FFF3D6; --gold-dark: #D4880A;
+            --navy: #1B2340; --navy-soft: #2A3458; --navy-light: #3A4568;
+            --sky: #E8F0FE; --lavender: #EDE7F6; --mint: #E0F5EC; --coral: #FDEAE7;
+            --text: #1B2340; --text-soft: #5A6178; --text-light: #9AA0B8;
+            --white: #FFFFFF; --green: #22C55E; --red: #EF4444;
+            --bg: #F0F4FF;
+            --radius-sm: 12px; --radius-md: 20px; --radius-lg: 28px;
+            --shadow-sm: 0 2px 8px rgba(27,35,64,0.08);
+            --shadow-md: 0 4px 20px rgba(27,35,64,0.12);
+            --shadow-lg: 0 8px 40px rgba(27,35,64,0.16);
+        }
+        html { font-size: 16px; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(245,166,35,0.07) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(74,100,255,0.05) 0%, transparent 50%);
+        }
+
+        /* ── Phone frame ── */
+        .phone-frame {
+            width: 320px;
+            background: var(--navy);
+            border-radius: 44px;
+            padding: 12px;
+            box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .phone-screen {
+            background: var(--bg);
+            border-radius: 34px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Notch */
+        .notch {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 24px;
+            background: var(--navy);
+            border-radius: 0 0 16px 16px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .notch::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+        }
+
+        /* ── App header ── */
+        .app-header {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%);
+            padding: 44px 20px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .app-header::after {
+            content: '';
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(245,166,35,0.25) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .greeting {
+            color: rgba(255,255,255,0.65);
+            font-size: 0.78rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .child-name {
+            color: var(--gold);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+        .date-display {
+            color: rgba(255,255,255,0.45);
+            font-size: 0.75rem;
+            margin-top: 2px;
+        }
+
+        /* ── Star counter ── */
+        .star-counter {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 14px;
+            background: rgba(245,166,35,0.18);
+            border-radius: 50px;
+            padding: 8px 20px;
+            display: inline-flex;
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .star-counter .star-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(245,166,35,0.5);
+        }
+        .star-counter .count {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--gold);
+            line-height: 1;
+        }
+        .star-counter .label {
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.55);
+            font-weight: 500;
+        }
+
+        /* ── Time bar ── */
+        .time-bar {
+            background: var(--white);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(27,35,64,0.06);
+        }
+        .time-bar .current-time {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+        .time-bar .weather {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.82rem;
+            color: var(--text-soft);
+        }
+        .time-bar .weather span { font-size: 1.1rem; }
+
+        /* ── Activity sections ── */
+        .activity-area {
+            padding: 16px;
+        }
+
+        .activity-section-label {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-light);
+            margin-bottom: 10px;
+            padding-left: 4px;
+        }
+
+        /* Current activity */
+        .current-card {
+            background: linear-gradient(135deg, #FFF9EE, #FFF0D0);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            border: 2.5px solid var(--gold);
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(245,166,35,0.2);
+        }
+        .current-card::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, rgba(245,166,35,0.2) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .current-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--gold);
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 4px 10px;
+            border-radius: 50px;
+            margin-bottom: 12px;
+        }
+        .current-badge .pulse {
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+        .current-activity {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+            z-index: 2;
+        }
+        .current-activity .emoji {
+            width: 56px;
+            height: 56px;
+            background: white;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            box-shadow: var(--shadow-sm);
+            border: 1.5px solid rgba(245,166,35,0.2);
+        }
+        .current-activity .details { flex: 1; }
+        .current-activity .activity-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 4px;
+        }
+        .current-activity .activity-time {
+            font-size: 0.88rem;
+            color: var(--text-soft);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .current-activity .activity-time span { font-size: 1rem; }
+        .current-activity .check-btn {
+            width: 44px;
+            height: 44px;
+            background: var(--gold);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            box-shadow: 0 3px 12px rgba(245,166,35,0.4);
+            cursor: pointer;
+        }
+
+        /* Next / Later sections */
+        .activity-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .activity-card {
+            flex: 1;
+            background: var(--white);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--shadow-sm);
+            border: 1.5px solid transparent;
+            transition: all 0.2s;
+        }
+        .activity-card:hover {
+            border-color: rgba(245,166,35,0.3);
+            transform: translateY(-1px);
+        }
+        .activity-card .emoji {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            background: var(--sky);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+        .activity-card.next .emoji { background: #F0F0FF; }
+        .activity-card.later .emoji { background: var(--mint); }
+        .activity-card .info { flex: 1; min-width: 0; }
+        .activity-card .info .title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--navy);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .activity-card .info .time {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .activity-card .info .time span { font-size: 0.85rem; }
+
+        /* Status label chips */
+        .status-chip {
+            font-size: 0.65rem;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 3px 8px;
+            border-radius: 50px;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+        .status-chip.next { background: #EDE9FF; color: #6B50F5; }
+        .status-chip.later { background: #D1FAE5; color: #059669; }
+
+        /* Bottom nav */
+        .bottom-nav {
+            background: var(--white);
+            padding: 10px 20px 24px;
+            display: flex;
+            justify-content: space-around;
+            border-top: 1px solid rgba(27,35,64,0.06);
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            color: var(--text-light);
+            text-decoration: none;
+            padding: 4px 8px;
+        }
+        .nav-item.active { color: var(--gold); }
+        .nav-item .nav-icon {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        .nav-item .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Page label */
+        .mockup-label {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .mockup-label h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+        .mockup-label p {
+            font-size: 0.88rem;
+            color: var(--text-soft);
+            margin-top: 4px;
+        }
+
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="mockup-label">
+        <h2>Barnvy</h2>
+        <p>NU — NÄSTA — SEDAN. Ljust och lekfullt tema.</p>
+    </div>
+
+    <div class="phone-frame">
+        <div class="phone-screen">
+            <div class="notch"></div>
+
+            <!-- Header -->
+            <div class="app-header">
+                <div class="greeting">God morgon</div>
+                <div class="child-name">Lova, 7 år</div>
+                <div class="date-display">Fredag 24 april</div>
+                <div class="star-counter">
+                    <div class="star-icon">&#9733;</div>
+                    <div class="count">12</div>
+                    <div class="label">stjärnor</div>
+                </div>
+            </div>
+
+            <!-- Time bar -->
+            <div class="time-bar">
+                <div class="current-time">07:42</div>
+                <div class="weather"><span>&#9728;</span> 14° Stockholm</div>
+            </div>
+
+            <!-- Activity area -->
+            <div class="activity-area">
+
+                <!-- NU -->
+                <div class="activity-section-label">&#9679; Nu</div>
+                <div class="current-card">
+                    <div class="current-badge"><div class="pulse"></div> Pågående</div>
+                    <div class="current-activity">
+                        <div class="emoji">&#129379;</div>
+                        <div class="details">
+                            <div class="activity-title">Frukost</div>
+                            <div class="activity-time"><span>&#9200;</span> 07:30 – 08:00</div>
+                        </div>
+                        <div class="check-btn">&#10003;</div>
+                    </div>
+                </div>
+
+                <!-- NÄSTA -->
+                <div class="activity-section-label">&#9654; Nästa</div>
+                <div class="activity-row">
+                    <div class="activity-card next">
+                        <div class="emoji">&#129463;</div>
+                        <div class="info">
+                            <div class="title">Borsta tänderna</div>
+                            <div class="time"><span>&#9200;</span> 08:00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEDAN -->
+                <div class="activity-section-label">&#9656; Senare</div>
+                <div class="activity-row">
+                    <div class="activity-card later">
+                        <div class="emoji">&#127890;</div>
+                        <div class="info">
+                            <div class="title">Skolan</div>
+                            <div class="time"><span>&#9200;</span> 08:30</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="activity-row">
+                    <div class="activity-card later">
+                        <div class="emoji">&#9917;</div>
+                        <div class="info">
+                            <div class="title">Fotboll</div>
+                            <div class="time"><span>&#9200;</span> 17:00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom nav -->
+            <div class="bottom-nav">
+                <a href="#" class="nav-item active">
+                    <div class="nav-icon">&#127919;</div>
+                    <div class="nav-label">Scheman</div>
+                </a>
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">&#9733;</div>
+                    <div class="nav-label">Stjärnor</div>
+                </a>
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">&#127873;</div>
+                    <div class="nav-label">Belöningar</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

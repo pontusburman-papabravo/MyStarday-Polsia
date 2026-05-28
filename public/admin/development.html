@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Utveckling — Min Stjärndag Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623',
+            'gold-light': '#FFF3D6',
+            navy: '#1B2340',
+            'navy-soft': '#2A3458',
+            sky: '#E8F0FE',
+            lavender: '#EDE7F6',
+            mint: '#E0F5EC',
+            coral: '#FDEAE7',
+            'text-soft': '#5A6178',
+          },
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            body: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <script src="/js/auth.js"></script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F5F7FA; }
+    h1, h2, h3 { font-family: 'Outfit', sans-serif; }
+    .status-dev { background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
+    .status-live { background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; }
+    .status-off { background: #F3F4F6; color: #6B7280; border: 1px solid #D1D5DB; }
+    .priority-critical { background: #FEE2E2; color: #991B1B; }
+    .priority-high { background: #FEF3C7; color: #92400E; }
+    .priority-medium { background: #DBEAFE; color: #1E40AF; }
+    .priority-low { background: #F3F4F6; color: #6B7280; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .confirm-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 60; align-items: center; justify-content: center; }
+    .confirm-modal.open { display: flex; }
+    textarea { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .search-results { max-height: 280px; overflow-y: auto; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white border-b-2 border-lavender px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+    <div class="flex items-center gap-4">
+      <a href="/admin" class="text-text-soft hover:text-navy transition-colors text-sm font-medium">← Admin</a>
+      <h1 class="text-2xl font-heading font-bold text-navy">UTVECKLING</h1>
+    </div>
+    <button id="newFeatureBtn" class="bg-gold hover:bg-yellow-500 text-navy font-bold px-4 py-2 rounded-lg transition-colors text-sm">
+      + Ny funktion
+    </button>
+  </header>
+
+  <!-- Main -->
+  <main class="p-6 max-w-7xl mx-auto">
+
+    <!-- Access denied -->
+    <div id="accessDenied" class="hidden bg-coral border-l-4 border-red-500 p-6 rounded-lg text-center mb-8">
+      <h3 class="text-lg font-heading font-bold text-navy mb-2">Åtkomst nekad</h3>
+      <p class="text-text-soft mb-4">Du har inte behörighet att se denna sida</p>
+      <a href="/dashboard" class="text-gold font-semibold hover:underline">Gå till min panel</a>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingState" class="text-center py-16">
+      <div class="text-4xl mb-4 animate-pulse">⚙️</div>
+      <p class="text-text-soft">Laddar funktioner…</p>
+    </div>
+
+    <!-- Content -->
+    <div id="content" class="hidden">
+      <!-- Stats row -->
+      <div id="statsRow" class="grid grid-cols-3 gap-4 mb-6"></div>
+
+      <!-- Filter row -->
+      <div class="flex items-center gap-3 mb-4">
+        <label class="text-xs font-semibold text-text-soft">Sortera:</label>
+        <select id="sortSelect" onchange="renderFeatures()" class="px-3 py-1.5 border-2 border-lavender rounded-lg text-sm focus:outline-none focus:border-gold">
+          <option value="category-asc">Kategori ↑</option>
+          <option value="priority-desc">Prioritet ↓</option>
+          <option value="name-asc">Namn ↑</option>
+          <option value="status-asc">Status ↑</option>
+        </select>
+      </div>
+
+    <!-- Table -->
+      <div class="bg-white rounded-2xl border-2 border-lavender overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-sky">
+            <tr>
+              <th class="text-left px-4 py-3 font-semibold text-navy">NAMN</th>
+              <th class="text-left px-4 py-3 font-semibold text-navy">KATEGORI</th>
+              <th class="text-center px-4 py-3 font-semibold text-navy">STATUS</th>
+              <th class="text-center px-4 py-3 font-semibold text-navy">FAMILJER</th>
+              <th class="text-center px-4 py-3 font-semibold text-navy">PRIORITET</th>
+              <th class="text-center px-4 py-3 font-semibold text-navy">KOMPLEXITET</th>
+              <th class="text-center px-4 py-3 font-semibold text-navy">TIMMAR</th>
+              <th class="text-center px-4 py-3 font-semibold text-navy">ÅTGÄRDER</th>
+            </tr>
+          </thead>
+          <tbody id="featureTableBody"></tbody>
+        </table>
+        <div id="emptyState" class="hidden text-center py-12 text-text-soft">
+          <p class="text-lg mb-2">Inga funktioner ännu</p>
+          <p class="text-sm">Klicka på "+ Ny funktion" för att skapa den första.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="errorState" class="hidden bg-coral border-l-4 border-red-500 p-6 rounded-lg mt-6">
+      <p class="text-red-700 font-semibold">Ett fel uppstod vid laddning av funktioner.</p>
+      <button onclick="loadFeatures()" class="mt-2 text-gold font-semibold hover:underline">Försök igen</button>
+    </div>
+  </main>
+
+  <!-- ─── Create / Edit Modal ─────────────────────────────────── -->
+  <div id="createModal" class="modal-overlay">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b-2 border-lavender flex items-center justify-between">
+        <h2 id="modalTitle" class="text-xl font-heading font-bold text-navy">Ny funktion</h2>
+        <button onclick="closeModal()" class="text-text-soft hover:text-navy text-2xl leading-none">&times;</button>
+      </div>
+
+      <form id="featureForm" class="p-6 space-y-4">
+        <input type="hidden" id="editSlug" value="">
+
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">Slug (unik identifierare) *</label>
+          <input type="text" id="fSlug" placeholder="t.ex. klinisk_rapportering" required
+            pattern="[a-z0-9_]+"
+            class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm">
+          <p class="text-xs text-text-soft mt-1">Bara små bokstäver, siffror och understreck</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">Namn *</label>
+          <input type="text" id="fName" placeholder="t.ex. Klinisk rapportering" required
+            class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm">
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">Beskrivning</label>
+          <textarea id="fDescription" rows="2" placeholder="Kort beskrivning av funktionen…"
+            class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm resize-none"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-navy mb-1">Status</label>
+            <select id="fStatus" class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm">
+              <option value="off">OFF (avstängd)</option>
+              <option value="dev">DEV (utveckling)</option>
+              <option value="live">LIVE (i produktion)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-navy mb-1">Prioritet</label>
+            <select id="fPriority" class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-navy mb-1">Komplexitet (1-10)</label>
+            <input type="number" id="fComplexity" value="5" min="1" max="10"
+              class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-navy mb-1">Estimerade timmar</label>
+            <input type="number" id="fEstimatedHours" step="0.5" min="0" placeholder="t.ex. 8"
+              class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm">
+          </div>
+        </div>
+
+        <div class="pt-2 flex gap-3">
+          <button type="submit" class="flex-1 bg-gold hover:bg-yellow-500 text-navy font-bold py-2 rounded-lg transition-colors">
+            Spara funktion
+          </button>
+          <button type="button" onclick="closeModal()" class="px-4 py-2 text-text-soft hover:text-navy transition-colors">
+            Avbryt
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ─── Delete Confirm Modal ────────────────────────────────── -->
+  <div id="deleteModal" class="confirm-modal">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+      <h3 class="text-xl font-heading font-bold text-navy mb-4">Ta bort funktion?</h3>
+      <p id="deleteConfirmText" class="text-text-soft mb-6">Vill du verkligen ta bort denna funktion? Detta kan inte ångras.</p>
+      <input type="hidden" id="deleteSlug" value="">
+      <div class="flex gap-3">
+        <button onclick="confirmDelete()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition-colors">
+          Ja, ta bort
+        </button>
+        <button onclick="closeDeleteModal()" class="px-4 py-2 text-text-soft hover:text-navy transition-colors">
+          Avbryt
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Families Modal ─────────────────────────────────────── -->
+  <div id="familiesModal" class="modal-overlay">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b-2 border-lavender flex items-center justify-between">
+        <h2 class="text-xl font-heading font-bold text-navy">Tilldelade familjer</h2>
+        <button onclick="closeFamiliesModal()" class="text-text-soft hover:text-navy text-2xl leading-none">&times;</button>
+      </div>
+      <div class="p-6">
+        <div id="familiesList" class="space-y-3 mb-4"></div>
+        <div id="noFamiliesMsg" class="hidden text-center py-8 text-text-soft">
+          <p class="mb-2">Inga familjer tilldelade ännu.</p>
+          <p class="text-sm">Lägg till en familj nedan för att ge tillgång i DEV-läge.</p>
+        </div>
+        <div class="border-t pt-4 mt-4">
+          <button onclick="openAddFamilySearch()" class="w-full flex items-center justify-center gap-2 bg-gold hover:bg-yellow-500 text-navy font-bold px-4 py-2.5 rounded-lg transition-colors text-sm">
+            + Lägg till familj
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Add Family Search Modal ────────────────────────── -->
+  <div id="addFamilyModal" class="modal-overlay">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+      <div class="p-6 border-b-2 border-lavender flex items-center justify-between">
+        <h2 class="text-xl font-heading font-bold text-navy">Lägg till familj</h2>
+        <button onclick="closeAddFamilySearch()" class="text-text-soft hover:text-navy text-2xl leading-none">&times;</button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <input type="text" id="familySearchInput" placeholder="Sök på namn, e-post eller barn…"
+            class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm">
+          <p class="text-xs text-text-soft mt-1">Minst 2 tecken krävs</p>
+        </div>
+        <div id="familySearchResults" class="space-y-2 search-results"></div>
+        <div id="familySearchLoading" class="hidden text-center py-4">
+          <span class="text-sm text-text-soft">Söker…</span>
+        </div>
+        <div id="familySearchEmpty" class="hidden text-center py-4">
+          <p class="text-sm text-text-soft">Inga familjer hittades</p>
+        </div>
+        <div id="familySearchHint" class="text-center py-2">
+          <p class="text-xs text-text-soft">Skriv för att söka</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let features = [];
+    let currentFeatureSlug = null;
+
+    // ─── Auth check ────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const user = await checkAuth();
+        if (!user || (!user.isAdmin && !user.is_admin)) {
+          document.getElementById('accessDenied').classList.remove('hidden');
+          document.getElementById('loadingState').classList.add('hidden');
+          return;
+        }
+        await loadFeatures();
+      } catch (err) {
+        console.error('[ADMIN-DEV] Init error:', err);
+        document.getElementById('errorState').classList.remove('hidden');
+        document.getElementById('errorState').querySelector('p').textContent =
+          err.message || 'Okänt fel vid laddning';
+      } finally {
+        document.getElementById('loadingState').classList.add('hidden');
+      }
+    });
+
+    // ─── Load features ─────────────────────────────────────────
+    async function loadFeatures() {
+      document.getElementById('loadingState').classList.remove('hidden');
+      document.getElementById('content').classList.add('hidden');
+      document.getElementById('errorState').classList.add('hidden');
+
+      try {
+        const data = await Auth.api('/api/admin/features');
+        features = Array.isArray(data) ? data : (data?.features || []);
+        try {
+          renderFeatures();
+        } catch (renderErr) {
+          console.error('[ADMIN-DEV] Render error:', renderErr);
+          throw renderErr;
+        }
+      } catch (err) {
+        console.error('[ADMIN-DEV] loadFeatures error:', err);
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('errorState').classList.remove('hidden');
+      }
+    }
+
+    // ─── Render ─────────────────────────────────────────────────
+    function renderFeatures() {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('content').classList.remove('hidden');
+
+      // Stats
+      const dev = features.filter(f => f.status === 'dev').length;
+      const live = features.filter(f => f.status === 'live').length;
+      document.getElementById('statsRow').innerHTML = `
+        <div class="bg-sky rounded-xl p-4 border-2 border-lavender">
+          <p class="text-xs text-text-soft font-semibold mb-1">DEV</p>
+          <p class="text-2xl font-heading font-bold text-navy">${dev}</p>
+        </div>
+        <div class="bg-mint rounded-xl p-4 border-2 border-mint">
+          <p class="text-xs text-text-soft font-semibold mb-1">LIVE</p>
+          <p class="text-2xl font-heading font-bold text-green-800">${live}</p>
+        </div>
+        <div class="bg-lavender rounded-xl p-4 border-2 border-lavender">
+          <p class="text-xs text-text-soft font-semibold mb-1">TOTALT</p>
+          <p class="text-2xl font-heading font-bold text-navy">${features.length}</p>
+        </div>
+      `;
+
+      // Table
+      const tbody = document.getElementById('featureTableBody');
+      if (features.length === 0) {
+        tbody.innerHTML = '';
+        document.getElementById('emptyState').classList.remove('hidden');
+        return;
+      }
+      document.getElementById('emptyState').classList.add('hidden');
+
+      // Sorting
+      const sortVal = document.getElementById('sortSelect').value;
+      const sorted = [...features].sort((a, b) => {
+        if (sortVal === 'category-asc') {
+          const catOrder = ['kärnprodukt','core','admin','rapporter','ui','features','marketing','notifications','monetization','övrigt'];
+          const ca = a.category || 'övrigt';
+          const cb = b.category || 'övrigt';
+          const ia = catOrder.indexOf(ca) === -1 ? 99 : catOrder.indexOf(ca);
+          const ib = catOrder.indexOf(cb) === -1 ? 99 : catOrder.indexOf(cb);
+          if (ia !== ib) return ia - ib;
+          return priorityOrder(a.priority) - priorityOrder(b.priority);
+        }
+        if (sortVal === 'priority-desc') return priorityOrder(b.priority) - priorityOrder(a.priority);
+        if (sortVal === 'name-asc') return (a.name || '').localeCompare(b.name || '');
+        if (sortVal === 'status-asc') return statusOrder(a.status) - statusOrder(b.status);
+        return 0;
+      });
+
+      const catLabels = {
+        'kärnprodukt': 'Kärnprodukt', core: 'Kärna',
+        admin: 'Admin', rapporter: 'Rapporter',
+        ui: 'UI', features: 'Features',
+        marketing: 'Marketing', notifications: 'Notifikationer',
+        monetization: 'Monetization', övrigt: 'Övrigt',
+      };
+
+      tbody.innerHTML = sorted.map(f => {
+        const cat = f.category || deriveCategory(f.tags);
+        return `
+        <tr class="border-t border-lavender/50 hover:bg-sky/50 transition-colors">
+          <td class="px-4 py-3">
+            <a href="/admin/development/${f.slug}" class="font-semibold text-navy hover:text-gold transition-colors">
+              ${escHtml(f.name)}
+            </a>
+            <p class="text-xs text-text-soft/70 mt-0.5 font-mono">${escHtml(f.slug)}</p>
+          </td>
+          <td class="px-4 py-3">
+            <span class="px-2 py-1 rounded text-xs font-semibold ${categoryBadge(cat)}">
+              ${catLabels[cat] || cat || '—'}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <div class="flex items-center justify-center gap-1 status-toggle-row">
+              <button onclick="openStatusConfirm('${escJs(f.slug)}', 'dev', '${escJs(f.name)}', '${f.status}')"
+                class="px-2 py-1 rounded text-xs font-bold transition-all ${f.status === 'dev' ? 'status-dev font-bold' : 'status-off opacity-60 hover:opacity-100'}">DEV</button>
+              <button onclick="openStatusConfirm('${escJs(f.slug)}', 'live', '${escJs(f.name)}', '${f.status}')"
+                class="px-2 py-1 rounded text-xs font-bold transition-all ${f.status === 'live' ? 'status-live font-bold' : 'status-off opacity-60 hover:opacity-100'}">LIVE</button>
+              <button onclick="openStatusConfirm('${escJs(f.slug)}', 'off', '${escJs(f.name)}', '${f.status}')"
+                class="px-2 py-1 rounded text-xs font-bold transition-all ${f.status === 'off' ? 'status-off font-bold' : 'status-off opacity-60 hover:opacity-100'}">OFF</button>
+            </div>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <button onclick="openFamiliesModal('${escJs(f.slug)}')"
+              class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-sky hover:bg-lavender transition-colors text-xs font-semibold text-navy">
+              👨‍👩‍👧 ${f.family_count || 0}
+            </button>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <span class="px-2 py-1 rounded text-xs font-bold ${priorityClass(f.priority)}">
+              ${f.priority || 'medium'}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center text-text-soft text-sm">${f.complexity || 5}</td>
+          <td class="px-4 py-3 text-center text-text-soft text-sm">${f.estimated_hours ? f.estimated_hours + 'h' : '—'}</td>
+          <td class="px-4 py-3 text-center">
+            <div class="flex items-center justify-center gap-2">
+              <a href="/admin/development/${f.slug}" class="text-xs font-semibold text-navy hover:text-gold transition-colors px-2 py-1 rounded hover:bg-sky">Redigera</a>
+              <button onclick="openDeleteModal('${escJs(f.slug)}', '${escJs(f.name)}')"
+                class="text-xs text-red-400 hover:text-red-600 transition-colors px-2 py-1">🗑</button>
+            </div>
+          </td>
+        </tr>
+      `}).join('');
+    }
+
+    // ─── Status toggle with confirmation ─────────────────────
+    const STATUS_CONFIRM_MESSAGES = {
+      'dev-to-live': 'Slå på {name} för alla? Detta gör funktionen synlig för alla föräldrar utan feature-limit.',
+      'dev-to-off': 'Återkalla {name}? Familjer som inte är i beta förlorar åtkomst. Data bevaras.',
+      'live-to-dev': 'Flytta {name} till dev? Familjer som inte är i beta förlorar åtkomst. Data bevaras.',
+      'live-to-off': 'Stäng av {name}? Alla familjer förlorar åtkomst. Data bevaras.',
+      'off-to-dev': 'Aktivera {name} i dev-läge? Bara tilldelade betafamiljer får åtkomst.',
+      'off-to-live': 'Slå på {name} för alla? Detta gör funktionen synlig för alla föräldrar utan feature-limit.',
+    };
+
+    function openStatusConfirm(slug, newStatus, featureName, currentStatus) {
+      if (newStatus === currentStatus) return; // Already active, no-op
+      document.getElementById('statusConfirmSlug').value = slug;
+      document.getElementById('statusConfirmNewStatus').value = newStatus;
+      document.getElementById('statusConfirmTitle').textContent =
+        `Ändra ${featureName} till ${newStatus.toUpperCase()}?`;
+      const key = `${currentStatus}-to-${newStatus}`;
+      const msg = STATUS_CONFIRM_MESSAGES[key] || `Ändra status för ${featureName} till ${newStatus.toUpperCase()}?`;
+      document.getElementById('statusConfirmBody').textContent = msg.replace('{name}', featureName);
+      document.getElementById('statusConfirmModal').classList.add('open');
+    }
+
+    function closeStatusConfirm() {
+      document.getElementById('statusConfirmModal').classList.remove('open');
+    }
+
+    async function confirmStatusChange() {
+      const slug = document.getElementById('statusConfirmSlug').value;
+      const newStatus = document.getElementById('statusConfirmNewStatus').value;
+      try {
+        await Auth.api(`/api/admin/features/${slug}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: newStatus }),
+        });
+        closeStatusConfirm();
+        await loadFeatures();
+      } catch (err) {
+        alert('Kunde inte uppdatera status: ' + err.message);
+        closeStatusConfirm();
+      }
+    }
+
+    function statusLabel(status) {
+      return { dev: '● DEV', live: '○ LIVE', off: '○ OFF' }[status] || status;
+    }
+
+    function statusClass(status) {
+      return { dev: 'status-dev', live: 'status-live', off: 'status-off' }[status] || 'status-off';
+    }
+
+    function priorityClass(priority) {
+      return { critical: 'priority-critical', high: 'priority-high', medium: 'priority-medium', low: 'priority-low' }[priority] || 'priority-low';
+    }
+
+    // ─── Create / Edit Modal ───────────────────────────────────
+    document.getElementById('newFeatureBtn').addEventListener('click', () => {
+      document.getElementById('editSlug').value = '';
+      document.getElementById('modalTitle').textContent = 'Ny funktion';
+      document.getElementById('fSlug').disabled = false;
+      document.getElementById('featureForm').reset();
+      document.getElementById('fComplexity').value = '5';
+      document.getElementById('fPriority').value = 'medium';
+      document.getElementById('createModal').classList.add('open');
+    });
+
+    document.getElementById('featureForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const editSlug = document.getElementById('editSlug').value;
+      const body = {
+        slug: document.getElementById('fSlug').value.trim(),
+        name: document.getElementById('fName').value.trim(),
+        description: document.getElementById('fDescription').value.trim() || null,
+        status: document.getElementById('fStatus').value,
+        priority: document.getElementById('fPriority').value,
+        complexity: parseInt(document.getElementById('fComplexity').value, 10),
+        estimated_hours: document.getElementById('fEstimatedHours').value ? parseFloat(document.getElementById('fEstimatedHours').value) : null,
+      };
+
+      try {
+        const url = editSlug ? `/api/admin/features/${editSlug}` : '/api/admin/features';
+        const method = editSlug ? 'PUT' : 'POST';
+        await Auth.api(url, { method, body: JSON.stringify(body) });
+        closeModal();
+        loadFeatures();
+      } catch (err) {
+        alert('Fel: ' + err.message);
+      }
+    });
+
+    function closeModal() {
+      document.getElementById('createModal').classList.remove('open');
+    }
+
+    // ─── Delete Modal ──────────────────────────────────────────
+    function openDeleteModal(slug, name) {
+      document.getElementById('deleteSlug').value = slug;
+      document.getElementById('deleteConfirmText').textContent =
+        `Vill du verkligen ta bort funktionen "${name}"? Detta kan inte ångras.`;
+      document.getElementById('deleteModal').classList.add('open');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.remove('open');
+    }
+
+    async function confirmDelete() {
+      const slug = document.getElementById('deleteSlug').value;
+      try {
+        await Auth.api(`/api/admin/features/${slug}`, { method: 'DELETE' });
+        closeDeleteModal();
+        loadFeatures();
+      } catch (err) {
+        alert('Kunde inte ta bort: ' + err.message);
+      }
+    }
+
+    // ─── Families Modal ────────────────────────────────────────
+    async function openFamiliesModal(slug) {
+      currentFeatureSlug = slug;
+      document.getElementById('familiesModal').classList.add('open');
+      document.getElementById('familiesList').innerHTML = '<p class="text-text-soft text-sm">Laddar…</p>';
+      document.getElementById('noFamiliesMsg').classList.add('hidden');
+
+      try {
+        const data = await Auth.api(`/api/admin/features/${slug}`);
+        const families = data.assigned_families || [];
+
+        if (families.length === 0) {
+          document.getElementById('familiesList').innerHTML = '';
+          document.getElementById('noFamiliesMsg').classList.remove('hidden');
+        } else {
+          document.getElementById('noFamiliesMsg').classList.add('hidden');
+          document.getElementById('familiesList').innerHTML = families.map(f => `
+            <div class="flex items-center justify-between bg-sky rounded-lg px-4 py-3">
+              <div>
+                <p class="font-semibold text-navy text-sm">${escHtml(f.family_name || 'Namnlös')}</p>
+                <p class="text-xs text-text-soft">ID: ${f.family_id} · Tillagd ${new Date(f.enabled_at).toLocaleDateString('sv-SE')}</p>
+              </div>
+              <button onclick="removeFamily('${f.family_id}')" class="text-red-400 hover:text-red-600 text-xs font-semibold transition-colors">
+                Ta bort
+              </button>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        document.getElementById('familiesList').innerHTML = `<p class="text-red-500 text-sm">Fel vid laddning: ${err.message}</p>`;
+      }
+    }
+
+    // ─── Add Family Search ──────────────────────────────────
+    let searchTimeout = null;
+
+    function openAddFamilySearch() {
+      document.getElementById('addFamilyModal').classList.add('open');
+      document.getElementById('familySearchInput').value = '';
+      document.getElementById('familySearchResults').innerHTML = '';
+      document.getElementById('familySearchLoading').classList.add('hidden');
+      document.getElementById('familySearchEmpty').classList.add('hidden');
+      document.getElementById('familySearchHint').classList.remove('hidden');
+      setTimeout(() => document.getElementById('familySearchInput').focus(), 50);
+    }
+
+    function closeAddFamilySearch() {
+      document.getElementById('addFamilyModal').classList.remove('open');
+      clearTimeout(searchTimeout);
+    }
+
+    document.getElementById('familySearchInput').addEventListener('input', function () {
+      const q = this.value.trim();
+      clearTimeout(searchTimeout);
+      if (q.length < 2) {
+        document.getElementById('familySearchResults').innerHTML = '';
+        document.getElementById('familySearchLoading').classList.add('hidden');
+        document.getElementById('familySearchEmpty').classList.add('hidden');
+        document.getElementById('familySearchHint').classList.remove('hidden');
+        document.getElementById('familySearchHint').querySelector('p').textContent = 'Skriv för att söka';
+        return;
+      }
+      document.getElementById('familySearchHint').classList.add('hidden');
+      document.getElementById('familySearchLoading').classList.remove('hidden');
+      searchTimeout = setTimeout(() => performFamilySearch(q), 300);
+    });
+
+    document.getElementById('familySearchInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        closeAddFamilySearch();
+      }
+    });
+
+    async function performFamilySearch(q) {
+      try {
+        const results = await Auth.api(`/api/admin/features/families-search?q=${encodeURIComponent(q)}&exclude_slug=${encodeURIComponent(currentFeatureSlug)}&limit=20`);
+        document.getElementById('familySearchLoading').classList.add('hidden');
+        document.getElementById('familySearchResults').innerHTML = '';
+        document.getElementById('familySearchEmpty').classList.add('hidden');
+
+        if (results.length === 0) {
+          document.getElementById('familySearchEmpty').classList.remove('hidden');
+        } else {
+          document.getElementById('familySearchResults').innerHTML = results.map(f => `
+            <div class="flex items-center justify-between bg-sky rounded-lg px-4 py-3 hover:bg-lavender/50 transition-colors cursor-pointer"
+                 onclick="addFamilyFromSearch('${f.id}')">
+              <div>
+                <p class="font-semibold text-navy text-sm">${escHtml(f.family_name)}</p>
+                <p class="text-xs text-text-soft">${f.parent_count} förälder${f.parent_count !== 1 ? 'ar' : ''} · ${f.child_count} barn</p>
+              </div>
+              <span class="text-gold text-xs font-bold">+ Lägg till</span>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        document.getElementById('familySearchLoading').classList.add('hidden');
+        document.getElementById('familySearchResults').innerHTML =
+          `<p class="text-red-500 text-sm text-center">Sökningsfel: ${err.message}</p>`;
+      }
+    }
+
+    async function addFamilyFromSearch(familyId) {
+      try {
+        await Auth.api(`/api/admin/features/${currentFeatureSlug}/families`, {
+          method: 'POST',
+          body: JSON.stringify({ family_id: familyId }),
+        });
+        closeAddFamilySearch();
+        openFamiliesModal(currentFeatureSlug); // refresh the families list
+      } catch (err) {
+        alert('Kunde inte lägga till familj: ' + err.message);
+      }
+    }
+
+    async function removeFamily(familyId) {
+      if (!confirm('Ta bort denna familj?')) return;
+      try {
+        await Auth.api(`/api/admin/features/${currentFeatureSlug}/families/${familyId}`, { method: 'DELETE' });
+        openFamiliesModal(currentFeatureSlug); // refresh
+      } catch (err) {
+        alert('Fel: ' + err.message);
+      }
+    }
+
+    function closeFamiliesModal() {
+      document.getElementById('familiesModal').classList.remove('open');
+      currentFeatureSlug = null;
+    }
+
+    // ─── Helpers ───────────────────────────────────────────────
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function escJs(str) {
+      if (!str) return '';
+      return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    function priorityOrder(p) {
+      return { critical: 0, high: 1, medium: 2, low: 3 }[p || 'medium'] || 4;
+    }
+
+    function statusOrder(s) {
+      return { live: 0, dev: 1, off: 2 }[s || 'off'] || 3;
+    }
+
+    function deriveCategory(tags) {
+      if (!tags || !Array.isArray(tags) || tags.length === 0) return null;
+      const map = {
+        'kärna': 'kärnprodukt', core: 'core',
+        admin: 'admin', rapporter: 'rapporter',
+        ui: 'ui', features: 'features',
+        marketing: 'marketing', notifications: 'notifications',
+        monetization: 'monetization',
+      };
+      return map[tags[0]] || tags[0];
+    }
+
+    function categoryBadge(cat) {
+      const b = {
+        'kärnprodukt': 'bg-blue-100 text-blue-800',
+        core: 'bg-blue-100 text-blue-800',
+        admin: 'bg-purple-100 text-purple-800',
+        rapporter: 'bg-amber-100 text-amber-800',
+        ui: 'bg-green-100 text-green-800',
+        features: 'bg-teal-100 text-teal-800',
+        marketing: 'bg-pink-100 text-pink-800',
+        notifications: 'bg-orange-100 text-orange-800',
+        monetization: 'bg-yellow-100 text-yellow-800',
+        övrigt: 'bg-gray-100 text-gray-600',
+      };
+      return b[cat] || 'bg-gray-100 text-gray-600';
+    }
+  </script>
+
+  <!-- ─── Status Toggle Confirmation Modal ───────────────── -->
+  <div id="statusConfirmModal" class="confirm-modal">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+      <h3 class="text-xl font-heading font-bold text-navy mb-2" id="statusConfirmTitle">Ändra status?</h3>
+      <p class="text-text-soft mb-6" id="statusConfirmBody"></p>
+      <input type="hidden" id="statusConfirmSlug" value="">
+      <input type="hidden" id="statusConfirmNewStatus" value="">
+      <div class="flex gap-3">
+        <button id="statusConfirmBtn" onclick="confirmStatusChange()" class="flex-1 bg-gold hover:bg-yellow-500 text-navy font-bold py-2 rounded-lg transition-colors">
+          Ja, ändra
+        </button>
+        <button onclick="closeStatusConfirm()" class="px-4 py-2 text-text-soft hover:text-navy transition-colors">
+          Avbryt
+        </button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

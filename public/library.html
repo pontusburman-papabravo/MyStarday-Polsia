@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:title" content="Min Stjärndag — Förenkla vardagen för hela familjen">
+    <meta property="og:description" content="Skapa och följ dagliga scheman, aktiviteter och belöningar">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://mystarday.se/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://mystarday.se/og-image.png">
+  <title>Mitt bibliotek - Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="/js/dom-utils.js?v=2.12.0"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623', 'gold-light': '#FFF3D6', navy: '#1B2340', 'navy-soft': '#2A3458',
+            sky: '#E8F0FE', lavender: '#EDE7F6', mint: '#E0F5EC', coral: '#FDEAE7', 'text-soft': '#5A6178',
+          },
+          fontFamily: { heading: ['Outfit', 'sans-serif'], body: ['Plus Jakarta Sans', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="/css/theme.css?v=2.13.0">
+  <link rel="stylesheet" href="/css/mobile-nav.css?v=2.13.0">
+  <script src="/js/theme.js?v=2.12.0"></script>
+  <script src="/js/auth.js?v=2.13.0"></script>
+  <script src="/js/feedback.js?v=2.12.0"></script>
+  <script src="/js/i18n.js?v=2.12.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+  <script src="/js/toast.js?v=2.12.0"></script>
+  <script src="/js/birthday-picker.js?v=2.12.0"></script>
+  <style>
+    html, body { overflow-x: hidden; max-width: 100vw; }
+    * { box-sizing: border-box; }
+    .icon-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; padding: 6px; }
+    .icon-opt { min-width: 44px; min-height: 44px; }
+
+    /* ── Mobile responsive fixes (375px) ── */
+    @media (max-width: 640px) {
+      /* Tab bar: prevent overflow, ensure all 4 tabs fit */
+      .tab-btn { flex: 1 1 0; min-width: 0; padding-left: 4px; padding-right: 4px; font-size: 11px; }
+      /* Standard library sub-tabs */
+      .std-sub-btn { font-size: 11px; padding-left: 6px; padding-right: 6px; }
+      /* Grid items: single column on mobile */
+      .grid.sm\\:grid-cols-2 { grid-template-columns: 1fr; }
+      /* Modals: constrain width and ensure scroll */
+      .fixed.inset-0 .bg-white { max-width: calc(100vw - 32px); max-height: 90vh; overflow-y: auto; }
+      /* Search inputs: full width */
+      input[type="text"], input[type="search"] { font-size: 16px; }
+      /* Date/time inputs: prevent iOS oversized rendering */
+      input[type="date"], input[type="time"] { font-size: 16px; height: 44px; -webkit-appearance: none; max-width: 100%; }
+    }
+    .drag-handle { cursor: grab; touch-action: none; }
+    .drag-handle:active { cursor: grabbing; }
+    .sortable-ghost { opacity: 0.3; }
+    .sortable-chosen { box-shadow: 0 8px 25px rgba(0,0,0,0.15); transform: scale(1.02); }
+    .star-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+    .sidebar-nav a { display: block; padding: 10px 16px; min-height: 44px; }
+    .checkbox-touch { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+    .checkbox-touch input[type="checkbox"] { width: 44px; height: 44px; margin: 0; cursor: pointer; accent-color: #F5A623; flex-shrink: 0; }
+    .checkbox-touch span { cursor: pointer; flex: 1; }
+    .substeps-panel { display: none; }
+    .substeps-panel.open { display: block; }
+    .substep-item { display: flex; align-items: center; gap: 2px; }
+    /* Main tabs (Aktiviteter / Belöningar) */
+    .tab-btn { transition: all 0.15s ease; }
+    .tab-btn.active { background: white; color: #1B2340; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    /* Schema tabs — toggle buttons */
+    .schema-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      border-radius: 9999px;
+      padding: 4px 8px 4px 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+    }
+    .schema-tab.active {
+      background: #F5A623;
+      color: white;
+    }
+    .schema-tab:not(.active) {
+      background: #f8f5ff;
+      color: #1B2340;
+      border-color: #e8e0f5;
+    }
+    .schema-tab:not(.active):hover {
+      border-color: #F5A623;
+      background: #fef7e8;
+    }
+    .cat-delete-btn {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .schema-tab:hover .cat-delete-btn {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .reward-toggle { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+    /* Standard library sub-tabs */
+    .std-sub-btn { transition: all 0.15s ease; }
+    .std-sub-btn.bg-white { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .std-sub-pane { }
+    /* Emoji text input within icon picker */
+    .emoji-text-input { font-size: 1.5rem; text-align: center; width: 3rem; height: 3rem; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.25s ease forwards; }
+
+    /* ── Overflow menu (⋯) for activity/reward row actions on mobile ── */
+    .overflow-menu-wrap { position: relative; }
+    .overflow-menu-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center;
+      background: #EDE7F6; border-radius: 8px; border: none; cursor: pointer; font-size: 18px; color: #1B2340; }
+    .overflow-menu-btn:active { background: #F5A623; color: white; }
+    .overflow-menu-popup {
+      /* BUG-19/BUG-22/BUG-24: MÅSTE ha display:none — rör inte */
+      display: none; position: absolute; right: 0; top: calc(100% + 4px); z-index: 500;
+      background: white; border: 1.5px solid #EDE7F6; border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 160px; overflow: hidden;
+    }
+    .overflow-menu-popup.open {
+      /* BUG-19/BUG-22/BUG-24: !important krävs — rör inte */
+      display: block !important; animation: fadeIn 0.15s ease forwards;
+    }
+    .overflow-menu-popup button {
+      display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 16px;
+      border: none; background: none; cursor: pointer; text-align: left;
+      font-size: 14px; font-weight: 600; color: #1B2340; min-height: 44px;
+      transition: background 0.1s;
+    }
+    .overflow-menu-popup button:hover { background: #F8F9FF; }
+    .overflow-menu-popup button.danger { color: #DC2626; }
+    .overflow-menu-popup button.danger:hover { background: #FDEAE7; }
+    /* Active row: promote stacking context so popup renders above siblings;
+       override overflow-hidden on activity card so dropdown isn't clipped */
+    [data-id].overflow-menu-row-active {
+      position: relative;
+      z-index: 50;
+      overflow: visible !important;
+    }
+    /* Activity rows: substeps-panel overflow clips the popup — fix when row is active */
+    [data-id].overflow-menu-row-active .substeps-panel {
+      overflow: visible !important;
+    }
+    /* Desktop: hide overflow menu button, show inline buttons */
+    @media (min-width: 640px) {
+      .overflow-menu-wrap { display: none !important; }
+      .icon-btns-desktop { display: flex !important; }
+    }
+    /* Mobile: show overflow menu button, hide inline buttons */
+    @media (max-width: 639px) {
+      .icon-btns-desktop { display: none !important; }
+      .overflow-menu-wrap { display: block; }
+    }
+
+    /* ── Main content: bottom padding so FAB doesn't cover last item ── */
+    main { padding-bottom: max(80px, calc(env(safe-area-inset-bottom, 0px) + 80px)); }
+
+    /* ── Treasury (Skattkammaren) reward grid — parent read-only ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .trg-item {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 12px 6px 10px;
+      border-radius: 16px;
+      text-align: center;
+      background: #f8f9ff;
+      border: 1.5px solid transparent;
+      overflow: hidden;
+      transition: transform 0.15s;
+    }
+    .trg-item.earned {
+      background: linear-gradient(135deg, #fffbf0, #fff3cc);
+      border-color: rgba(245,166,35,0.4);
+      box-shadow: 0 2px 10px rgba(245,166,35,0.15);
+    }
+    .trg-item.affordable {
+      background: linear-gradient(135deg, #f0fff6, #e6ffed);
+      border-color: rgba(34,197,94,0.4);
+      box-shadow: 0 2px 10px rgba(34,197,94,0.12);
+    }
+    .trg-item.pending {
+      background: linear-gradient(135deg, #faf0ff, #f3e8ff);
+      border-color: rgba(168,85,247,0.3);
+    }
+    .trg-item.locked {
+      opacity: 0.5;
+      filter: grayscale(0.6);
+      background: #f0f0f5;
+      border-color: rgba(0,0,0,0.05);
+    }
+    .trg-icon {
+      font-size: 2rem;
+      line-height: 1;
+      width: 52px; height: 52px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.8);
+    }
+    .trg-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #1B2340;
+      line-height: 1.2;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .trg-cost {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: #B8860B;
+      background: rgba(245,166,35,0.12);
+      border-radius: 50px;
+      padding: 1px 6px;
+    }
+    .trg-item.locked .trg-cost { color: #9AA0B8; background: rgba(0,0,0,0.05); }
+    .trg-badge {
+      position: absolute;
+      top: 5px; right: 5px;
+      font-size: 0.75rem;
+      line-height: 1;
+    }
+    .trg-bar {
+      width: 100%; height: 3px;
+      background: rgba(0,0,0,0.08);
+      border-radius: 50px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+    .trg-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #F5A623, #22C55E);
+      border-radius: 50px;
+    }
+    /* 4 columns on wider screens — max 3 columns under 768px */
+    @media (min-width: 768px) {
+      #treasuryGridInner { grid-template-columns: repeat(4, 1fr) !important; }
+    }
+  </style>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Min Stjärndag">
+</head>
+<body class="bg-white font-body text-navy dark:bg-navy dark:text-white">
+  <div class="min-h-screen flex flex-col md:flex-row">
+
+    <!-- Mobile Top Bar -->
+    <div class="md:hidden bg-navy text-white p-4 flex items-center justify-between sticky top-0 z-20">
+      <a href="/dashboard" class="flex items-center gap-2 no-underline text-white hover:text-white">
+        <span class="text-xl">⭐</span>
+        <h1 class="text-lg font-heading font-bold">Min Stjärndag</h1>
+      </a>
+      <div class="flex items-center gap-1">
+        <button onclick="Theme.toggleDark()" class="p-2 hover:bg-navy-soft rounded-lg transition-colors text-lg" title="Mörkt läge">🌙</button>
+        <button id="menuToggle" class="p-2 hover:bg-navy-soft rounded-lg transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <nav id="sidebar" class="hidden md:block w-full md:w-64 bg-navy text-white p-4 md:p-6 md:min-h-screen">
+      <a href="/dashboard" class="hidden md:flex items-center gap-3 mb-8 no-underline text-white hover:text-white">
+        <span class="text-2xl">⭐</span>
+        <h1 class="text-xl font-heading font-bold">Min Stjärndag</h1>
+      </a>
+      <ul class="space-y-2">
+        <li><a href="/dashboard" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Översikt</a></li>
+        <li><a href="/daily-log" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Daglig logg</a></li>
+        <li><a href="/schedule" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Veckoschema</a></li>
+        <li><a href="/reports" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">📊 Rapporter</a></li>
+        <li><a href="/library" class="sidebar-nav block px-4 py-3 rounded-lg bg-gold text-navy font-semibold">Bibliotek</a></li>
+        <li><a href="/skattkammaren" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors" style="color:#F5A623;font-weight:600;">🏆 Skattkammaren</a></li>
+        <li><a href="/family" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Familjen &amp; inställningar</a></li>
+      </ul>
+      <div class="mt-8 pt-4 border-t border-navy-soft space-y-2">
+        <button onclick="Theme.toggleDark()" class="w-full px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors text-left flex items-center gap-2">
+          <span>🌙</span> Mörkt läge
+        </button>
+        <button id="logoutBtn" class="w-full px-4 py-2 bg-coral hover:bg-red-200 text-navy rounded-lg font-semibold transition-colors">Logga ut</button>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="flex-1 flex flex-col">
+      <!-- Header -->
+      <div class="bg-sky border-b border-lavender p-4 md:p-6 flex justify-between items-center">
+        <div>
+          <h2 class="text-xl font-heading font-bold text-navy">📚 Mitt bibliotek</h2>
+          <p class="text-sm text-text-soft mt-0.5">Schema, aktiviteter, belöningar och standardbibliotek</p>
+        </div>
+      </div>
+
+      <div class="flex-1 p-4 md:p-8 overflow-auto space-y-6">
+
+        <!-- Toast -->
+        <div id="toast" class="hidden fixed top-4 right-4 z-50 bg-navy text-white px-6 py-3 rounded-xl shadow-lg font-semibold text-sm max-w-xs"></div>
+
+        <!-- Tips section -->
+        <div class="bg-sky border border-lavender rounded-2xl p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg">💡</span>
+            <span class="font-semibold text-navy text-sm">Tips: Bibliotek</span>
+          </div>
+          <ul class="text-xs text-text-soft space-y-1.5">
+            <li>• Skapa aktiviteter med delsteg — barnet bockar av ett steg i taget</li>
+            <li>• Kopiera aktiviteter från standardbiblioteket och anpassa dem för din familj</li>
+            <li>• Belöningar sparas som mål — barnet ser sin progress i sin vy</li>
+            <li>• Aktivera/inaktivera belöningar för specifika barn i barnvyn</li>
+          </ul>
+        </div>
+
+        <!-- ── Main Tab Bar (Schema / Aktiviteter / Belöningar / Standardbibliotek) ─── -->
+        <!-- Skattkammaren removed from tabs — accessible only via sidebar menu -->
+        <div class="bg-sky/60 rounded-2xl p-1.5 flex gap-1 sm:gap-1.5 overflow-x-auto">
+          <button id="tab-schema-btn" onclick="switchTab('schema')"
+            class="tab-btn flex-1 px-2 sm:px-3 py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-text-soft whitespace-nowrap">
+            📅 Schema
+          </button>
+          <button id="tab-activities-btn" onclick="switchTab('activities')"
+            class="tab-btn flex-1 px-2 sm:px-3 py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-text-soft whitespace-nowrap">
+            📋 Aktiviteter
+          </button>
+          <button id="tab-rewards-btn" onclick="switchTab('rewards')"
+            class="tab-btn flex-1 px-2 sm:px-3 py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-text-soft whitespace-nowrap">
+            🏆 Belöningar
+          </button>
+          <button id="tab-standard-btn" onclick="switchTab('standard')" data-feature="standardbibliotek"
+            class="tab-btn flex-1 px-2 sm:px-3 py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-text-soft whitespace-nowrap">
+            📚 Bibliotek
+          </button>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- TAB 0: Schema (per barn + Mina scheman + Standardbiblioteket) -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div id="tab-schema" class="tab-pane space-y-5">
+
+          <!-- ── Section: Barnens scheman ─── -->
+          <div>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+              <div>
+                <h3 class="text-lg font-heading font-bold text-navy">👧 Barnens scheman</h3>
+                <p class="text-sm text-text-soft mt-0.5">Varje barn har sitt eget veckoschema — klicka för att redigera</p>
+              </div>
+              <a href="/schedule" class="px-4 py-2 bg-navy hover:bg-navy-soft text-white rounded-lg font-semibold text-sm transition-colors whitespace-nowrap">
+                📅 Schemaredigeraren
+              </a>
+            </div>
+            <div id="schemaChildrenList" class="space-y-3">
+              <div class="text-center py-8 text-text-soft">Laddar barn och scheman…</div>
+            </div>
+          </div>
+
+          <!-- ── Section: Mina scheman (family templates) ─── -->
+          <div class="border-t-2 border-lavender pt-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+              <div>
+                <h3 class="text-lg font-heading font-bold text-navy">📝 Mina scheman</h3>
+                <p class="text-sm text-text-soft mt-0.5">Egna schemamallar — skapa, redigera och kopiera till barn</p>
+              </div>
+              <button onclick="openCreateTemplateModal()" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-white rounded-lg font-semibold text-sm transition-colors whitespace-nowrap">
+                + Skapa nytt schema
+              </button>
+            </div>
+            <div id="familyTemplatesList" class="grid gap-4 sm:grid-cols-2">
+              <div class="text-center py-6 text-text-soft col-span-full">Laddar schemamallar…</div>
+            </div>
+          </div>
+
+          <!-- ── Section: Standardbiblioteket ─── -->
+          <div class="border-t-2 border-lavender pt-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+              <div>
+                <h3 class="text-lg font-heading font-bold text-navy">📚 Standardbiblioteket</h3>
+                <p class="text-sm text-text-soft mt-0.5">Färdiga scheman — kopiera till barn och anpassa fritt efteråt</p>
+              </div>
+            </div>
+            <div id="standardScheduleCards" class="grid gap-4 sm:grid-cols-2">
+              <div class="text-center py-6 text-text-soft col-span-full">Laddar standardscheman…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- TAB 1: Aktiviteter (family's own)                      -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div id="tab-activities" class="tab-pane space-y-5">
+
+          <!-- Schema tabs (Förskola / Skola / custom) -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <div id="schemaTabsContainer" class="flex items-center gap-2 flex-wrap">
+              <!-- Filled dynamically -->
+            </div>
+          </div>
+
+          <!-- Header + add button for current tab -->
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h3 id="schemaTabTitle" class="text-lg font-heading font-bold text-navy">Aktiviteter</h3>
+              <p class="text-sm text-text-soft mt-0.5">Grupperade efter tid på dagen</p>
+            </div>
+            <button onclick="openActivityModal()" class="px-4 py-2 bg-navy hover:bg-navy-soft text-white rounded-lg font-semibold text-sm transition-colors whitespace-nowrap">
+              + Ny aktivitet
+            </button>
+          </div>
+
+          <!-- Search bar -->
+          <div class="relative">
+            <input type="text" id="activitySearchInput" placeholder="🔍 Sök bland dina och standardaktiviteter…"
+              class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-sm"
+              oninput="onActivitySearch(this.value)">
+            <div id="activitySearchResults" class="hidden mt-2 space-y-2"></div>
+          </div>
+
+          <!-- Time-grouped activities -->
+          <div id="activitiesContainer" class="space-y-3">
+            <div class="text-center py-8 text-text-soft">Laddar aktiviteter…</div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- TAB: Skattkammaren (parent read-only child view)        -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div id="tab-treasury" class="tab-pane space-y-5">
+          <div>
+            <h3 class="text-lg font-heading font-bold text-navy">💎 Skattkammaren</h3>
+            <p class="text-sm text-text-soft mt-0.5">Barnets trofé-hylla — se vilka belöningar som är upplåsta och vilka som är på väg</p>
+          </div>
+
+          <!-- Child selector -->
+          <div id="treasuryChildSelector" class="flex flex-wrap gap-2">
+            <div class="text-center py-4 text-text-soft text-sm w-full">Laddar barn…</div>
+          </div>
+
+          <!-- Star balance display -->
+          <div id="treasuryBalanceBar" class="hidden bg-gradient-to-r from-amber-400 to-yellow-300 rounded-2xl p-4 flex items-center justify-between shadow-md">
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-amber-900 opacity-70">Stjärnsaldo</div>
+              <div id="treasuryBalanceNum" class="text-3xl font-heading font-extrabold text-amber-900">⭐ 0</div>
+            </div>
+            <div class="text-4xl">🪙</div>
+          </div>
+
+          <!-- Reward grid -->
+          <div id="treasuryGrid" class="hidden">
+            <div class="flex items-center justify-between mb-3">
+              <h4 id="treasuryChildName" class="font-heading font-bold text-navy text-base"></h4>
+              <span id="treasuryRewardCount" class="text-xs font-semibold text-text-soft bg-lavender px-3 py-1 rounded-full"></span>
+            </div>
+            <div id="treasuryGridInner" class="grid gap-3" style="grid-template-columns: repeat(3, 1fr);">
+              <!-- Filled by JS -->
+            </div>
+          </div>
+
+          <div id="treasuryEmpty" class="hidden text-center py-10 bg-sky/40 rounded-2xl border-2 border-dashed border-lavender">
+            <p class="text-3xl mb-2">🎁</p>
+            <p class="font-heading font-bold text-navy mb-1">Inga belöningar än</p>
+            <p class="text-sm text-text-soft">Lägg till belöningar under fliken Belöningar.</p>
+          </div>
+
+          <div id="treasuryLoading" class="hidden text-center py-8 text-text-soft">
+            <span class="text-3xl" style="display:inline-block;animation:spin 1s linear infinite;">⭐</span>
+            <p class="mt-2 text-sm font-semibold">Öppnar Skattkammaren…</p>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- TAB 3: Standardbibliotek (3 sub-tabs)                  -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div id="tab-standard" class="tab-pane space-y-5" data-feature="standardbibliotek">
+          <div>
+            <h3 class="text-lg font-heading font-bold text-navy">📚 Standardbibliotek</h3>
+            <p class="text-sm text-text-soft mt-0.5">Färdiga aktiviteter från standardbiblioteket — kopiera till ditt bibliotek med ett klick</p>
+          </div>
+
+          <!-- Sub-tabs: Scheman / Aktiviteter / Belöningar -->
+          <div class="bg-lavender/30 rounded-xl p-1 flex gap-1">
+            <button id="std-sub-schedules-btn" onclick="switchStdSubTab('schedules')"
+              class="std-sub-btn flex-1 px-3 py-2 rounded-lg font-semibold text-xs sm:text-sm text-text-soft transition-all">
+              📅 Scheman
+            </button>
+            <button id="std-sub-activities-btn" onclick="switchStdSubTab('activities')"
+              class="std-sub-btn flex-1 px-3 py-2 rounded-lg font-semibold text-xs sm:text-sm text-text-soft transition-all">
+              📋 Aktiviteter
+            </button>
+            <button id="std-sub-rewards-btn" onclick="switchStdSubTab('rewards')"
+              class="std-sub-btn flex-1 px-3 py-2 rounded-lg font-semibold text-xs sm:text-sm text-text-soft transition-all">
+              🏆 Belöningar
+            </button>
+          </div>
+
+          <!-- Sub-tab: Scheman -->
+          <div id="std-sub-schedules" class="std-sub-pane space-y-4">
+            <p class="text-sm text-text-soft">Färdiga dagscheman — kopiera till ett barn och anpassa fritt</p>
+            <div id="stdSchedulesContainer" class="grid gap-4 sm:grid-cols-2">
+              <div class="text-center py-8 text-text-soft col-span-full">Laddar standardscheman…</div>
+            </div>
+          </div>
+
+          <!-- Sub-tab: Aktiviteter -->
+          <div id="std-sub-activities" class="std-sub-pane hidden space-y-4">
+            <p class="text-sm text-text-soft">Färdiga aktiviteter — kopiera enskilda eller alla till ditt eget bibliotek</p>
+            <div id="standardLibraryContainer" class="space-y-2">
+              <div class="text-center py-8 text-text-soft">Laddar standardaktiviteter…</div>
+            </div>
+          </div>
+
+          <!-- Sub-tab: Belöningar -->
+          <div id="std-sub-rewards" class="std-sub-pane hidden space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div>
+                <p class="text-sm text-text-soft">Fördefinierade belöningar — välj och kopiera till ditt belöningsbibliotek</p>
+              </div>
+              <button id="copySelectedRewardsBtn" onclick="copySelectedRewards()"
+                class="hidden px-5 py-2.5 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm transition-colors whitespace-nowrap shadow-sm">
+                📥 Kopiera valda (<span id="selectedRewardsCount">0</span>)
+              </button>
+            </div>
+            <div id="standardRewardsContainer" class="space-y-2">
+              <div class="text-center py-8 text-text-soft">Laddar standardbelöningar…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- TAB 2: Belöningar (family's own)                       -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div id="tab-rewards" class="tab-pane space-y-6">
+          <section>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+              <div>
+                <h3 class="text-lg font-heading font-bold text-navy">Belöningsbibliotek</h3>
+                <p class="text-sm text-text-soft mt-0.5">Alla belöningar tillgängliga i familjen</p>
+              </div>
+              <button onclick="openRewardModal()" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-white rounded-lg font-semibold text-sm transition-colors whitespace-nowrap">
+                + Ny belöning
+              </button>
+            </div>
+            <!-- Reward search -->
+            <div class="mb-3">
+              <input type="text" id="rewardSearchInput" placeholder="🔍 Sök belöning…"
+                class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors text-sm"
+                oninput="onRewardSearch(this.value)">
+              <div id="rewardSearchResults" class="hidden mt-2 space-y-2"></div>
+            </div>
+            <div id="rewardsContainer" class="space-y-3">
+              <div class="text-center py-8 text-text-soft">Laddar belöningar…</div>
+            </div>
+          </section>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ── Category Modal ──────────────────────────────────────── -->
+  <div id="categoryModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-navy-soft rounded-2xl p-6 w-full max-w-md shadow-xl">
+      <div class="flex justify-between items-center mb-6">
+        <h3 id="categoryModalTitle" class="text-xl font-heading font-bold text-navy">Ny kategori</h3>
+        <button onclick="closeCategoryModal()" class="text-text-soft hover:text-navy text-2xl leading-none">&times;</button>
+      </div>
+      <form id="categoryForm" class="space-y-4" onsubmit="submitCategory(event)">
+        <input type="hidden" id="categoryId">
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">Kategorinamn *</label>
+          <input type="text" id="categoryName" required maxlength="100"
+            class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors"
+            placeholder="T.ex. Helg, Högstadiet, Sommar…">
+        </div>
+        <p class="text-xs text-text-soft">Kategorin visas som en ny flik i ditt bibliotek. Du kan använda den vid schemaskapande.</p>
+        <div id="categoryError" class="text-red-500 text-sm hidden"></div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeCategoryModal()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold hover:border-navy transition-colors">Avbryt</button>
+          <button type="submit" id="categorySubmitBtn" class="flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold transition-colors">Spara</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Activity Modal ─────────────────────────────────────── -->
+  <div id="activityModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div class="bg-white dark:bg-navy-soft rounded-2xl p-6 w-full max-w-lg shadow-xl my-4">
+      <div class="flex justify-between items-center mb-6">
+        <h3 id="activityModalTitle" class="text-xl font-heading font-bold text-navy">Lägg till aktivitet</h3>
+        <button onclick="closeActivityModal()" class="text-text-soft hover:text-navy text-2xl leading-none">&times;</button>
+      </div>
+      <form id="activityForm" class="space-y-5" onsubmit="submitActivity(event)">
+        <input type="hidden" id="activityId">
+
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">Aktivitetsnamn *</label>
+          <input type="text" id="activityName" required maxlength="200"
+            class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors"
+            placeholder="T.ex. Borsta tänderna">
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-2">Ikon (valfri emoji)</label>
+          <div class="flex items-center gap-3 mb-3">
+            <div id="selectedIconDisplay" class="text-3xl w-12 h-12 flex items-center justify-center bg-sky rounded-xl">❓</div>
+            <input type="text" id="emojiTextInput" placeholder="Skriv/klistra emoji…"
+              class="emoji-text-input px-2 py-1 rounded-xl border-2 border-lavender focus:border-gold outline-none"
+              maxlength="50" oninput="onEmojiTextInput(this.value)">
+            <span class="text-xs text-text-soft">eller välj nedan</span>
+          </div>
+          <input type="hidden" id="activityIcon">
+          <div id="iconPicker" class="flex flex-wrap gap-1 max-h-48 overflow-y-auto p-2 bg-sky rounded-xl"></div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">Flik / Kategori</label>
+          <select id="activityCategory"
+            class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors bg-white">
+            <option value="">Ingen kategori</option>
+          </select>
+        </div>
+
+
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-2">Stjärnvärde (1–5 ⭐)</label>
+          <div class="flex gap-2" id="starPicker">
+            <button type="button" class="star-btn px-4 py-2 rounded-xl border-2 border-lavender hover:border-gold transition-colors font-bold" data-val="1" onclick="selectStar(1)">1 ⭐</button>
+            <button type="button" class="star-btn px-4 py-2 rounded-xl border-2 border-lavender hover:border-gold transition-colors font-bold" data-val="2" onclick="selectStar(2)">2 ⭐</button>
+            <button type="button" class="star-btn px-4 py-2 rounded-xl border-2 border-lavender hover:border-gold transition-colors font-bold" data-val="3" onclick="selectStar(3)">3 ⭐</button>
+            <button type="button" class="star-btn px-4 py-2 rounded-xl border-2 border-lavender hover:border-gold transition-colors font-bold" data-val="4" onclick="selectStar(4)">4 ⭐</button>
+            <button type="button" class="star-btn px-4 py-2 rounded-xl border-2 border-lavender hover:border-gold transition-colors font-bold" data-val="5" onclick="selectStar(5)">5 ⭐</button>
+          </div>
+          <input type="hidden" id="activityStarValue" value="1">
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button type="button" id="favToggle" onclick="toggleFavorite()"
+            class="w-10 h-6 rounded-full bg-lavender transition-colors relative flex-shrink-0">
+            <span id="favDot" class="w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 transition-transform shadow"></span>
+          </button>
+          <label class="text-sm font-semibold text-navy cursor-pointer" onclick="toggleFavorite()">
+            Favorit — visas först i schemat
+          </label>
+          <input type="hidden" id="activityFavorite" value="false">
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">
+            "Hur gick det?" — vem ser frågan?
+          </label>
+          <select id="activityFeedbackFor"
+            class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors bg-white text-sm">
+            <option value="both">🧒👨‍👩‍👧 Både barnet och föräldern (standard)</option>
+            <option value="child">🧒 Bara barnet</option>
+            <option value="parent">👨‍👩‍👧 Bara föräldern</option>
+            <option value="none">🚫 Ingen (avstängd)</option>
+          </select>
+          <p class="text-xs text-text-soft mt-1">Visas efter att aktiviteten bockats av</p>
+        </div>
+
+        <!-- Substeps (always visible, pre-loads existing steps for edit) -->
+        <div id="libSubstepSection">
+          <label class="block text-sm font-semibold text-navy mb-1">Delsteg <span class="font-normal text-text-soft text-xs">(valfritt)</span></label>
+          <div id="libActSubstepList" class="space-y-1 mb-2"></div>
+          <div class="flex gap-2">
+            <input type="text" id="libActSubstepInput" placeholder="Lägg till delsteg…" class="flex-1 px-3 py-2 rounded-xl border-2 border-lavender focus:border-gold outline-none text-sm transition-colors" onkeydown="if(event.key==='Enter'){event.preventDefault();addLibActSubstep();}">
+            <button type="button" onclick="addLibActSubstep()" class="px-3 py-2 bg-lavender hover:bg-purple-100 text-navy rounded-xl text-sm font-semibold transition-colors">+</button>
+          </div>
+        </div>
+
+        <div id="activityError" class="text-red-500 text-sm hidden"></div>
+
+        <div id="libActSubstepEditModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div class="bg-white rounded-2xl p-5 w-full max-w-sm shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+              <h4 class="text-base font-heading font-bold text-navy">Redigera delsteg</h4>
+              <button onclick="closeLibActSubstepEdit()" class="text-text-soft hover:text-navy text-2xl leading-none">&times;</button>
+            </div>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-1">Namn</label>
+                <input type="text" id="libActStepEditName" maxlength="200"
+                  class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors"
+                  placeholder="T.ex. Ta tandkräm">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-navy mb-2">Ikon (valfri)</label>
+                <div class="flex items-center gap-3 mb-2">
+                  <div id="libActStepEditIconDisplay" class="text-2xl w-10 h-10 flex items-center justify-center bg-sky rounded-xl">❓</div>
+                  <button type="button" onclick="clearLibActStepIcon()" class="text-xs text-text-soft hover:text-navy underline">Ingen ikon</button>
+                </div>
+                <input type="hidden" id="libActStepEditIcon">
+                <div id="subStepIconPicker" class="flex flex-wrap gap-1 max-h-32 overflow-y-auto p-2 bg-sky rounded-xl"></div>
+              </div>
+            </div>
+            <div class="flex gap-3 mt-5">
+              <button type="button" onclick="closeLibActSubstepEdit()" class="flex-1 px-4 py-2.5 border-2 border-lavender rounded-xl font-semibold hover:border-navy transition-colors text-sm">Avbryt</button>
+              <button type="button" onclick="submitLibActSubstepEdit()" class="flex-1 px-4 py-2.5 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold transition-colors text-sm">Spara</button>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeActivityModal()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold hover:border-navy transition-colors">Avbryt</button>
+          <button type="submit" id="activitySubmitBtn" class="flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold transition-colors">Spara</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Reward Modal ───────────────────────────────────────── -->
+  <div id="rewardModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div class="bg-white dark:bg-navy-soft rounded-2xl p-6 w-full max-w-lg shadow-xl my-4">
+      <div class="flex justify-between items-center mb-6">
+        <h3 id="rewardModalTitle" class="text-xl font-heading font-bold text-navy">Ny belöning</h3>
+        <button onclick="closeRewardModal()" class="text-text-soft hover:text-navy text-2xl leading-none">&times;</button>
+      </div>
+      <form id="rewardForm" class="space-y-5" onsubmit="submitReward(event)">
+        <input type="hidden" id="rewardId">
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">Belöningsnamn *</label>
+          <input type="text" id="rewardName" required maxlength="200"
+            class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors"
+            placeholder="T.ex. Biofilm">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-2">Ikon (valfri emoji)</label>
+          <div class="flex items-center gap-3 mb-3">
+            <div id="rewardIconDisplay" class="text-3xl w-12 h-12 flex items-center justify-center bg-sky rounded-xl">🏆</div>
+            <input type="text" id="rewardEmojiTextInput" placeholder="Skriv/klistra emoji…"
+              class="emoji-text-input px-2 py-1 rounded-xl border-2 border-lavender focus:border-gold outline-none"
+              maxlength="50" oninput="onRewardEmojiTextInput(this.value)">
+            <span class="text-xs text-text-soft">eller välj</span>
+          </div>
+          <input type="hidden" id="rewardIcon" value="🏆">
+          <div id="rewardIconPicker" class="flex flex-wrap gap-1 max-h-40 overflow-y-auto p-2 bg-sky rounded-xl"></div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">Stjärnkostnad *</label>
+          <input type="number" id="rewardStarCost" required min="1" max="9999" value="10"
+            class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors"
+            placeholder="T.ex. 10">
+          <p class="text-xs text-text-soft mt-1">Antal stjärnor som krävs för att lösa in belöningen</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button type="button" id="approvalToggle" onclick="toggleApproval()"
+            class="w-10 h-6 rounded-full bg-lavender transition-colors relative flex-shrink-0">
+            <span id="approvalDot" class="w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 transition-transform shadow"></span>
+          </button>
+          <label class="text-sm font-semibold text-navy cursor-pointer" onclick="toggleApproval()">
+            Kräver föräldragodkännande
+          </label>
+          <input type="hidden" id="rewardRequiresApproval" value="true">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-2">Synlig för</label>
+          <div id="rewardVisibilityContainer" class="space-y-2">
+            <p class="text-sm text-text-soft">Laddar barn…</p>
+          </div>
+          <p class="text-xs text-text-soft mt-1">Lämna alla avbockade = synlig för alla barn</p>
+        </div>
+        <div id="rewardError" class="text-red-500 text-sm hidden"></div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeRewardModal()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold hover:border-navy transition-colors">Avbryt</button>
+          <button type="submit" id="rewardSubmitBtn" class="flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold transition-colors">Spara</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Sub-step Modal ───────────────────────────────────── -->
+  <div id="subStepModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-navy-soft rounded-2xl p-6 w-full max-w-md shadow-xl">
+      <div class="flex justify-between items-center mb-5">
+        <h3 id="subStepModalTitle" class="text-lg font-heading font-bold text-navy">Lägg till delsteg</h3>
+        <button onclick="closeSubStepModal()" class="text-text-soft hover:text-navy text-2xl leading-none">&times;</button>
+      </div>
+      <form id="subStepForm" class="space-y-4" onsubmit="submitSubStep(event)">
+        <input type="hidden" id="subStepTemplateId">
+        <input type="hidden" id="subStepId">
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">Namn *</label>
+          <input type="text" id="subStepName" required maxlength="200"
+            class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors"
+            placeholder="T.ex. Ta tandkräm">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-2">Ikon (valfri)</label>
+          <div class="flex items-center gap-3 mb-2">
+            <div id="subStepIconDisplay" class="text-2xl w-10 h-10 flex items-center justify-center bg-sky rounded-xl">❓</div>
+            <button type="button" onclick="clearSubStepIcon()" class="text-xs text-text-soft hover:text-navy underline">Ingen ikon</button>
+          </div>
+          <input type="hidden" id="subStepIcon">
+          <div id="subStepIconPicker" class="flex flex-wrap gap-1 max-h-32 overflow-y-auto p-2 bg-sky rounded-xl"></div>
+        </div>
+        <div id="subStepError" class="text-red-500 text-sm hidden"></div>
+        <div class="flex gap-3 pt-1">
+          <button type="button" onclick="closeSubStepModal()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold hover:border-navy transition-colors">Avbryt</button>
+          <button type="submit" id="subStepSubmitBtn" class="flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold transition-colors">Spara</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Confirm Delete Modal ──────────────────────────────── -->
+  <div id="confirmModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+      <h3 class="text-lg font-heading font-bold text-navy mb-3">Bekräfta borttagning</h3>
+      <p id="confirmMsg" class="text-text-soft mb-6">Är du säker?</p>
+      <div class="flex gap-3">
+        <button onclick="closeConfirmModal()" class="flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold">Avbryt</button>
+        <button id="confirmOkBtn" class="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold transition-colors">Ta bort</button>
+      </div>
+    </div>
+  </div>
+
+<script src="/js/library-schema.js?v=2.13.0"></script>
+<script src="/js/library-standard.js?v=2.12.0"></script>
+<script src="/js/library-substeps.js?v=2.12.0"></script>
+<script src="/js/library-treasury.js?v=2.12.0"></script>
+<script src="/js/library.js?v=2.16.0"></script>
+
+  <!-- Service Worker Registration (update detection in /js/sw-register.js) -->
+  <script src="/js/sw-register.js?v=2.12.0"></script>
+<script src="/js/mobile-nav.js?v=2.14.0"></script>
+<!-- Contextual help bubble -->
+<script src="/js/help-bubble.js?v=2.12.0"></script>
+
+<!-- Feature-flag frontend gates -->
+<script src="/js/feature-check.js?v=2.14.0"></script>
+</body>
+</html>

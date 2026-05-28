@@ -1,0 +1,425 @@
+/* ── Mobile dropdown navigation for logged-in pages ────────────────
+   Replaces the full-screen sidebar overlay with a compact dropdown
+   that slides down from the hamburger icon.
+   ─────────────────────────────────────────────────────────────────── */
+
+/* Hide the desktop sidebar on mobile */
+@media (max-width: 767px) {
+  .app-sidebar {
+    display: none !important;
+  }
+}
+
+/* Mobile top bar */
+.mobile-topbar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: #1B2340;
+  color: white;
+  padding: 0.75rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (max-width: 767px) {
+  .mobile-topbar {
+    display: flex;
+  }
+}
+
+.mobile-topbar .topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: white;
+}
+
+.mobile-topbar .topbar-brand span {
+  font-size: 1.25rem;
+}
+
+.mobile-topbar .topbar-brand h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.mobile-topbar .topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Hamburger button */
+.mobile-hamburger {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.mobile-hamburger:hover,
+.mobile-hamburger:active {
+  background: #2A3458;
+}
+
+.mobile-hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: white;
+  border-radius: 2px;
+  transition: transform 0.28s ease, opacity 0.28s ease;
+}
+
+.mobile-hamburger.open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.mobile-hamburger.open span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.mobile-hamburger.open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Share button in topbar — next to moon icon */
+.topbar-share-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  transition: background 0.15s;
+  color: white;
+  position: relative;
+}
+
+.topbar-share-btn:hover,
+.topbar-share-btn:active {
+  background: #2A3458;
+}
+
+/* Gentle glow animation on share button — no scale to avoid overlapping neighbours */
+@keyframes share-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245,166,35,0); }
+  50% { box-shadow: 0 0 8px 3px rgba(245,166,35,0.5); }
+}
+
+.topbar-share-btn {
+  animation: share-glow 2s ease-in-out 3;
+}
+
+/* Dark mode toggle button in topbar */
+.topbar-dark-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  transition: background 0.15s;
+  color: white;
+}
+
+.topbar-dark-toggle:hover,
+.topbar-dark-toggle:active {
+  background: #2A3458;
+}
+
+/* ── Dropdown menu ─────────────────────────────────────────────── */
+.mobile-dropdown {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(27, 35, 64, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 199;
+  display: flex;
+  flex-direction: column;
+  padding: 0 1rem 1.2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  border-bottom-left-radius: 18px;
+  border-bottom-right-radius: 18px;
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s ease;
+}
+
+.mobile-dropdown.open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobile-dropdown-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-top: 4rem;
+}
+
+.mobile-dropdown a {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  text-decoration: none;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  transition: background 0.18s;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.mobile-dropdown a:hover,
+.mobile-dropdown a:active {
+  background: #2A3458;
+}
+
+.mobile-dropdown a.active-link {
+  background: #F5A623;
+  color: #1B2340;
+}
+
+.mobile-dropdown .dropdown-footer {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #2A3458;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.mobile-dropdown .dropdown-footer button {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.65rem 1rem;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.18s;
+  width: 100%;
+}
+
+.mobile-dropdown .btn-dark-toggle {
+  background: transparent;
+  color: white;
+}
+
+.mobile-dropdown .btn-dark-toggle:hover {
+  background: #2A3458;
+}
+
+.mobile-dropdown .btn-logout {
+  background: #FDEAE7;
+  color: #1B2340;
+}
+
+.mobile-dropdown .btn-logout:hover {
+  background: #fcd5cf;
+}
+
+/* ── Tipsa button in dropdown (amber CTA, parent-only) ──────── */
+.mobile-dropdown .btn-dropdown-share {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.18s, transform 0.15s;
+  width: 100%;
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, #F5A623, #D4891A);
+  color: white;
+  box-shadow: 0 2px 12px rgba(245, 166, 35, 0.3);
+}
+
+.mobile-dropdown .btn-dropdown-share:hover,
+.mobile-dropdown .btn-dropdown-share:active {
+  background: linear-gradient(135deg, #D4891A, #B5730F);
+  transform: translateY(-1px);
+}
+
+/* ── Extra action buttons (facebook) ─────────────────────────── */
+.mobile-dropdown .btn-facebook-link {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.18s;
+  width: 100%;
+  margin-top: 0.15rem;
+  text-decoration: none;
+  background: transparent;
+  color: #74b4ff;
+}
+
+.mobile-dropdown .btn-facebook-link:hover,
+.mobile-dropdown .btn-facebook-link:active {
+  background: #2A3458;
+  color: #74b4ff;
+}
+
+/* ── Desktop sidebar share button ───────────────────────────── */
+.sidebar-share-btn {
+  font-size: 0.875rem;
+}
+
+.sidebar-share-btn:hover {
+  background: #F5A623 !important;
+  color: #1B2340 !important;
+}
+
+/* Hide on desktop */
+@media (min-width: 768px) {
+  .mobile-dropdown {
+    display: none !important;
+  }
+}
+
+/* ── Share popup (desktop fallback when Web Share API unavailable) ── */
+.share-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 35, 64, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.share-popup-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 1.8rem 1.6rem 1.4rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(28, 35, 64, 0.2);
+  animation: sharePopupIn 0.25s ease-out;
+}
+
+@keyframes sharePopupIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.share-popup-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+.share-popup-header strong {
+  flex: 1;
+  font-size: 1rem;
+  color: #1C2340;
+}
+
+.share-popup-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #8A92AA;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 8px;
+  line-height: 1;
+  transition: background 0.15s;
+}
+
+.share-popup-close:hover {
+  background: #F7F3EA;
+  color: #1C2340;
+}
+
+.share-popup-text {
+  font-size: 0.88rem;
+  color: #5A6178;
+  line-height: 1.65;
+  margin-bottom: 1.2rem;
+  padding: 0.8rem 1rem;
+  background: #FDFAF4;
+  border-radius: 12px;
+  border: 1px solid rgba(28, 35, 64, 0.08);
+}
+
+.share-popup-text a {
+  color: #D4891A;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.share-popup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.share-popup-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid rgba(28, 35, 64, 0.1);
+  background: #fff;
+  color: #1C2340;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+}
+
+.share-popup-btn:hover {
+  background: #FFF3D6;
+  border-color: #F5A623;
+}
+
+.share-popup-btn span {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}

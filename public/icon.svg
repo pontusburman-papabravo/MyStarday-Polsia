@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background circle with gradient -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#FDE9B0"/>
+      <stop offset="100%" stop-color="#F5A623"/>
+    </radialGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#C97D0E" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <!-- Rounded square background (maskable safe zone: 80% of 512 = content in 102..410) -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Star centered at 256,256, points reaching ~180px from center -->
+  <polygon
+    points="256,76 299,176 409,180 325,249 354,358 256,296 158,358 187,249 103,180 213,176"
+    fill="#F5A623"
+    filter="url(#shadow)"
+  />
+  <!-- Inner star slightly lighter for depth -->
+  <polygon
+    points="256,96 295,185 395,188 318,252 344,349 256,290 168,349 194,252 117,188 217,185"
+    fill="#FFB733"
+  />
+  <!-- Bright highlight in upper portion of star -->
+  <polygon
+    points="256,110 287,183 371,186 304,244 327,331 256,278 185,331 208,244 141,186 225,183"
+    fill="#FFC94D"
+    opacity="0.6"
+  />
+</svg>

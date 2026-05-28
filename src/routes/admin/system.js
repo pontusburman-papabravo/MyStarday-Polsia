@@ -1,0 +1,594 @@
+// System administration: stats, app configuration, feature flags, contact messages, push notifications, system messages.
+// Owns: stats, feature-flags, app-config, contact-messages, system-messages, push, login-stats.
+// Does NOT own: app-mode, families (see family.js), children (see child.js), activities (see schedule.js), rewards (see reward.js).
+
+const express = require('express');
+const db = require('../../lib/db');
+
+const router = express.Router();
+
+// ─── GET /api/admin/stats ─────────────────────────────────
+router.get('/stats', async (req, res) => {
+  try {
+    const [families, parents, children, unreadMessages, totalMessages] = await Promise.all([
+      db.query('SELECT COUNT(*) as count FROM family WHERE archived_at IS NULL'),
+      db.query('SELECT COUNT(*) as count FROM parent'),
+      db.query('SELECT COUNT(*) as count FROM child'),
+      db.query('SELECT COUNT(*) as count FROM contact_message WHERE is_read = false'),
+      db.query('SELECT COUNT(*) as count FROM contact_message'),
+    ]);
+
+    res.json({
+      families: parseInt(families.rows[0].count),
+      parents: parseInt(parents.rows[0].count),
+      children: parseInt(children.rows[0].count),
+      unreadMessages: parseInt(unreadMessages.rows[0].count),
+      totalMessages: parseInt(totalMessages.rows[0].count),
+    });
+  } catch (err) {
+    console.error('[ADMIN] Stats error:', err);
+    res.status(500).json({ error: 'Kunde inte hämta statistik' });
+  }
+});
+
+// ─── GET /api/admin/export-emails ─────────────────────────
+// Exports all registered family emails as a CSV file
+router.get('/export-emails', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT p.email, f.name as family_name, f.created_at
+      FROM parent p
+      JOIN family f ON f.id = p.family_id
+      WHERE f.archived_at IS NULL
+        AND p.email IS NOT NULL
+        AND p.email != ''
+      ORDER BY f.name ASC NULLS LAST, f.created_at ASC, p.email ASC
+    `);
+
+    const header = 'E-post,Familjenamn,Registreringsdatum\n';
+    const rows = result.rows.map(r => {
+      const date = new Date(r.created_at).toISOString().split('T')[0];
+      const email = '"' + (r.email || '').replace(/"/g, '""') + '"';
+      const familyName = '"' + (r.family_name || '').replace(/"/g, '""') + '"';
+      return email + ',' + familyName + ',' + date;
+    }).join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=familjer-mailadresser.csv');
+    res.send('\uFEFF' + header + rows);
+  } catch (err) {
+    console.error('[ADMIN] Export emails error:', err);
+    res.status(500).json({ error: 'Kunde inte exportera mailadresser' });
+  }
+});
+
+// ─── GET /api/admin/contact-messages ──────────────────────
+// Supports filtering by ?type=bug|feedback|contact (optional)
+router.get('/contact-messages', async (req, res) => {
+  try {
+    const typeFilter = req.query.type;
+    const validTypes = ['bug', 'feedback', 'contact'];
+    const whereClause = typeFilter && validTypes.includes(typeFilter)
+      ? 'WHERE message_type = $1'
+      : '';
+    const limit = 100;
+
+    let query;
+    let params;
+    if (typeFilter && validTypes.includes(typeFilter)) {
+      query = `
+        SELECT id, name, email, message, internal_note, noted_at, noted_by, created_at, is_read, message_type
+        FROM contact_message
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT $2
+      `;
+      params = [typeFilter, limit];
+    } else {
+      query = `
+        SELECT id, name, email, message, internal_note, noted_at, noted_by, created_at, is_read, message_type
+        FROM contact_message
+        ORDER BY created_at DESC
+        LIMIT ${limit}
+      `;
+      params = [];
+    }
+
+    const result = await db.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('[ADMIN] Contact messages error:', err);
+    res.status(500).json({ error: 'Kunde inte hämta meddelanden' });
+  }
+});
+
+// ─── GET /api/admin/contact-messages/unread-count ───────
+router.get('/contact-messages/unread-count', async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT COUNT(*) as count FROM contact_message WHERE is_read = false'
+    );
+    res.json({ unreadCount: parseInt(result.rows[0].count) });
+  } catch (err) {
+    console.error('[ADMIN] Unread count error:', err);
+    res.status(500).json({ error: 'Kunde inte hämta oläst-antal' });
+  }
+});
+
+// ─── PUT /api/admin/contact-messages/:id/read ───────────
+// Toggle read/unread. Body: { is_read: true|false }
+router.put('/contact-messages/:id/read', async (req, res) => {
+  try {
+    const { is_read } = req.body;
+    if (typeof is_read !== 'boolean') {
+      return res.status(400).json({ error: 'is_read krävs (boolean)' });
+    }
+    const result = await db.query(
+      'UPDATE contact_message SET is_read = $1 WHERE id = $2 RETURNING id, is_read',
+      [is_read, req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Meddelandet hittades inte' });
+    }
+    res.json({ message: is_read ? 'Markerat som läst' : 'Markerat som oläst', ...result.rows[0] });
+  } catch (err) {
+    console.error('[ADMIN] Toggle read status error:', err);
+    res.status(500).json({ error: 'Kunde inte uppdatera läsläge' });
+  }
+});
+
+// ─── PUT /api/admin/contact-messages/:id/note ────────────
+router.put('/contact-messages/:id/note', async (req, res) => {
+  try {
+    const { note } = req.body;
+    const result = await db.query(
+      `UPDATE contact_message
+       SET internal_note = $1, noted_at = NOW(), noted_by = $2
+       WHERE id = $3
+       RETURNING id, internal_note, noted_at`,
+      [note || null, req.user.id, req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Meddelandet hittades inte' });
+    }
+    res.json({ message: 'Anteckning sparad', ...result.rows[0] });
+  } catch (err) {
+    console.error('[ADMIN] Note contact message error:', err);
+    res.status(500).json({ error: 'Kunde inte spara anteckning' });
+  }
+});
+
+// ─── DELETE /api/admin/contact-messages/:id ──────────────
+router.delete('/contact-messages/:id', async (req, res) => {
+  try {
+    const result = await db.query(
+      'DELETE FROM contact_message WHERE id = $1 RETURNING id',
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Meddelandet hittades inte' });
+    }
+    res.json({ message: 'Meddelandet har tagits bort' });
+  } catch (err) {
+    console.error('[ADMIN] Delete contact message error:', err);
+    res.status(500).json({ error: 'Kunde inte ta bort meddelandet' });
+  }
+});
+
+// ─── GET /api/admin/feature-flags ────────────────────────
+router.get('/feature-flags', async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT key, enabled, description, updated_at FROM feature_flag ORDER BY key ASC'
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('[ADMIN] Feature flags error:', err);
+    res.status(500).json({ error: 'Kunde inte hämta funktionsflaggor' });
+  }
+});
+
+// ─── PUT /api/admin/feature-flags/:key ─────────────────
+router.put('/feature-flags/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { enabled } = req.body;
+
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ error: 'enabled krävs (boolean)' });
+    }
+
+    const result = await db.query(
+      `UPDATE feature_flag
+       SET enabled = $1, updated_at = NOW(), updated_by = $2
+       WHERE key = $3
+       RETURNING key, enabled, description, updated_at`,
+      [enabled, req.user.id, key]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Flaggan hittades inte' });
+    }
+
+    console.log(`[ADMIN] Feature flag "${key}" set to ${enabled} by admin ${req.user.id}`);
+    res.json({ message: `Flaggan "${key}" har uppdaterats`, ...result.rows[0] });
+  } catch (err) {
+    console.error('[ADMIN] Update feature flag error:', err);
+    res.status(500).json({ error: 'Kunde inte uppdatera funktionsflagga' });
+  }
+});
+
+// ─── GET /api/admin/app-config ────────────────────────────
+// Returns all app config settings as { key: value } object
+router.get('/app-config', async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT key, value, description, updated_at FROM app_config ORDER BY key ASC'
+    );
+    // Return as flat object for easy frontend consumption
+    const config = {};
+    for (const row of result.rows) {
+      config[row.key] = { value: row.value, description: row.description, updated_at: row.updated_at };
+    }
+    res.json(config);
+  } catch (err) {
+    console.error('[ADMIN] Get app config error:', err);
+    res.status(500).json({ error: 'Kunde inte hämta konfiguration' });
+  }
+});
+
+// ─── PUT /api/admin/app-config/:key ───────────────────────
+router.put('/app-config/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { value } = req.body;
+
+    if (value === undefined || value === null) {
+      return res.status(400).json({ error: 'value krävs' });
+    }
+
+    const result = await db.query(
+      `UPDATE app_config
+       SET value = $1, updated_at = NOW(), updated_by = $2
+       WHERE key = $3
+       RETURNING key, value, description, updated_at`,
+      [String(value), req.user.id, key]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Konfigurationsnyckeln hittades inte' });
+    }
+
+    console.log(`[ADMIN] App config "${key}" set to "${value}" by admin ${req.user.id}`);
+    res.json({ message: `Inställningen "${key}" har uppdaterats`, ...result.rows[0] });
+  } catch (err) {
+    console.error('[ADMIN] Update app config error:', err);
+    res.status(500).json({ error: 'Kunde inte uppdatera konfiguration' });
+  }
+});
+
+// ─── GET /api/admin/login-stats ───────────────────────────
+// Admin-only. Returns login stats per family with parent/child breakdowns
+router.get('/login-stats', async (req, res) => {
+  try {
+    // Resolve period filter for totals
+    const PERIOD_MAP = { '24h': '24 hours', '7d': '7 days', '30d': '30 days', '365d': '365 days' };
+    const periodKey = req.query.period && PERIOD_MAP[req.query.period] ? req.query.period : null;
+    const intervalSql = periodKey ? `AND occurred_at >= NOW() - INTERVAL '${PERIOD_MAP[periodKey]}'` : '';
+
+    // Totals by role (exclude admin logins from overview counts), filtered by period if provided
+    const totalsResult = await db.query(`
+      SELECT role, COUNT(*) AS total
+      FROM login_event
+      WHERE role IN ('parent', 'child')
+      ${intervalSql}
+      GROUP BY role
+    `);
+    const totals = { parents: 0, children: 0 };
+    for (const row of totalsResult.rows) {
+      if (row.role === 'parent') totals.parents = parseInt(row.total);
+      if (row.role === 'child')  totals.children = parseInt(row.total);
+    }
+
+    // Per-family data: aggregate login stats for each parent and child
+    const familiesResult = await db.query(`
+      SELECT
+        f.id            AS family_id,
+        f.name          AS family_name,
+        -- parents
+        json_agg(DISTINCT jsonb_build_object(
+          'id',             p.id,
+          'name',           COALESCE(p.name, p.email),
+          'role',           'parent',
+          'total_logins',   COALESCE(pls.total_logins, 0),
+          'logins_last_7d', COALESCE(pls.logins_last_7d, 0),
+          'last_login',     pls.last_login
+        )) FILTER (WHERE p.id IS NOT NULL) AS parents,
+        -- children
+        json_agg(DISTINCT jsonb_build_object(
+          'id',             c.id,
+          'name',           c.name,
+          'role',           'child',
+          'total_logins',   COALESCE(cls.total_logins, 0),
+          'logins_last_7d', COALESCE(cls.logins_last_7d, 0),
+          'last_login',     cls.last_login
+        )) FILTER (WHERE c.id IS NOT NULL) AS children
+      FROM family f
+      LEFT JOIN parent p ON p.family_id = f.id AND p.is_admin = false
+      LEFT JOIN (
+        SELECT
+          user_id,
+          COUNT(*) AS total_logins,
+          COUNT(*) FILTER (WHERE occurred_at >= NOW() - INTERVAL '7 days') AS logins_last_7d,
+          MAX(occurred_at) AS last_login
+        FROM login_event
+        WHERE role = 'parent'
+        GROUP BY user_id
+      ) pls ON pls.user_id = p.id
+      LEFT JOIN child c ON c.family_id = f.id
+      LEFT JOIN (
+        SELECT
+          user_id,
+          COUNT(*) AS total_logins,
+          COUNT(*) FILTER (WHERE occurred_at >= NOW() - INTERVAL '7 days') AS logins_last_7d,
+          MAX(occurred_at) AS last_login
+        FROM login_event
+        WHERE role = 'child'
+        GROUP BY user_id
+      ) cls ON cls.user_id = c.id
+      WHERE f.archived_at IS NULL
+      GROUP BY f.id, f.name
+      ORDER BY f.created_at DESC
+    `);
+
+    res.json({
+      totals,
+      families: familiesResult.rows.map(row => ({
+        family_id:   row.family_id,
+        family_name: row.family_name || 'Namnlös familj',
+        parents:     (row.parents  || []).sort((a, b) => b.total_logins - a.total_logins),
+        children:    (row.children || []).sort((a, b) => b.total_logins - a.total_logins),
+      })),
+    });
+  } catch (err) {
+    console.error('[ADMIN] Login stats error:', err);
+    res.status(500).json({ error: 'Kunde inte hämta inloggningsstatistik' });
+  }
+});
+
+// ─── System Messages (Admin → Family) ─────────────────────────────────
+
+const systemMessages = require('../../../db/system-messages');
+const { broadcast } = require('../../lib/sse-broadcast');
+
+/**
+ * POST /api/admin/messages
+ * Body: { family_id, message }
+ * Creates a system message and broadcasts SYSTEM_ALERT via SSE to the family.
+ */
+router.post('/messages', async (req, res) => {
+  try {
+    const { family_id, message } = req.body;
+    if (!family_id || typeof family_id !== 'string') {
+      return res.status(400).json({ error: 'family_id krävs' });
+    }
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({ error: 'message krävs' });
+    }
+
+    // Verify family exists
+    const familyResult = await db.query(
+      'SELECT id FROM family WHERE id = $1',
+      [family_id]
+    );
+    if (familyResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Familjen hittades inte' });
+    }
+
+    const msg = await systemMessages.createSystemMessage(family_id, message.trim());
+
+    // Broadcast SSE to the family — silent if no clients connected
+    broadcast(family_id, 'SYSTEM_ALERT', {
+      message_id: msg.id,
+      message_text: msg.message,
+      created_at: msg.created_at,
+    });
+
+    console.log(`[ADMIN] System message sent to family ${family_id} by admin ${req.user.id}`);
+
+    res.status(201).json({ success: true, message: msg });
+  } catch (err) {
+    console.error('[ADMIN] System message error:', err);
+    res.status(500).json({ error: 'Kunde inte skicka meddelande' });
+  }
+});
+
+/**
+ * GET /api/admin/messages/:familyId
+ * Returns the 10 most recent system messages sent to a family.
+ */
+router.get('/messages/:familyId', async (req, res) => {
+  try {
+    const { familyId } = req.params;
+    const messages = await systemMessages.getRecentMessages(familyId);
+    res.json(messages);
+  } catch (err) {
+    console.error('[ADMIN] Get family messages error:', err);
+    res.status(500).json({ error: 'Kunde inte hämta meddelanden' });
+  }
+});
+
+// ─── POST /api/admin/push/test ────────────────────────────
+// Send a test push notification to a specific parent by email or to all subscribed parents.
+// Body: { email?: string, title?: string, body?: string, url?: string }
+// If email is omitted, sends to all parents with active push subscriptions.
+router.post('/push/test', async (req, res) => {
+  try {
+    const { sendPushNotification } = require('../../lib/push-notifications');
+    const { email, title, body: msgBody, url } = req.body;
+
+    const payload = {
+      title: title || '🔔 Test från Min Stjärndag',
+      body: msgBody || 'Push-notiser fungerar korrekt!',
+      icon: '/icon-192.png',
+      url: url || '/dashboard',
+    };
+
+    if (email) {
+      // Send to specific parent by email
+      const parentResult = await db.query(
+        'SELECT id, email FROM parent WHERE email = $1',
+        [email.toLowerCase().trim()]
+      );
+      if (parentResult.rows.length === 0) {
+        return res.status(404).json({ error: `Ingen förälder hittades med e-post: ${email}` });
+      }
+      const parent = parentResult.rows[0];
+      const result = await sendPushNotification(parent.id, payload);
+      return res.json({
+        success: true,
+        email: parent.email,
+        sent: result.sent,
+        cleaned: result.cleaned,
+        message: result.sent > 0
+          ? `Test-push skickat till ${parent.email} (${result.sent} enhet${result.sent > 1 ? 'er' : ''})`
+          : `Ingen aktiv push-prenumeration för ${parent.email}`,
+      });
+    }
+
+    // Send to all parents with subscriptions
+    const subsResult = await db.query(
+      'SELECT DISTINCT parent_id FROM push_subscriptions'
+    );
+    if (subsResult.rows.length === 0) {
+      return res.json({ success: true, sent: 0, message: 'Inga push-prenumerationer i databasen' });
+    }
+
+    let totalSent = 0;
+    let totalCleaned = 0;
+    for (const row of subsResult.rows) {
+      const r = await sendPushNotification(row.parent_id, payload);
+      totalSent += r.sent;
+      totalCleaned += r.cleaned;
+    }
+
+    res.json({
+      success: true,
+      recipients: subsResult.rows.length,
+      sent: totalSent,
+      cleaned: totalCleaned,
+      message: `Test-push skickat till ${subsResult.rows.length} föräldrar (${totalSent} enheter totalt)`,
+    });
+  } catch (err) {
+    console.error('[ADMIN] Test push error:', err);
+    res.status(500).json({ error: 'Kunde inte skicka test-push: ' + err.message });
+  }
+});
+
+// ─── POST /api/admin/test-push ───────────────────────────
+// Send a test push to all iOS/Android devices for a specific family.
+// Body: { family_id, title, body, url }
+// Requires admin authentication (router.use(requireAdmin) is already applied).
+router.post('/test-push', async (req, res) => {
+  try {
+    const { family_id, title, body: msgBody, url } = req.body;
+
+    if (!family_id || typeof family_id !== 'string') {
+      return res.status(400).json({ error: 'family_id krävs' });
+    }
+
+    // Resolve family
+    const familyResult = await db.query(
+      'SELECT id, name FROM family WHERE id = $1',
+      [family_id]
+    );
+    if (familyResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Familjen hittades inte' });
+    }
+    const family = familyResult.rows[0];
+
+    // Get all parents in this family with native push subscriptions
+    const parentsResult = await db.query(
+      `SELECT DISTINCT p.id AS parent_id, p.email, p.name AS parent_name
+       FROM parent p
+       JOIN push_subscriptions ps ON ps.parent_id = p.id
+       WHERE p.family_id = $1
+         AND ps.platform IN ('ios', 'android')
+         AND ps.native_token IS NOT NULL`,
+      [family_id]
+    );
+
+    const payload = {
+      title: title || '🔔 Test push från Min Stjärndag',
+      body: msgBody || 'Push-notiser fungerar — administratörstest!',
+      url: url || '/dashboard',
+    };
+
+    let totalSent = 0;
+    let totalFailed = 0;
+
+    if (parentsResult.rows.length === 0) {
+      return res.json({
+        success: false,
+        family_id,
+        family_name: family.name,
+        sent: 0,
+        message: `Inga iOS/Android-prenumerationer hittades för familj "${family.name}"`,
+      });
+    }
+
+    const { sendPushNotification } = require('../../lib/push-notifications');
+
+    for (const row of parentsResult.rows) {
+      try {
+        const result = await sendPushNotification(row.parent_id, payload);
+        totalSent += result.sent;
+        if (result.cleaned > 0) totalSent -= result.cleaned; // cleaned tokens not counted as sent
+      } catch (err) {
+        console.error(`[ADMIN] test-push failed for parent ${row.parent_id}:`, err.message);
+        totalFailed++;
+      }
+    }
+
+    const parentList = parentsResult.rows.map(r => r.email).join(', ');
+    console.log(
+      `[ADMIN] test-push sent to family "${family.name}" (${parentsResult.rows.length} parents): "${payload.title}"`
+    );
+
+    res.json({
+      success: true,
+      family_id,
+      family_name: family.name,
+      parents_targeted: parentsResult.rows.length,
+      sent: totalSent,
+      failed: totalFailed,
+      payload,
+      message: `Push skickad till ${totalSent} enhet${totalSent !== 1 ? 'er' : ''} för familj "${family.name}" (${parentList})`,
+    });
+  } catch (err) {
+    console.error('[ADMIN] test-push error:', err);
+    res.status(500).json({ error: 'Kunde inte skicka test-push: ' + err.message });
+  }
+});
+
+// ─── GET /api/admin/push/stats ────────────────────────────
+// Returns push subscription statistics.
+router.get('/push/stats', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT
+        COUNT(*) AS total_subscriptions,
+        COUNT(DISTINCT parent_id) AS subscribed_parents
+      FROM push_subscriptions
+    `);
+    res.json({
+      total_subscriptions: parseInt(result.rows[0].total_subscriptions),
+      subscribed_parents: parseInt(result.rows[0].subscribed_parents),
+    });
+  } catch (err) {
+    console.error('[ADMIN] Push stats error:', err);
+    res.status(500).json({ error: 'Kunne inte hämta push-statistik' });
+  }
+});
+
+module.exports = router;
