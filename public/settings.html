@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:title" content="Min Stjärndag — Förenkla vardagen för hela familjen">
+    <meta property="og:description" content="Skapa och följ dagliga scheman, aktiviteter och belöningar">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://mystarday.se/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://mystarday.se/og-image.png">
+  <title>Inställningar - Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623', 'gold-light': '#FFF3D6', navy: '#1B2340', 'navy-soft': '#2A3458',
+            sky: '#E8F0FE', lavender: '#EDE7F6', mint: '#E0F5EC', coral: '#FDEAE7', 'text-soft': '#5A6178',
+          },
+          fontFamily: { heading: ['Outfit', 'sans-serif'], body: ['Plus Jakarta Sans', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="/css/theme.css?v=2.12.0">
+  <link rel="stylesheet" href="/css/mobile-nav.css?v=2.12.0">
+  <script src="/js/platform.js?v=2026-05-28-ios"></script>
+  <script src="/js/theme.js?v=2.12.0"></script>
+  <script src="/js/auth.js?v=2.13.0"></script>
+  <script src="/js/pwa-install.js?v=2.13.0"></script>
+  <script src="/js/push-manager.js?v=2.13.0"></script>
+  <script src="/js/feedback.js?v=2.12.0"></script>
+  <script src="/js/i18n.js?v=2.12.0"></script>
+  <style>
+    /* WCAG 2.5.8: minimum 44×44px touch target for all checkboxes */
+    .checkbox-touch { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+    .checkbox-touch input[type="checkbox"] { width: 44px; height: 44px; margin: 0; cursor: pointer; accent-color: #F5A623; flex-shrink: 0; }
+    .checkbox-touch label { cursor: pointer; flex: 1; }
+    /* Sidebar nav items: min 44px height for touch */
+    .sidebar-nav-item { display: block; padding: 10px 16px; min-height: 44px; }
+  </style>
+  <!-- PWA / Favicon -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Min Stjärndag">
+  <!-- Consent Manager (GA4 + Meta Pixel + GDPR) -->
+  <script src="/js/app-consent.js?v=2.12.0"></script>
+</head>
+<body class="bg-white font-body text-navy dark:bg-navy dark:text-white">
+  <div class="min-h-screen flex flex-col md:flex-row">
+    <!-- Sidebar -->
+    <nav class="w-full md:w-64 bg-navy text-white p-4 md:p-6 md:min-h-screen">
+      <a href="/dashboard" class="flex items-center gap-3 mb-8 no-underline text-white hover:text-white">
+        <span class="text-2xl">⭐</span>
+        <h1 class="text-xl font-heading font-bold">Min Stjärndag</h1>
+      </a>
+      <ul class="space-y-2">
+        <li><a href="/dashboard" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Översikt</a></li>
+        <li><a href="/daily-log" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Daglig logg</a></li>
+        <li><a href="/schedule" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Veckoschema</a></li>
+        <li><a href="/library" class="block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Bibliotek</a></li>
+        <li><a href="/skattkammaren" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors" style="color:#F5A623;font-weight:600;">🏆 Skattkammaren</a></li>
+        <li><a href="/family" class="block px-4 py-3 rounded-lg bg-gold text-navy font-semibold">Familjen &amp; inställningar</a></li>
+      </ul>
+      <div class="mt-8 pt-4 border-t border-navy-soft space-y-2">
+        <button onclick="toggleDarkMode()" class="w-full px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors text-left flex items-center gap-2">
+          <span>🌙</span> Mörkt läge
+        </button>
+        <button id="logoutBtn" class="w-full px-4 py-2 bg-coral hover:bg-red-200 text-navy rounded-lg font-semibold transition-colors">Logga ut</button>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="flex-1 flex flex-col">
+      <div class="bg-sky border-b border-lavender p-4 md:p-6">
+        <h2 class="text-xl font-heading font-bold text-navy">Inställningar</h2>
+      </div>
+
+      <!-- View switch (dual-role only) -->
+      <div id="viewSwitchSection" class="hidden bg-lavender border-b border-lavender p-4 md:p-6">
+        <p class="text-sm text-text-soft mb-3">Du har tillgång till både föräldra- och pedagogvyn.</p>
+        <div class="flex gap-3 flex-wrap">
+          <button id="switchToPedagog" class="px-4 py-2 bg-navy hover:bg-navy-soft text-white text-sm font-semibold rounded-xl transition-colors">
+            🌟 Byt till pedagogvy
+          </button>
+          <button id="switchToParent" class="px-4 py-2 bg-navy hover:bg-navy-soft text-white text-sm font-semibold rounded-xl transition-colors">
+            👨‍👩‍👧 Byt till föräldravy
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 p-4 md:p-8 overflow-auto space-y-8 max-w-2xl">
+
+        <!-- Notifications -->
+        <section>
+          <h3 class="text-xl font-heading font-bold text-navy mb-4">Notis-inställningar</h3>
+          <form id="notifForm" class="space-y-4">
+            <label for="weeklySummary" class="checkbox-touch text-sm text-navy">
+              <input type="checkbox" id="weeklySummary" checked>
+              <span>Veckosammanfattning (söndag 21:00)</span>
+            </label>
+            <label for="rewardRedemption" class="checkbox-touch text-sm text-navy">
+              <input type="checkbox" id="rewardRedemption" checked>
+              <span>Belöningsinlösen</span>
+            </label>
+            <div class="flex items-center justify-between mb-2" id="newsletterInline" data-feature="nyhetsbrev">
+              <label for="newsletterToggleInline" class="text-sm font-semibold text-navy">Nyhetsbrev via e-post</label>
+              <button id="newsletterToggleInline" type="button"
+                class="relative w-12 h-7 rounded-full transition-colors duration-200 bg-gray-300"
+                aria-label="Växla nyhetsbrev">
+                <span id="newsletterKnobInline" class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-200"></span>
+              </button>
+            </div>
+            <label for="emailEnabled" class="checkbox-touch text-sm text-navy" id="emailEnabledLabel" style="display: none;">
+              <input type="checkbox" id="emailEnabled" checked>
+              <span>Alla mejl globalt</span>
+            </label>
+            <button type="submit" class="w-full px-4 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-heading font-bold transition-colors">Spara notis-inställningar</button>
+            <div id="notifMsg" class="text-sm min-h-[1.4em]"></div>
+          </form>
+        </section>
+
+        <hr class="border-lavender">
+
+        <!-- Push-notiser -->
+        <section id="pushSection" data-feature="push_notiser">
+          <h3 class="text-xl font-heading font-bold text-navy mb-2">Push-notiser</h3>
+          <p class="text-sm text-text-soft mb-4">Få notiser direkt i telefonen — även när appen är stängd.</p>
+
+          <!-- PWA install guide: platform-adaptive, hidden when already standalone -->
+          <div id="pwaInstallGuide"></div>
+
+          <!-- Unsupported warning (non-iOS, non-PWA, no service worker) -->
+          <div id="pushUnsupported" class="hidden bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4">
+            <p class="text-sm text-gray-600">Din webbläsare stöder inte push-notiser.</p>
+          </div>
+
+          <!-- Main toggle -->
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <label class="text-sm font-semibold text-navy">Push-notiser</label>
+              <p class="text-xs text-text-soft">Slå på för att ta emot notiser om barnens aktiviteter</p>
+            </div>
+            <button id="pushMainToggle" type="button"
+              class="relative w-12 h-7 rounded-full transition-colors duration-200 bg-gray-300"
+              aria-label="Växla push-notiser">
+              <span id="pushMainKnob" class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-200"></span>
+            </button>
+          </div>
+
+          <!-- Per-child toggles (shown when push is enabled) -->
+          <div id="pushPerChildSection" class="hidden space-y-3 mb-4 pl-2 border-l-2 border-gold">
+            <p class="text-xs font-semibold text-text-soft uppercase tracking-wide">Notiser per barn</p>
+            <div id="pushChildToggles" class="space-y-2"></div>
+          </div>
+
+          <!-- Expanded push notification settings (shown when push is enabled) -->
+          <div id="pushExpandedSettings" class="hidden mt-4 space-y-4 pl-2 border-l-2 border-gold">
+
+            <!-- Notification types -->
+            <div>
+              <p class="text-xs font-semibold text-text-soft uppercase tracking-wide mb-2">Vilka notiser?</p>
+              <div class="space-y-2">
+                <label class="flex items-center justify-between gap-3 cursor-pointer py-1">
+                  <div>
+                    <p class="text-sm font-semibold text-navy">Schema-påminnelse</p>
+                    <p class="text-xs text-text-soft">10 min innan aktivitet</p>
+                  </div>
+                  <button type="button" id="pushType_schedule_reminder"
+                    class="push-type-toggle relative w-10 h-6 rounded-full transition-colors duration-200 bg-gray-300"
+                    aria-label="Växla schema-påminnelse">
+                    <span class="push-type-knob absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 translate-x-4"></span>
+                  </button>
+                </label>
+                <label class="flex items-center justify-between gap-3 cursor-pointer py-1">
+                  <div>
+                    <p class="text-sm font-semibold text-navy">Inaktivitets-påminnelse</p>
+                    <p class="text-xs text-text-soft">18:00 om barnet inte loggat in</p>
+                  </div>
+                  <button type="button" id="pushType_inactivity_nudge"
+                    class="push-type-toggle relative w-10 h-6 rounded-full transition-colors duration-200 bg-gray-300"
+                    aria-label="Växla inaktivitets-påminnelse">
+                    <span class="push-type-knob absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 translate-x-4"></span>
+                  </button>
+                </label>
+                <label class="flex items-center justify-between gap-3 cursor-pointer py-1">
+                  <div>
+                    <p class="text-sm font-semibold text-navy">Stjärnmilstolpe</p>
+                    <p class="text-xs text-text-soft">Vid 10/25/50/100 stjärnor</p>
+                  </div>
+                  <button type="button" id="pushType_star_milestone"
+                    class="push-type-toggle relative w-10 h-6 rounded-full transition-colors duration-200 bg-gray-300"
+                    aria-label="Växla stjärnmilstolpe">
+                    <span class="push-type-knob absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 translate-x-4"></span>
+                  </button>
+                </label>
+                <label class="flex items-center justify-between gap-3 cursor-pointer py-1">
+                  <div>
+                    <p class="text-sm font-semibold text-navy">Backfill-påminnelse</p>
+                    <p class="text-xs text-text-soft">09:00 om gårdagen saknas</p>
+                  </div>
+                  <button type="button" id="pushType_backfill_reminder"
+                    class="push-type-toggle relative w-10 h-6 rounded-full transition-colors duration-200 bg-gray-300"
+                    aria-label="Växla backfill-påminnelse">
+                    <span class="push-type-knob absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 translate-x-4"></span>
+                  </button>
+                </label>
+              </div>
+            </div>
+
+            <!-- Lead time -->
+            <div class="flex items-center gap-3">
+              <label class="text-sm font-semibold text-navy w-32 flex-shrink-0">Påminnelse före</label>
+              <select id="pushLeadMinutes"
+                class="flex-1 px-3 py-2 border-2 border-lavender focus:border-gold rounded-xl text-sm font-semibold text-navy outline-none transition-colors">
+                <option value="5">5 min</option>
+                <option value="10">10 min</option>
+                <option value="15">15 min</option>
+                <option value="30">30 min</option>
+              </select>
+            </div>
+
+            <!-- Quiet hours -->
+            <div class="flex items-center gap-3">
+              <label class="text-sm font-semibold text-navy w-32 flex-shrink-0">Tyst period</label>
+              <div class="flex items-center gap-2 flex-1">
+                <input type="time" id="pushQuietStart" value="21:00"
+                  class="px-3 py-2 border-2 border-lavender focus:border-gold rounded-xl text-sm font-semibold text-navy outline-none transition-colors w-24" />
+                <span class="text-sm text-text-soft">till</span>
+                <input type="time" id="pushQuietEnd" value="07:00"
+                  class="px-3 py-2 border-2 border-lavender focus:border-gold rounded-xl text-sm font-semibold text-navy outline-none transition-colors w-24" />
+              </div>
+            </div>
+          </div>
+
+          <div id="pushMsg" class="text-sm min-h-[1.4em] mt-1"></div>
+
+          <!-- Notis-arkiv link -->
+          <a href="/notifications" class="mt-4 flex items-center gap-3 p-3 bg-sky border border-lavender rounded-xl hover:bg-lavender transition-colors no-underline">
+            <span class="text-xl">🔔</span>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-navy">Notis-arkiv</p>
+              <p class="text-xs text-text-soft">Visa alla dina notiser de senaste 7 dagarna</p>
+            </div>
+            <span class="text-text-soft text-sm">→</span>
+          </a>
+        </section>
+
+        <hr class="border-lavender">
+
+        <!-- Påminnelser (Reminders) — moved here from Overview -->
+        <section id="reminderSection">
+          <h3 class="text-xl font-heading font-bold text-navy mb-2">Påminnelser</h3>
+          <p class="text-sm text-text-soft mb-4">Ställ in en daglig påminnelse för att komma ihåg att kolla schemat.</p>
+
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <label class="text-sm font-semibold text-navy">Daglig påminnelse</label>
+              <p class="text-xs text-text-soft">Får en påminnelse vid vald tid på valda dagar</p>
+            </div>
+            <button id="reminderMainToggle" type="button"
+              class="relative w-12 h-7 rounded-full transition-colors duration-200 bg-gray-300"
+              aria-label="Växla påminnelse">
+              <span id="reminderMainKnob" class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-200"></span>
+            </button>
+          </div>
+
+          <!-- Time + days (shown when enabled) -->
+          <div id="reminderSettings" class="hidden space-y-4 mb-4 pl-2 border-l-2 border-gold">
+            <div class="flex items-center gap-3">
+              <label class="text-sm font-semibold text-navy w-12">Tid</label>
+              <input type="time" id="reminderTime" value="07:30"
+                class="px-3 py-2 border-2 border-lavender focus:border-gold rounded-xl text-sm font-semibold text-navy outline-none transition-colors" />
+            </div>
+            <div>
+              <label class="text-sm font-semibold text-navy block mb-2">Dagar</label>
+              <div class="flex gap-2 flex-wrap" id="reminderDays"></div>
+            </div>
+          </div>
+
+          <div id="reminderMsg" class="text-sm min-h-[1.4em] mt-1"></div>
+        </section>
+
+        <hr class="border-lavender">
+
+        <!-- Family Settings -->
+        <section>
+          <h3 class="text-xl font-heading font-bold text-navy mb-4">Familjeinställningar</h3>
+          <form id="familyForm" class="space-y-4">
+            <input type="hidden" id="parentName">
+            <div>
+              <label class="block text-sm font-semibold text-navy mb-1">Familjenamn</label>
+              <input type="text" id="familyName" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors" placeholder="T.ex. Familjen Svensson">
+            </div>
+            <div>
+              <label for="soundEnabled" class="checkbox-touch text-sm font-semibold text-navy">
+                <input type="checkbox" id="soundEnabled">
+                <span>Ljud på</span>
+              </label>
+              <p class="text-xs text-text-soft mt-1 ml-14">Spelar upp ett ljud när barnet bockar av en aktivitet i sin dagvy.</p>
+            </div>
+
+            <button type="submit" class="w-full px-4 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-heading font-bold transition-colors">Spara familjeinställningar</button>
+            <div id="familyMsg" class="text-sm min-h-[1.4em]"></div>
+          </form>
+        </section>
+
+        <hr class="border-lavender">
+
+        <!-- Pedagog Invite — only shown to primary parents -->
+        <section id="pedagogInviteSection" class="hidden">
+          <h3 class="text-xl font-heading font-bold text-navy mb-2">👩‍🏫 Pedagog-inbjudan</h3>
+          <p class="text-sm text-text-soft mb-4">Bjud in en pedagog (förskola, skola, terapeut) att lägga till observationer för ett eller flera barn.</p>
+
+          <!-- Invite form -->
+          <form id="pedagogInviteForm" class="space-y-3 mb-4 p-4 bg-sky rounded-xl">
+            <div>
+              <label class="block text-sm font-semibold text-navy mb-1">Barn att dela med pedagogen</label>
+              <div id="pedagogChildCheckboxes" class="space-y-2"></div>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-navy mb-1">E-postadress</label>
+              <input type="email" id="pedagogEmail" required placeholder="pedagog@forskola.se"
+                class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-navy mb-1">Namn (valfritt)</label>
+              <input type="text" id="pedagogName" placeholder="T.ex. Lisa Andersson"
+                class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+            </div>
+            <button type="submit" class="w-full px-4 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-heading font-bold transition-colors">
+              Skicka inbjudan
+            </button>
+            <div id="pedagogInviteMsg" class="text-sm min-h-[1.2em]"></div>
+          </form>
+
+          <!-- Connected pedagogen -->
+          <div id="pedagogList" class="space-y-3 mb-4"></div>
+
+          <!-- Pending invites -->
+          <div id="pedagogPendingSection" class="hidden">
+            <h4 class="text-sm font-semibold text-text-soft uppercase tracking-wide mb-2">Väntande inbjudningar</h4>
+            <div id="pedagogPendingList" class="space-y-2"></div>
+          </div>
+        </section>
+
+        <hr class="border-lavender">
+
+        <!-- GDPR Data Export -->
+        <section id="dataExportSection">
+          <h3 class="text-xl font-heading font-bold text-navy mb-2">Min data</h3>
+          <p class="text-sm text-text-soft mb-4">Ladda ner en kopia av all din data i CSV-format (ZIP-fil). Inkluderar profil, barn, scheman, belöningar och aktivitetshistorik.</p>
+          <button id="downloadDataBtn" class="w-full px-4 py-3 bg-navy hover:bg-navy-soft text-white rounded-xl font-heading font-bold transition-colors flex items-center justify-center gap-2">
+            <span>⬇️</span> Ladda ner min data
+          </button>
+          <div id="exportMsg" class="text-sm min-h-[1.4em] mt-2"></div>
+        </section>
+
+        <hr class="border-lavender">
+
+        <!-- Account Deletion -->
+        <section id="deletionSection">
+          <h3 class="text-xl font-heading font-bold text-navy mb-2">Radera konto</h3>
+          <div class="bg-coral rounded-xl p-4 mb-4">
+            <p class="text-sm text-navy font-semibold mb-1">⚠️ Permanent radering</p>
+            <p class="text-sm text-navy">Alla dina data — familj, barn, scheman, aktiviteter, betyg och belöningar — raderas omedelbart och permanent. Det går inte att ångra.</p>
+          </div>
+          <button id="deleteAccountBtn" class="w-full px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-heading font-bold transition-colors">Radera mitt konto</button>
+          <div id="deletionMsg" class="text-sm min-h-[1.4em] mt-2"></div>
+        </section>
+
+        <hr class="border-lavender">
+
+        <!-- Privacy & Terms links in app -->
+        <section class="pb-8 flex flex-col gap-2">
+          <a href="/privacy" class="text-sm text-text-soft hover:text-gold transition-colors flex items-center gap-2">
+            <span>🔒</span> Integritetspolicy
+          </a>
+          <a href="/terms" class="text-sm text-text-soft hover:text-gold transition-colors flex items-center gap-2">
+            <span>📄</span> Användarvillkor
+          </a>
+        </section>
+
+        <hr class="border-lavender">
+
+        <!-- Samtycke & Integritet -->
+        <section id="consentSection">
+          <h3 class="text-xl font-heading font-bold text-navy mb-2">Samtycke & Integritet</h3>
+          <p class="text-sm text-text-soft mb-4">Hantera dina integritetsinställningar och cookie-val.</p>
+          <div id="consentSummary" class="bg-sky rounded-xl p-4 mb-4 text-sm text-navy space-y-2"></div>
+          <button id="openConsentBtn" type="button" class="w-full px-4 py-3 bg-navy hover:bg-navy-soft text-white rounded-xl font-heading font-bold transition-colors">
+            Ändra samtyckesinställningar
+          </button>
+        </section>
+
+        <hr class="border-lavender">
+
+        <!-- Theme Settings -->
+        <section>
+          <h3 class="text-xl font-heading font-bold text-navy mb-4">Utseende</h3>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="text-sm font-semibold text-navy">Mörkt läge</label>
+                <p class="text-xs text-text-soft">Aktivera mörkt tema för bekvämare användning i mörker</p>
+              </div>
+              <button id="darkModeToggle" type="button" class="relative w-12 h-7 rounded-full transition-colors duration-200 bg-gray-300" aria-label="Växla mörkt läge">
+                <span id="darkModeKnob" class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-200"></span>
+              </button>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-navy mb-1">Färgblindhetstema</label>
+              <p class="text-xs text-text-soft mb-2">Anpassar färgerna för olika typer av färgblindhet</p>
+              <select id="colorBlindMode" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors bg-white">
+                <option value="none">Inget (standard)</option>
+                <option value="protanopia">Protanopi (röd-blind)</option>
+                <option value="deuteranopia">Deuteranopi (grön-blind)</option>
+                <option value="tritanopia">Tritanopi (blå-blind)</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <hr class="border-lavender">
+
+        <!-- Password Change — placed last, infrequent action -->
+        <section class="pb-8">
+          <h3 class="text-xl font-heading font-bold text-navy mb-4">Byt lösenord</h3>
+          <form id="passwordForm" class="space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-navy mb-1">Nuvarande lösenord</label>
+              <input type="password" id="currentPw" required class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-navy mb-1">Nytt lösenord</label>
+              <input type="password" id="newPw" required minlength="8" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-navy mb-1">Bekräfta nytt lösenord</label>
+              <input type="password" id="confirmPw" required minlength="8" class="w-full px-4 py-3 rounded-xl border-2 border-lavender focus:border-gold outline-none transition-colors">
+            </div>
+            <button type="submit" class="w-full px-4 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-heading font-bold transition-colors">Byt lösenord</button>
+            <div id="pwMsg" class="text-sm min-h-[1.4em]"></div>
+          </form>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Deletion Confirmation Modal (two-step: warn → type RADERA → confirm) -->
+  <div id="deleteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div class="bg-red-500 px-6 py-4 flex items-center gap-3">
+        <span class="text-2xl">⚠️</span>
+        <h3 class="text-xl font-heading font-bold text-white">Radera konto permanent</h3>
+      </div>
+      <div class="p-6">
+        <div class="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+          <p class="text-sm text-red-700 font-semibold mb-1">Är du säker? ALL data raderas permanent.</p>
+          <ul class="text-sm text-red-600 list-disc list-inside space-y-0.5">
+            <li>Föräldrakontot</li>
+            <li>Alla barn kopplade till familjen</li>
+            <li>Alla scheman och aktiviteter</li>
+            <li>Alla dagliga loggar och stjärnor</li>
+            <li>Alla belöningar och inlösningar</li>
+          </ul>
+          <p class="text-sm text-red-700 font-semibold mt-2">Detta kan inte ångras.</p>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-navy mb-1">
+            Skriv <strong>RADERA</strong> för att bekräfta
+          </label>
+          <input type="text" id="deleteConfirmText" autocomplete="off" autocapitalize="off" spellcheck="false"
+            class="w-full px-4 py-3 rounded-xl border-2 border-red-200 focus:border-red-500 outline-none transition-colors font-bold tracking-widest text-center text-lg"
+            placeholder="RADERA">
+        </div>
+        <div id="deleteModalErr" class="text-sm text-red-500 min-h-[1.2em] mb-3"></div>
+        <div class="flex gap-3">
+          <button id="cancelModalBtn" class="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-navy rounded-xl font-semibold transition-colors">Avbryt</button>
+          <button id="confirmDeleteBtn" disabled
+            class="flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-xl font-bold transition-colors cursor-not-allowed">Radera allt permanent</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let familyChildren = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        Auth.requireAuth();
+
+        // Fetch current user first (needed for view switch and pedagog invite)
+        const me = await Auth.api('/api/auth/me');
+
+        // Load family data — Auth.api() returns parsed JSON directly
+        const fam = await Auth.api('/api/family');
+        document.getElementById('familyName').value = fam.name || '';
+        document.getElementById('soundEnabled').checked = fam.sound_enabled !== false;
+
+        familyChildren = fam.children || [];
+
+        // Initialize pedagog invite section (primary parents only)
+        initPedagogInviteSection();
+
+        // View switch buttons for dual-role parents
+        if (me && me.account_type === 'dual') {
+          const viewSection = document.getElementById('viewSwitchSection');
+          viewSection.classList.remove('hidden');
+          // Hide the button for the current view mode
+          if (me.preferred_view_mode === 'pedagog') {
+            document.getElementById('switchToPedagog').style.display = 'none';
+          } else {
+            document.getElementById('switchToParent').style.display = 'none';
+          }
+          document.getElementById('switchToPedagog').addEventListener('click', async () => {
+            await Auth.api('/api/auth/me/preferences', {
+              method: 'POST',
+              body: JSON.stringify({ preferredViewMode: 'pedagog' }),
+            });
+            localStorage.removeItem('viewMode');
+            window.location.href = '/pedagog-oversikt';
+          });
+          document.getElementById('switchToParent').addEventListener('click', async () => {
+            await Auth.api('/api/auth/me/preferences', {
+              method: 'POST',
+              body: JSON.stringify({ preferredViewMode: 'parent' }),
+            });
+            localStorage.removeItem('viewMode');
+            window.location.href = '/dashboard';
+          });
+        }
+
+        // Populate parent name for family name fallback
+        if (me && me.name) {
+          document.getElementById('parentName').value = me.name;
+        }
+
+        const currentUser = Auth.getUser();
+
+        // Hide "Alla mejl globalt" for non-admin users
+        if (!currentUser || !currentUser.isAdmin) {
+          document.getElementById('emailEnabledLabel').style.display = 'none';
+        }
+
+        // Load notification preferences
+        const notif = await Auth.api('/api/account/notifications');
+        document.getElementById('weeklySummary').checked = notif.weekly_summary !== false;
+        document.getElementById('rewardRedemption').checked = notif.reward_redemption !== false;
+        document.getElementById('emailEnabled').checked = notif.email_enabled !== false;
+
+        // Initialize push notification section
+        initPushSection(familyChildren, currentUser);
+
+        // Initialize reminder section
+        initReminderSection();
+
+        // Initialize theme controls
+        const darkToggle = document.getElementById('darkModeToggle');
+        const darkKnob = document.getElementById('darkModeKnob');
+        const cbSelect = document.getElementById('colorBlindMode');
+
+        function updateDarkToggleUI() {
+          if (Theme.isDark()) {
+            darkToggle.classList.remove('bg-gray-300');
+            darkToggle.classList.add('bg-gold');
+            darkKnob.style.transform = 'translateX(1.25rem)';
+          } else {
+            darkToggle.classList.remove('bg-gold');
+            darkToggle.classList.add('bg-gray-300');
+            darkKnob.style.transform = 'translateX(0)';
+          }
+        }
+        updateDarkToggleUI();
+        cbSelect.value = Theme.getColorBlind();
+
+        darkToggle.addEventListener('click', () => {
+          Theme.toggleDark();
+          updateDarkToggleUI();
+        });
+
+        cbSelect.addEventListener('change', () => {
+          Theme.setColorBlind(cbSelect.value);
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => Auth.logout());
+
+        // (Immediate deletion — no pending state needed)
+      } catch (error) {
+        console.error('Settings init failed:', error);
+        window.location.href = '/login';
+      }
+    });
+
+    // Download my data (GDPR export)
+    document.getElementById('downloadDataBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('downloadDataBtn');
+      const msgEl = document.getElementById('exportMsg');
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳</span> Förbereder nedladdning…';
+      msgEl.textContent = '';
+      msgEl.className = 'text-sm min-h-[1.4em] mt-2';
+
+      try {
+        // Cookie-only auth: no Authorization header needed.
+        const response = await fetch('/api/account/export-data', { credentials: 'include' });
+
+        if (response.status === 429) {
+          const data = await response.json().catch(() => ({}));
+          msgEl.textContent = data.error || 'Du kan bara exportera en gång per 24 timmar.';
+          msgEl.className = 'text-sm min-h-[1.4em] mt-2 text-amber-600';
+          return;
+        }
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          msgEl.textContent = data.error || 'Något gick fel. Försök igen.';
+          msgEl.className = 'text-sm min-h-[1.4em] mt-2 text-red-500';
+          return;
+        }
+
+        // Trigger download via blob URL
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const filename = (response.headers.get('Content-Disposition') || '')
+          .match(/filename="?([^"]+)"?/)?.[1] || 'min-data.zip';
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        msgEl.textContent = '✅ Nedladdning startad!';
+        msgEl.className = 'text-sm min-h-[1.4em] mt-2 text-green-600';
+      } catch (err) {
+        msgEl.textContent = 'Nätverksfel. Försök igen.';
+        msgEl.className = 'text-sm min-h-[1.4em] mt-2 text-red-500';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>⬇️</span> Ladda ner min data';
+      }
+    });
+
+    // Delete account → show confirmation modal
+    document.getElementById('deleteAccountBtn').addEventListener('click', () => {
+      document.getElementById('deleteModal').classList.remove('hidden');
+    });
+
+    // Cancel modal / click backdrop → hide modal and clear input
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.add('hidden');
+      document.getElementById('deleteConfirmText').value = '';
+      document.getElementById('deleteModalErr').textContent = '';
+      updateConfirmBtnState('');
+    }
+    document.getElementById('cancelModalBtn').addEventListener('click', closeDeleteModal);
+    document.getElementById('deleteModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('deleteModal')) closeDeleteModal();
+    });
+
+    // Enable/disable confirm button based on RADERA text match
+    function updateConfirmBtnState(value) {
+      const btn = document.getElementById('confirmDeleteBtn');
+      const match = value.trim().toUpperCase() === 'RADERA';
+      if (match) {
+        btn.disabled = false;
+        btn.className = 'flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors';
+        btn.textContent = 'Radera allt permanent';
+      } else {
+        btn.disabled = true;
+        btn.className = 'flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-xl font-bold transition-colors cursor-not-allowed';
+        btn.textContent = 'Radera allt permanent';
+      }
+    }
+    document.getElementById('deleteConfirmText').addEventListener('input', (e) => {
+      updateConfirmBtnState(e.target.value);
+      document.getElementById('deleteModalErr').textContent = '';
+    });
+
+    // Confirm delete → DELETE /api/family/delete-account with CSRF
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+      const confirmText = document.getElementById('deleteConfirmText').value.trim().toUpperCase();
+      const errEl = document.getElementById('deleteModalErr');
+
+      if (confirmText !== 'RADERA') {
+        errEl.textContent = 'Skriv RADERA för att bekräfta.';
+        return;
+      }
+
+      const btn = document.getElementById('confirmDeleteBtn');
+      btn.disabled = true;
+      btn.textContent = 'Raderar...';
+      errEl.textContent = '';
+
+      try {
+        const csrfToken = Auth.getCsrfToken();
+        const response = await fetch('/api/family/delete-account', {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken || '',
+          },
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || 'Något gick fel vid radering.');
+        }
+
+        // Data gone — redirect to landing page
+        document.getElementById('deletionMsg').textContent = '✅ Kontot har raderats.';
+        document.getElementById('deletionMsg').className = 'text-sm text-green-600 mt-2';
+        closeDeleteModal();
+        // Clear local auth state and redirect
+        localStorage.removeItem('stjarndag_user');
+        localStorage.removeItem('stjarndag_csrf');
+        document.cookie = 'access_token=; Max-Age=0; path=/; SameSite=strict';
+        document.cookie = 'refresh_token=; Max-Age=0; path=/; SameSite=strict';
+        document.cookie = 'csrf_token=; Max-Age=0; path=/; SameSite=strict';
+        setTimeout(() => { window.location.href = '/'; }, 1500);
+      } catch (err) {
+        errEl.textContent = err.message || 'Nätverksfel. Försök igen.';
+        btn.disabled = false;
+        btn.textContent = 'Radera allt permanent';
+      }
+    });
+
+    // Family settings form — Auth.api() returns data or throws
+    document.getElementById('familyForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('familyMsg');
+      let familyNameVal = document.getElementById('familyName').value.trim();
+
+      // If family name is empty, auto-regenerate from parent's name
+      if (!familyNameVal) {
+        const parentName = document.getElementById('parentName').value.trim();
+        if (parentName) {
+          familyNameVal = parentName + 's familj';
+          document.getElementById('familyName').value = familyNameVal;
+        }
+      }
+
+      try {
+        const data = await Auth.api('/api/family/settings', {
+          method: 'PUT',
+          body: JSON.stringify({
+            name: familyNameVal,
+            sound_enabled: document.getElementById('soundEnabled').checked,
+          }),
+        });
+        msg.textContent = data.message || 'Sparat!';
+        msg.className = 'text-sm text-green-600';
+      } catch (err) { msg.textContent = err.message || 'Nätverksfel'; msg.className = 'text-sm text-red-500'; }
+    });
+
+    // Password form
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('pwMsg');
+      const newPw = document.getElementById('newPw').value;
+      if (newPw !== document.getElementById('confirmPw').value) {
+        msg.textContent = 'Lösenorden matchar inte'; msg.className = 'text-sm text-red-500'; return;
+      }
+      try {
+        const data = await Auth.api('/api/account/change-password', {
+          method: 'PUT',
+          body: JSON.stringify({ currentPassword: document.getElementById('currentPw').value, newPassword: newPw }),
+        });
+        msg.textContent = data.message || 'Lösenordet har ändrats!';
+        msg.className = 'text-sm text-green-600';
+        document.getElementById('passwordForm').reset();
+      } catch (err) { msg.textContent = err.message || 'Nätverksfel'; msg.className = 'text-sm text-red-500'; }
+    });
+
+    // Notification form
+    document.getElementById('notifForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('notifMsg');
+      try {
+        const data = await Auth.api('/api/account/notifications', {
+          method: 'PUT',
+          body: JSON.stringify({
+            weekly_summary: document.getElementById('weeklySummary').checked,
+            reward_redemption: document.getElementById('rewardRedemption').checked,
+            email_enabled: document.getElementById('emailEnabled').checked,
+          }),
+        });
+        msg.textContent = data.message || 'Sparat!';
+        msg.className = 'text-sm text-green-600';
+      } catch (err) { msg.textContent = err.message || 'Nätverksfel'; msg.className = 'text-sm text-red-500'; }
+    });
+
+    // ── Nyhetsbrevsprenumeration (moved to notification section) ────────────────────
+    async function initNewsletterToggleInline() {
+      const toggle = document.getElementById('newsletterToggleInline');
+      const knob   = document.getElementById('newsletterKnobInline');
+
+      let subscribed = false;
+
+      // Load current subscription status
+      try {
+        const data = await Auth.api('/api/newsletter/subscription');
+        subscribed = data.subscribed === true;
+      } catch (_) {
+        // If endpoint returns 404 (no record yet), default to off
+      }
+
+      function updateUI(on) {
+        if (on) {
+          toggle.classList.remove('bg-gray-300');
+          toggle.classList.add('bg-gold');
+          knob.style.transform = 'translateX(1.25rem)';
+        } else {
+          toggle.classList.remove('bg-gold');
+          toggle.classList.add('bg-gray-300');
+          knob.style.transform = 'translateX(0)';
+        }
+      }
+
+      updateUI(subscribed);
+
+      toggle.addEventListener('click', async () => {
+        const newState = !subscribed;
+        updateUI(newState);
+
+        try {
+          const data = await Auth.api('/api/newsletter/subscription', {
+            method: 'PUT',
+            body: JSON.stringify({ subscribed: newState }),
+          });
+          subscribed = newState;
+        } catch (err) {
+          // Revert UI on error
+          updateUI(subscribed);
+        }
+      });
+    }
+    initNewsletterToggleInline();
+
+
+    // ── Påminnelser (Reminders) ─────────────────────────────────────────────────
+    async function initReminderSection() {
+      const DAY_LABELS = ['S', 'M', 'T', 'O', 'T', 'F', 'L'];
+      const DAY_NAMES  = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
+      const mainToggle = document.getElementById('reminderMainToggle');
+      const mainKnob = document.getElementById('reminderMainKnob');
+      const settingsEl = document.getElementById('reminderSettings');
+      const timeInput = document.getElementById('reminderTime');
+      const daysContainer = document.getElementById('reminderDays');
+      const msgEl = document.getElementById('reminderMsg');
+
+      let enabled = false;
+      let time = '07:30';
+      let days = [1, 2, 3, 4, 5]; // Mon–Fri
+      let saveTimer = null;
+
+      // Load saved state
+      try {
+        const data = await Auth.api('/api/reminders');
+        enabled = data.enabled;
+        time = data.time || '07:30';
+        days = data.days || [1, 2, 3, 4, 5];
+      } catch (_) {}
+
+      function updateToggleUI() {
+        if (enabled) {
+          mainToggle.classList.remove('bg-gray-300');
+          mainToggle.classList.add('bg-gold');
+          mainKnob.style.transform = 'translateX(1.25rem)';
+          settingsEl.classList.remove('hidden');
+        } else {
+          mainToggle.classList.remove('bg-gold');
+          mainToggle.classList.add('bg-gray-300');
+          mainKnob.style.transform = 'translateX(0)';
+          settingsEl.classList.add('hidden');
+        }
+        if (timeInput) timeInput.value = time;
+        renderDayPicker();
+      }
+
+      function renderDayPicker() {
+        if (!daysContainer) return;
+        daysContainer.innerHTML = '';
+        // Monday-first display order
+        const dayOrder = [1, 2, 3, 4, 5, 6, 0];
+        dayOrder.forEach(idx => {
+          const btn = document.createElement('button');
+          const active = days.includes(idx);
+          btn.type = 'button';
+          btn.title = DAY_NAMES[idx];
+          btn.className = [
+            'w-9 h-9 rounded-full text-xs font-bold border-2 transition-all',
+            active
+              ? 'bg-navy text-white border-navy'
+              : 'bg-white text-text-soft border-lavender hover:border-navy'
+          ].join(' ');
+          btn.textContent = DAY_LABELS[idx];
+          btn.addEventListener('click', () => {
+            const i = days.indexOf(idx);
+            if (i >= 0) {
+              if (days.length > 1) days.splice(i, 1);
+            } else {
+              days.push(idx);
+              days.sort((a, b) => a - b);
+            }
+            renderDayPicker();
+            debounceSave();
+          });
+          daysContainer.appendChild(btn);
+        });
+      }
+
+      async function saveReminder() {
+        try {
+          await Auth.api('/api/reminders', {
+            method: 'PUT',
+            body: JSON.stringify({ enabled, time, days }),
+          });
+          msgEl.textContent = '✅ Sparat!';
+          msgEl.className = 'text-sm text-green-600';
+          setTimeout(() => { msgEl.textContent = ''; }, 2000);
+        } catch (err) {
+          msgEl.textContent = 'Kunde inte spara. Försök igen.';
+          msgEl.className = 'text-sm text-red-500';
+        }
+      }
+
+      function debounceSave() {
+        if (timeInput) time = timeInput.value;
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveReminder, 600);
+      }
+
+      updateToggleUI();
+
+      // Toggle click
+      mainToggle.addEventListener('click', () => {
+        enabled = !enabled;
+        updateToggleUI();
+        saveReminder();
+      });
+
+      // Time change
+      if (timeInput) {
+        timeInput.addEventListener('change', debounceSave);
+      }
+    }
+
+    // ── Samtycke & Integritet ──────────────────────────────────────────────────
+    const CONSENT_LABELS = {
+      analytics_storage:  'Analys & Förbättring',
+      ad_storage:         'Marknadsföring',
+      ad_user_data:       'Data till plattformar',
+      ad_personalization: 'Personalisering',
+      email_communication:'E-post & Tips',
+    };
+    const CONSENT_ICONS = { granted: '✓', denied: '✗', pending: '—' };
+    const CONSENT_COLORS = { granted: 'text-green-600', denied: 'text-red-500', pending: 'text-text-soft' };
+
+    function renderConsentSummary() {
+      const summary = document.getElementById('consentSummary');
+      if (!summary) return;
+      const c = window.AppConsent && window.AppConsent.get ? window.AppConsent.get() : null;
+      if (!c) {
+        summary.textContent = 'Inga samtyckesinställningar sparade ännu.';
+        return;
+      }
+      summary.innerHTML = Object.entries(CONSENT_LABELS).map(([key, label]) => {
+        const val = c[key] || 'pending';
+        const icon = CONSENT_ICONS[val];
+        const color = CONSENT_COLORS[val];
+        return `<div class="flex items-center justify-between"><span class="font-medium">${label}</span><span class="${color} font-bold text-base">${icon}</span></div>`;
+      }).join('');
+    }
+
+    // Render on load (app-consent.js runs before DOMContentLoaded resolves, so consent may already be loaded)
+    setTimeout(renderConsentSummary, 300);
+
+    // Open consent modal from settings
+    document.getElementById('openConsentBtn').addEventListener('click', () => {
+      if (window.AppConsent && window.AppConsent.open) {
+        window.AppConsent.open();
+        // After modal closes, refresh summary (poll for 5s)
+        let attempts = 0;
+        const poll = setInterval(() => {
+          attempts++;
+          if (!document.getElementById('msj-consent-overlay') || attempts > 10) {
+            clearInterval(poll);
+            setTimeout(renderConsentSummary, 200);
+          }
+        }, 500);
+      }
+    });
+
+    // ── Push notification section ─────────────────────────
+    const PUSH_TYPES = ['schedule_reminder', 'inactivity_nudge', 'star_milestone', 'backfill_reminder'];
+
+    async function initPushSection(children, currentUser) {
+      const Push = window.PushManager_StarDay;
+      const msgEl = document.getElementById('pushMsg');
+      const mainToggle = document.getElementById('pushMainToggle');
+      const mainKnob = document.getElementById('pushMainKnob');
+      const perChildSection = document.getElementById('pushPerChildSection');
+      const childTogglesEl = document.getElementById('pushChildToggles');
+      const expandedSettings = document.getElementById('pushExpandedSettings');
+      const leadSelect = document.getElementById('pushLeadMinutes');
+      const quietStartInput = document.getElementById('pushQuietStart');
+      const quietEndInput = document.getElementById('pushQuietEnd');
+
+      // Detect native app environment
+      const isNativeApp = !!(window.Platform && window.Platform.isNative());
+
+      if (!Push && !isNativeApp) {
+        document.getElementById('pushUnsupported').classList.remove('hidden');
+        mainToggle.disabled = true;
+        return;
+      }
+
+      // On native app: hide PWA install guide entirely
+      if (isNativeApp) {
+        const guide = document.getElementById('pwaInstallGuide');
+        if (guide) guide.classList.add('hidden');
+      } else if (window.PWAInstall) {
+        await PWAInstall.render(document.getElementById('pwaInstallGuide'));
+      }
+
+      if (!isNativeApp && (!Push || (!Push.isSupported() && !(Push.isIOS && Push.isIOS())))) {
+        document.getElementById('pushUnsupported').classList.remove('hidden');
+        mainToggle.disabled = true;
+        return;
+      }
+
+      // iOS non-standalone PWA: disable toggle but don't block native
+      if (!isNativeApp && Push.isIOS && Push.isIOS() && !Push.isStandalone()) {
+        mainToggle.disabled = true;
+      }
+
+      // Load saved preferences
+      let prefs = {};
+      let perChild = {};
+      let pushEnabled = false;
+      try {
+        const saved = await Push.getPreferences();
+        prefs = saved.push_preferences || {};
+        pushEnabled = prefs.enabled === true;
+        perChild = prefs.per_child || {};
+      } catch (_) {}
+
+      // Sync: if push is enabled in prefs but browser permission was denied, turn off
+      if (pushEnabled && Push.getPermission() === 'denied') {
+        pushEnabled = false;
+        await Push.savePreferences({ enabled: false, per_child: perChild }).catch(() => {});
+      }
+
+      function updateMainToggleUI(on) {
+        if (on) {
+          mainToggle.classList.remove('bg-gray-300');
+          mainToggle.classList.add('bg-gold');
+          mainKnob.style.transform = 'translateX(1.25rem)';
+          perChildSection.classList.remove('hidden');
+          expandedSettings.classList.remove('hidden');
+        } else {
+          mainToggle.classList.remove('bg-gold');
+          mainToggle.classList.add('bg-gray-300');
+          mainKnob.style.transform = 'translateX(0)';
+          perChildSection.classList.add('hidden');
+          expandedSettings.classList.add('hidden');
+        }
+      }
+
+      updateMainToggleUI(pushEnabled);
+
+      // Wire up type toggles
+      PUSH_TYPES.forEach(type => {
+        const btn = document.getElementById('pushType_' + type);
+        const setToggle = (on) => {
+          if (on) {
+            btn.classList.remove('bg-gray-300');
+            btn.classList.add('bg-gold');
+            btn.querySelector('.push-type-knob').style.transform = 'translateX(1.25rem)';
+          } else {
+            btn.classList.remove('bg-gold');
+            btn.classList.add('bg-gray-300');
+            btn.querySelector('.push-type-knob').style.transform = 'translateX(0)';
+          }
+        };
+        // Init from saved prefs (default true)
+        setToggle(prefs[type] !== false);
+        btn.addEventListener('click', async () => {
+          const currentOn = btn.classList.contains('bg-gold');
+          const newOn = !currentOn;
+          setToggle(newOn);
+          try {
+            await Push.savePreferences({ [type]: newOn });
+            msgEl.textContent = '✅ Sparat!';
+            msgEl.className = 'text-sm text-green-600';
+            setTimeout(() => { msgEl.textContent = ''; }, 2000);
+          } catch (_) {
+            msgEl.textContent = 'Kunde inte spara.';
+            msgEl.className = 'text-sm text-red-500';
+          }
+        });
+      });
+
+      // Lead time
+      leadSelect.value = String(prefs.reminder_lead_minutes || 10);
+      leadSelect.addEventListener('change', async () => {
+        try {
+          await Push.savePreferences({ reminder_lead_minutes: parseInt(leadSelect.value, 10) });
+        } catch (_) {}
+      });
+
+      // Quiet hours
+      const fmtTime = (n) => String(n || 21).padStart(2, '0') + ':00';
+      quietStartInput.value = fmtTime(prefs.quiet_start);
+      quietEndInput.value   = fmtTime(prefs.quiet_end);
+
+      [quietStartInput, quietEndInput].forEach(el => {
+        el.addEventListener('change', async () => {
+          const parseHour = (t) => parseInt(t.split(':')[0], 10);
+          try {
+            await Push.savePreferences({
+              quiet_start: parseHour(quietStartInput.value),
+              quiet_end:   parseHour(quietEndInput.value),
+            });
+          } catch (_) {}
+        });
+      });
+
+      // Render per-child toggles
+      function renderChildToggles() {
+        if (!children || children.length === 0) {
+          childTogglesEl.innerHTML = '<p class="text-xs text-text-soft">Inga barn kopplade.</p>';
+          return;
+        }
+        childTogglesEl.innerHTML = children.map(c => {
+          const childOn = perChild[c.id] !== false;
+          return `
+            <div class="flex items-center justify-between py-1">
+              <span class="text-sm">${c.emoji || ''} ${c.name}</span>
+              <button type="button"
+                class="child-push-toggle relative w-10 h-6 rounded-full transition-colors duration-200 ${childOn ? 'bg-gold' : 'bg-gray-300'}"
+                data-child-id="${c.id}" aria-label="Push för ${c.name}">
+                <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${childOn ? 'translate-x-4' : 'translate-x-0'}"></span>
+              </button>
+            </div>`;
+        }).join('');
+
+        childTogglesEl.querySelectorAll('.child-push-toggle').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const cid = btn.dataset.childId;
+            const isOn = btn.classList.contains('bg-gold');
+            const newOn = !isOn;
+            perChild[cid] = newOn;
+
+            if (newOn) {
+              btn.classList.remove('bg-gray-300');
+              btn.classList.add('bg-gold');
+              btn.querySelector('span').classList.remove('translate-x-0');
+              btn.querySelector('span').classList.add('translate-x-4');
+            } else {
+              btn.classList.remove('bg-gold');
+              btn.classList.add('bg-gray-300');
+              btn.querySelector('span').classList.remove('translate-x-4');
+              btn.querySelector('span').classList.add('translate-x-0');
+            }
+
+            try {
+              await Push.savePreferences({ enabled: true, per_child: perChild });
+              msgEl.textContent = '✅ Sparat!';
+              msgEl.className = 'text-sm text-green-600';
+              setTimeout(() => { msgEl.textContent = ''; }, 2000);
+            } catch (err) {
+              msgEl.textContent = 'Kunde inte spara. Försök igen.';
+              msgEl.className = 'text-sm text-red-500';
+            }
+          });
+        });
+      }
+
+      if (pushEnabled) renderChildToggles();
+
+      // Main toggle
+      mainToggle.addEventListener('click', async () => {
+        msgEl.textContent = '';
+        const turningOn = !pushEnabled;
+
+        if (turningOn) {
+          msgEl.textContent = '⏳ Begär tillstånd…';
+          msgEl.className = 'text-sm text-text-soft';
+
+          const result = await Push.requestAndSubscribe();
+
+          if (result === 'granted') {
+            pushEnabled = true;
+            updateMainToggleUI(true);
+            renderChildToggles();
+            await Push.savePreferences({ enabled: true, per_child: perChild });
+            msgEl.textContent = '✅ Push-notiser aktiverade!';
+            msgEl.className = 'text-sm text-green-600';
+          } else if (result === 'denied') {
+            msgEl.textContent = '🚫 Tillstånd nekat. Aktivera i webbläsarens inställningar.';
+            msgEl.className = 'text-sm text-red-500';
+          } else if (result === 'ios-not-installed') {
+            msgEl.textContent = '';
+          } else {
+            msgEl.textContent = 'Något gick fel. Försök igen.';
+            msgEl.className = 'text-sm text-red-500';
+          }
+        } else {
+          pushEnabled = false;
+          updateMainToggleUI(false);
+          await Push.unsubscribe();
+          await Push.savePreferences({ enabled: false, per_child: perChild });
+          msgEl.textContent = '✅ Push-notiser avstängda.';
+          msgEl.className = 'text-sm text-text-soft';
+          setTimeout(() => { msgEl.textContent = ''; }, 2000);
+        }
+      });
+    }
+
+    // ── Pedagog invite section ──────────────────────────────────────────
+    async function initPedagogInviteSection() {
+      const section = document.getElementById('pedagogInviteSection');
+      const checkboxesEl = document.getElementById('pedagogChildCheckboxes');
+      const listEl = document.getElementById('pedagogList');
+      const pendingSection = document.getElementById('pedagogPendingSection');
+      const pendingListEl = document.getElementById('pedagogPendingList');
+      const formMsg = document.getElementById('pedagogInviteMsg');
+
+      // Only primary parents see the section; show it even if API fails so they can still invite
+      try {
+        const me = await Auth.api('/api/auth/me');
+        if (me.account_type === 'educator') return; // pedagog-only — no invite UI
+
+        // Always show section for non-educator parents
+        section.classList.remove('hidden');
+
+        // Populate child checkboxes from familyChildren (always render form)
+        if (familyChildren && familyChildren.length > 0) {
+          checkboxesEl.innerHTML = familyChildren.map(c =>
+          `<label class="checkbox-touch text-sm">
+            <input type="checkbox" class="pedagog-child-check" value="${c.id}">
+            <span>${c.emoji || ''} ${c.name}</span>
+          </label>`
+        ).join('');
+        }
+
+        // Render connected pedagogen
+        function renderPedagogList(pedagogs) {
+          if (!pedagogs || pedagogs.length === 0) {
+            listEl.innerHTML = '<p class="text-sm text-text-soft">Inga pedagoger kopplade.</p>';
+            return;
+          }
+          // Map childId → childName for display
+          const childMap = {};
+          if (familyChildren) familyChildren.forEach(c => { childMap[c.id] = c; });
+
+          listEl.innerHTML = pedagogs.map(p => {
+            const childNames = (p.childIds || [])
+              .map(cid => childMap[cid] ? (childMap[cid].emoji + ' ' + childMap[cid].name) : cid)
+              .join(', ') || 'Okänt barn';
+
+            const connectedAt = p.connectedAt
+              ? new Date(p.connectedAt).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' })
+              : 'Okänt';
+
+            return `
+              <div class="flex items-center justify-between p-3 bg-white border border-lavender rounded-xl">
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-navy">${p.name || p.email}</p>
+                  <p class="text-xs text-text-soft">${childNames} · ${connectedAt}</p>
+                </div>
+                <button type="button" class="revoke-pedagog-btn px-3 py-1.5 bg-coral hover:bg-red-200 text-navy rounded-lg text-sm font-semibold transition-colors"
+                  data-pedagog-parent-id="${p.parentId}" data-child-id="${(p.childIds || [])[0] || ''}">
+                  Återkalla
+                </button>
+              </div>`;
+          }).join('');
+
+          // Wire revoke buttons
+          listEl.querySelectorAll('.revoke-pedagog-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              if (!confirm('Återkalla åtkomst för denna pedagog?')) return;
+              btn.disabled = true;
+              try {
+                await Auth.api('/api/family/pedagog-access/revoke', {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    pedagogParentId: btn.dataset.pedagogParentId,
+                    childId: btn.dataset.childId,
+                  }),
+                });
+                // Reload the section
+                await refreshPedagogData();
+              } catch (err) {
+                btn.disabled = false;
+                formMsg.textContent = 'Kunde inte återkalla: ' + (err.message || '');
+                formMsg.className = 'text-sm text-red-500';
+              }
+            });
+          });
+        }
+
+        // Render pending invites
+        function renderPendingList(pending) {
+          if (!pending || pending.length === 0) {
+            pendingSection.classList.add('hidden');
+            return;
+          }
+          pendingSection.classList.remove('hidden');
+          pendingListEl.innerHTML = pending.map(inv => {
+            const expiresAt = inv.expiresAt
+              ? new Date(inv.expiresAt).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })
+              : '';
+            return `
+              <div class="flex items-center justify-between p-3 bg-sky border border-lavender rounded-xl">
+                <div>
+                  <p class="text-sm font-semibold text-navy">${inv.email} ${inv.inviteeName ? '(' + inv.inviteeName + ')' : ''}</p>
+                  <p class="text-xs text-text-soft">Går ut ${expiresAt}</p>
+                </div>
+                <button type="button" class="revoke-invite-btn px-3 py-1.5 bg-coral hover:bg-red-200 text-navy rounded-lg text-sm font-semibold transition-colors"
+                  data-invite-id="${inv.inviteId}">
+                  Ta bort
+                </button>
+              </div>`;
+          }).join('');
+
+          pendingListEl.querySelectorAll('.revoke-invite-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              if (!confirm('Ta bort denna inbjudan?')) return;
+              btn.disabled = true;
+              try {
+                await Auth.api('/api/family/invite-pedagog/' + btn.dataset.inviteId, { method: 'DELETE' });
+                await refreshPedagogData();
+              } catch (err) {
+                btn.disabled = false;
+                formMsg.textContent = 'Kunde inte ta bort: ' + (err.message || '');
+                formMsg.className = 'text-sm text-red-500';
+              }
+            });
+          });
+        }
+
+        async function refreshPedagogData() {
+          const data = await Auth.api('/api/family/invite-pedagog');
+          renderPedagogList(data.pedagogs);
+          renderPendingList(data.pending);
+        }
+
+        // Invite form submit
+        const form = document.getElementById('pedagogInviteForm');
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const email = document.getElementById('pedagogEmail').value.trim();
+          const name = document.getElementById('pedagogName').value.trim();
+          const checked = Array.from(
+            document.querySelectorAll('.pedagog-child-check:checked')
+          ).map(cb => cb.value);
+
+          if (checked.length === 0) {
+            formMsg.textContent = 'Välj minst ett barn';
+            formMsg.className = 'text-sm text-red-500';
+            return;
+          }
+
+          formMsg.textContent = 'Skickar...';
+          formMsg.className = 'text-sm text-text-soft';
+          try {
+            await Auth.api('/api/family/invite-pedagog', {
+              method: 'POST',
+              body: JSON.stringify({ email, name: name || undefined, childIds: checked }),
+            });
+            formMsg.textContent = '✅ Inbjudan skickad!';
+            formMsg.className = 'text-sm text-green-600';
+            form.reset();
+            await refreshPedagogData();
+          } catch (err) {
+            formMsg.textContent = err.message || 'Något gick fel';
+            formMsg.className = 'text-sm text-red-500';
+          }
+        });
+
+        // Fetch invite data — show error inline if it fails, but keep form visible
+        let inviteData = null;
+        try {
+          inviteData = await Auth.api('/api/family/invite-pedagog');
+          renderPedagogList(inviteData.pedagogs || []);
+          renderPendingList(inviteData.pending || []);
+        } catch (apiErr) {
+          if (formMsg) {
+            formMsg.innerHTML = '<span class="text-red-500">Kunde inte ladda pedagog-listan.</span> Du kan fortfarande bjuda in en ny pedagog.';
+            formMsg.className = 'text-sm';
+          }
+          // Still show any existing pedagogen/pending from a partial response
+          if (inviteData) {
+            renderPedagogList(inviteData.pedagogs || []);
+            renderPendingList(inviteData.pending || []);
+          }
+        }
+      } catch (err) {
+        // Auth error or unexpected — still show section with form so parent can still invite
+        if (formMsg) {
+          formMsg.innerHTML = '<span class="text-red-500">Kunde inte ladda pedagog-listan.</span> Du kan fortfarande bjuda in en ny pedagog.';
+          formMsg.className = 'text-sm';
+        }
+      }
+    }
+
+    function toggleDarkMode() {
+      if (typeof Theme !== 'undefined') { Theme.toggleDark(); }
+    }
+  </script>
+  <!-- Service Worker Registration (update detection in /js/sw-register.js) -->
+  <script src="/js/sw-register.js?v=2.12.0"></script>
+<script src="/js/mobile-nav.js?v=2.14.0"></script>
+<!-- Contextual help bubble -->
+<script src="/js/help-bubble.js?v=2.12.0"></script>
+
+<!-- Feature-flag frontend gates -->
+<script src="/js/feature-check.js?v=2.14.0"></script>
+</body>
+</html>

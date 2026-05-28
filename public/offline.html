@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Offline – Min Stjärndag</title>
+  <meta name="theme-color" content="#F5A623">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── Safe area: iPhone home indicator never clips the content ── */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      body {
+        padding-bottom: max(2rem, env(safe-area-inset-bottom));
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #FAFBFF;
+      color: #1B2340;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    /* ── Inline SVG star: no external assets, works 100% offline ── */
+    .star-icon {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 2rem;
+      background: linear-gradient(135deg, #FDE9B0 0%, #F5A623 100%);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 32px rgba(245,166,35,0.35);
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      color: #1B2340;
+      letter-spacing: -0.02em;
+    }
+
+    p {
+      font-size: 1.0625rem;
+      color: #5A6178;
+      line-height: 1.65;
+      margin-bottom: 2rem;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Retry button */
+    button {
+      background: #F5A623;
+      color: white;
+      border: none;
+      border-radius: 14px;
+      padding: 0.875rem 2.5rem;
+      font-size: 1.0625rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+      letter-spacing: -0.01em;
+    }
+    button:hover { opacity: 0.88; transform: scale(0.97); }
+    button:active { transform: scale(0.94); }
+
+    /* Subtle hint text */
+    .hint {
+      margin-top: 1.5rem;
+      font-size: 0.8125rem;
+      color: #9CA3AF;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <!-- Inline SVG star — no external dependency -->
+    <div class="star-icon">
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="28,5 34,21 49,22 37,32 41,48 28,39 15,48 19,32 7,22 22,21" fill="white" opacity="0.95"/>
+      </svg>
+    </div>
+
+    <h1>Hoppsan!</h1>
+    <p>Kontrollera internetanslutningen och tryck på knappen nedan för att komma tillbaka till dina stjärnor.</p>
+
+    <button onclick="location.reload()">Försök igen</button>
+
+    <p class="hint">Ibland hjälper det att slå på wifi eller flygplansläge och tillbaka</p>
+  </div>
+</body>
+</html>

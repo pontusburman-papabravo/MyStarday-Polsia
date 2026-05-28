@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Min Stjärndag — Skattkammaren">
+  <meta property="og:description" content="Se barnets trofé-hylla och belöningsProgress">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://mystarday.se/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://mystarday.se/og-image.png">
+  <title>Skattkammaren - Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623', 'gold-light': '#FFF3D6', navy: '#1B2340', 'navy-soft': '#2A3458',
+            sky: '#E8F0FE', lavender: '#EDE7F6', mint: '#E0F5EC', coral: '#FDEAE7', 'text-soft': '#5A6178',
+          },
+          fontFamily: { heading: ['Outfit', 'sans-serif'], body: ['Plus Jakarta Sans', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="/css/theme.css?v=2.12.0">
+  <link rel="stylesheet" href="/css/mobile-nav.css?v=2.12.0">
+  <script src="/js/theme.js?v=2.12.0"></script>
+  <script src="/js/auth.js?v=2.13.0"></script>
+  <script src="/js/feedback.js?v=2.12.0"></script>
+  <script src="/js/toast.js?v=2.12.0"></script>
+  <script src="/js/birthday-picker.js?v=2.12.0"></script>
+  <style>
+    html, body { overflow-x: hidden; max-width: 100vw; }
+    * { box-sizing: border-box; }
+
+    /* ── Skattkammaren animations ── */
+    @keyframes skattFloat {
+      0%, 100% { transform: translateY(0px) rotate(-1deg); }
+      50%       { transform: translateY(-5px) rotate(1deg); }
+    }
+    @keyframes skattTwinkle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.35; transform: scale(0.65); }
+    }
+    @keyframes skattEntrance {
+      0%   { opacity: 0; transform: translateY(16px) scale(0.97); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Festive hero banner ── */
+    .skatt-hero {
+      position: relative;
+      background: linear-gradient(135deg, #1a0533 0%, #2d0a5e 40%, #1a0533 100%);
+      overflow: hidden;
+      padding: 28px 20px 24px;
+    }
+    .skatt-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 30% 0%, rgba(255,200,50,0.25) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 100%, rgba(180,50,255,0.2) 0%, transparent 60%);
+    }
+    .hero-star {
+      position: absolute;
+      color: #FFD700;
+      font-size: 10px;
+      animation: skattTwinkle var(--dur, 2s) ease-in-out var(--delay, 0s) infinite;
+    }
+
+    /* ── Child selector chips ── */
+    .child-chip {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 18px; border-radius: 14px;
+      border: 2px solid #EDE7F6; background: white;
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.9rem;
+      color: #1B2340; cursor: pointer; transition: all 0.15s;
+      min-height: 44px;
+    }
+    .child-chip:hover { border-color: #F5A623; }
+    .child-chip.active {
+      border-color: #F5A623;
+      background: #FFF3D6;
+      box-shadow: 0 2px 10px rgba(245,166,35,0.25);
+    }
+
+    /* ── Trophy grid items ── */
+    .trg-item {
+      position: relative;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 5px; padding: 14px 8px 12px;
+      border-radius: 18px; text-align: center;
+      background: #f8f9ff;
+      border: 1.5px solid transparent;
+      overflow: hidden;
+      transition: transform 0.15s, box-shadow 0.15s;
+      animation: skattEntrance 0.35s ease forwards;
+    }
+    .trg-item:hover { transform: translateY(-3px); }
+    .trg-item.earned {
+      background: linear-gradient(135deg, #fffbf0, #fff3cc);
+      border-color: rgba(245,166,35,0.45);
+      box-shadow: 0 3px 14px rgba(245,166,35,0.18);
+    }
+    .trg-item.affordable {
+      background: linear-gradient(135deg, #f0fff6, #e6ffed);
+      border-color: rgba(34,197,94,0.45);
+      box-shadow: 0 3px 14px rgba(34,197,94,0.15);
+    }
+    .trg-item.pending {
+      background: linear-gradient(135deg, #faf0ff, #f3e8ff);
+      border-color: rgba(168,85,247,0.35);
+    }
+    .trg-item.locked {
+      opacity: 0.52;
+      filter: grayscale(0.55);
+      background: #f0f0f5;
+      border-color: rgba(0,0,0,0.05);
+    }
+    .trg-icon {
+      font-size: 2.1rem; line-height: 1;
+      width: 56px; height: 56px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.85);
+    }
+    .trg-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.7rem; font-weight: 700; color: #1B2340;
+      line-height: 1.2;
+      overflow: hidden; display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .trg-cost {
+      font-size: 0.65rem; font-weight: 700; color: #B8860B;
+      background: rgba(245,166,35,0.13);
+      border-radius: 50px; padding: 2px 7px;
+    }
+    .trg-item.locked .trg-cost { color: #9AA0B8; background: rgba(0,0,0,0.05); }
+    .trg-badge {
+      position: absolute; top: 5px; right: 6px;
+      font-size: 0.78rem; line-height: 1;
+    }
+    .trg-bar {
+      width: 100%; height: 3px;
+      background: rgba(0,0,0,0.08);
+      border-radius: 50px; overflow: hidden; margin-top: 2px;
+    }
+    .trg-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #F5A623, #22C55E);
+      border-radius: 50px;
+    }
+    .trg-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    @media (min-width: 768px) { .trg-grid { grid-template-columns: repeat(4, 1fr); } }
+
+    /* ── Section headers ── */
+    .section-label {
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'Outfit', sans-serif; font-size: 0.7rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.1em; color: #9AA0B8;
+      margin-bottom: 10px;
+    }
+    .section-label::after {
+      content: ''; flex: 1; height: 1px; background: rgba(0,0,0,0.06);
+    }
+  </style>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Min Stjärndag">
+</head>
+<body class="bg-white font-body text-navy dark:bg-navy dark:text-white">
+  <div class="min-h-screen flex flex-col md:flex-row">
+
+    <!-- Sidebar -->
+    <nav id="sidebar" class="hidden md:block w-full md:w-64 bg-navy text-white p-4 md:p-6 md:min-h-screen">
+      <a href="/dashboard" class="hidden md:flex items-center gap-3 mb-8 no-underline text-white hover:text-white">
+        <span class="text-2xl">⭐</span>
+        <h1 class="text-xl font-heading font-bold">Min Stjärndag</h1>
+      </a>
+      <ul class="space-y-2">
+        <li><a href="/dashboard" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Översikt</a></li>
+        <li><a href="/daily-log" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Daglig logg</a></li>
+        <li><a href="/schedule" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Veckoschema</a></li>
+        <li><a href="/reports" data-feature="klinisk_rapportering" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">📊 Rapporter</a></li>
+        <li><a href="/library" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Bibliotek</a></li>
+        <li><a href="/skattkammaren" class="sidebar-nav block px-4 py-3 rounded-lg bg-gold text-navy font-semibold" style="background:linear-gradient(135deg,#F5A623,#FBBF24);color:#1B2340;">🏆 Skattkammaren</a></li>
+        <li><a href="/family" class="sidebar-nav block px-4 py-3 text-white hover:bg-navy-soft rounded-lg transition-colors">Familjen &amp; inställningar</a></li>
+      </ul>
+      <div class="mt-8 pt-4 border-t border-navy-soft space-y-2">
+        <button onclick="Theme.toggleDark()" class="w-full px-4 py-2 text-white hover:bg-navy-soft rounded-lg transition-colors text-left flex items-center gap-2">
+          <span>🌙</span> Mörkt läge
+        </button>
+        <button id="logoutBtn" class="w-full px-4 py-2 bg-coral hover:bg-red-200 text-navy rounded-lg font-semibold transition-colors">Logga ut</button>
+      </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="flex-1 flex flex-col min-w-0">
+
+      <!-- Festive hero header -->
+      <div class="skatt-hero">
+        <!-- Twinkle stars -->
+        <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;">
+          <span class="hero-star" style="top:12%;left:7%;--dur:1.8s;--delay:0s;">✦</span>
+          <span class="hero-star" style="top:28%;left:91%;--dur:2.2s;--delay:0.5s;">✦</span>
+          <span class="hero-star" style="top:62%;left:4%;--dur:1.5s;--delay:0.8s;">✦</span>
+          <span class="hero-star" style="top:72%;left:93%;--dur:2.5s;--delay:0.3s;">✦</span>
+          <span class="hero-star" style="top:18%;left:52%;--dur:1.9s;--delay:1.1s;">✦</span>
+          <span class="hero-star" style="top:80%;left:38%;--dur:2.1s;--delay:0.6s;">✦</span>
+          <span class="hero-star" style="top:44%;left:83%;--dur:1.7s;--delay:1.4s;">✦</span>
+          <span class="hero-star" style="top:9%;left:72%;--dur:2.3s;--delay:0.2s;">✦</span>
+        </div>
+        <!-- Content -->
+        <div style="position:relative;z-index:2;text-align:center;">
+          <div style="font-family:'Outfit',sans-serif;font-size:0.65rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-bottom:4px;">Barnets</div>
+          <div style="font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:800;color:white;letter-spacing:0.02em;margin-bottom:16px;">🏆 Skattkammaren</div>
+          <!-- Chest + balance row (hidden until child selected) -->
+          <div id="heroBalance" class="hidden" style="display:none;align-items:center;justify-content:center;gap:20px;">
+            <span style="font-size:2.5rem;animation:skattFloat 3.5s ease-in-out infinite;display:inline-block;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));">🪙</span>
+            <div>
+              <div style="font-family:'Outfit',sans-serif;font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,215,0,0.7);margin-bottom:2px;">Stjärnsaldo</div>
+              <div id="heroBalanceNum" style="font-family:'Outfit',sans-serif;font-size:2.8rem;font-weight:800;color:#FFD700;line-height:1;text-shadow:0 0 20px rgba(255,215,0,0.5);">⭐ 0</div>
+              <div id="heroChildName" style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:3px;font-family:'Plus Jakarta Sans',sans-serif;"></div>
+            </div>
+            <span style="font-size:2.5rem;animation:skattFloat 3.5s ease-in-out -1.5s infinite;display:inline-block;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));">💰</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Child selector strip -->
+      <div class="bg-white border-b border-lavender px-4 py-3">
+        <div id="childChips" class="flex flex-wrap gap-2">
+          <div class="text-sm text-text-soft py-2">Laddar barn…</div>
+        </div>
+      </div>
+
+      <!-- Scrollable content area -->
+      <div id="mainContent" class="flex-1 overflow-auto" style="background: linear-gradient(180deg, #f0e8ff 0%, #e8f0ff 40%, #f0fff4 100%);">
+
+        <!-- Initial placeholder (before child selected) -->
+        <div id="placeholderState" class="flex flex-col items-center justify-center py-20 px-6 text-center">
+          <div style="font-size:4rem;margin-bottom:16px;animation:skattFloat 3s ease-in-out infinite;display:inline-block;">🏆</div>
+          <div class="font-heading font-bold text-navy text-xl mb-2">Välj ett barn ovan</div>
+          <div class="text-text-soft text-sm">Se barnets trofé-hylla, stjärnsaldo och belöningsProgress</div>
+        </div>
+
+        <!-- Loading spinner -->
+        <div id="loadingState" class="hidden flex-col items-center justify-center py-20 text-text-soft text-center">
+          <span style="font-size:3rem;display:inline-block;animation:spin 1s linear infinite;">⭐</span>
+          <p class="mt-3 font-semibold text-sm">Öppnar Skattkammaren…</p>
+        </div>
+
+        <!-- Main treasury view (filled by JS) -->
+        <div id="treasuryView" class="hidden px-4 pb-8 max-w-2xl mx-auto pt-5">
+
+          <!-- Earned trophies section -->
+          <div id="trophySection" class="hidden mb-6">
+            <div class="section-label">🏆 Troféhyllan</div>
+            <div id="trophyGrid" class="trg-grid"></div>
+          </div>
+
+          <!-- Pending redemptions -->
+          <div id="pendingSection" class="hidden mb-6">
+            <div class="section-label">⏳ Väntar på godkännande</div>
+            <div id="pendingList" class="space-y-2"></div>
+          </div>
+
+          <!-- Available rewards -->
+          <div id="rewardsSection" class="hidden mb-6">
+            <div class="section-label">🌟 Alla belöningar</div>
+            <div id="rewardsGrid" class="trg-grid"></div>
+          </div>
+
+          <!-- Empty state -->
+          <div id="emptyState" class="hidden text-center py-16">
+            <div class="text-5xl mb-3">🎁</div>
+            <div class="font-heading font-bold text-navy text-lg mb-2">Inga belöningar än</div>
+            <div class="text-text-soft text-sm">Lägg till belöningar under <a href="/library" class="text-gold font-semibold underline">Bibliotek → Belöningar</a></div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="hidden fixed top-4 right-4 z-50 bg-navy text-white px-6 py-3 rounded-xl shadow-lg font-semibold text-sm max-w-xs"></div>
+
+  <script>
+    // ── Auth guard ────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!Auth.isLoggedIn()) {
+        window.location.href = '/login';
+        return;
+      }
+
+      // Logout button
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+          Auth.logout();
+          window.location.href = '/';
+        });
+      }
+
+      await loadChildren();
+    });
+
+    // ── State ─────────────────────────────────────────────────────
+    let _children = [];
+    let _selectedId = null;
+
+    // ── Load children list ────────────────────────────────────────
+    async function loadChildren() {
+      try {
+        const res = await window.apiFetch('/api/children');
+        if (!res.ok) throw new Error('API error');
+        _children = await res.json();
+        renderChildChips();
+        // Auto-select if only one child
+        if (_children.length === 1) selectChild(_children[0].id);
+      } catch (e) {
+        document.getElementById('childChips').innerHTML =
+          '<p class="text-sm text-red-500">Kunde inte ladda barn</p>';
+      }
+    }
+
+    // ── Render child selector chips ───────────────────────────────
+    function renderChildChips() {
+      const container = document.getElementById('childChips');
+      if (_children.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 bg-sky/50 rounded-2xl border-2 border-dashed border-lavender w-full">
+            <p class="text-2xl mb-1">👶</p>
+            <p class="font-heading font-bold text-navy text-sm mb-1">Inga barn tillagda</p>
+            <p class="text-xs text-text-soft">Lägg till barn under <a href="/family" class="text-gold underline font-semibold">Familjen &amp; inställningar</a></p>
+          </div>`;
+        return;
+      }
+      container.innerHTML = _children.map(c => `
+        <button id="chip-${c.id}" onclick="selectChild('${c.id}')"
+          class="child-chip ${_selectedId === c.id ? 'active' : ''}">
+          <span style="font-size:1.3rem;">${c.emoji || '⭐'}</span>
+          <span>${escHtml(c.name)}</span>
+        </button>
+      `).join('');
+    }
+
+    // ── Select and load a child's treasury ───────────────────────
+    async function selectChild(childId) {
+      _selectedId = childId;
+
+      // Update chip active state
+      document.querySelectorAll('.child-chip').forEach(btn => {
+        const isActive = btn.id === `chip-${childId}`;
+        btn.classList.toggle('active', isActive);
+      });
+
+      // Show loading
+      setView('loading');
+
+      try {
+        const res = await window.apiFetch(`/api/rewards/child-view/${childId}`);
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        renderTreasury(data);
+      } catch (e) {
+        setView('placeholder');
+        showToast('Kunde inte ladda Skattkammaren', 'error');
+      }
+    }
+
+    // ── Render full treasury for selected child ───────────────────
+    function renderTreasury(data) {
+      const { rewards, redemptions, child, starBalance } = data;
+
+      // Update hero balance
+      document.getElementById('heroBalanceNum').textContent = `⭐ ${starBalance}`;
+      document.getElementById('heroChildName').textContent = `${child.emoji || ''} ${child.name}`;
+      const heroBalance = document.getElementById('heroBalance');
+      heroBalance.style.display = 'flex';
+      heroBalance.classList.remove('hidden');
+
+      // Separate redemption states
+      const earned = redemptions.filter(r => r.status === 'approved' || r.status === 'auto');
+      const pending = redemptions.filter(r => r.status === 'pending');
+
+      // Show the treasury view container
+      setView('treasury');
+
+      // ── Trophy shelf (earned) ──────────────────────────────────
+      const trophySection = document.getElementById('trophySection');
+      const trophyGrid = document.getElementById('trophyGrid');
+      if (earned.length > 0) {
+        trophyGrid.innerHTML = earned.map((r, i) => {
+          const d = new Date(r.created_at || r.redeemed_at);
+          const dateStr = isNaN(d) ? '' : d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+          return `<div class="trg-item earned" style="animation-delay:${i * 40}ms;" title="${escHtml(r.reward_name)}${dateStr ? ' · ' + dateStr : ''}">
+            <span class="trg-badge">✅</span>
+            <div class="trg-icon">${r.reward_icon || '🎁'}</div>
+            <div class="trg-name">${escHtml(r.reward_name)}</div>
+            ${dateStr ? `<div style="font-size:0.58rem;color:#9AA0B8;margin-top:1px;">${dateStr}</div>` : ''}
+          </div>`;
+        }).join('');
+        trophySection.classList.remove('hidden');
+      } else {
+        trophySection.classList.add('hidden');
+      }
+
+      // ── Pending redemptions ────────────────────────────────────
+      const pendingSection = document.getElementById('pendingSection');
+      const pendingList = document.getElementById('pendingList');
+      if (pending.length > 0) {
+        pendingList.innerHTML = pending.map(r => `
+          <div style="display:flex;align-items:center;gap:10px;background:#faf0ff;border:1.5px solid rgba(168,85,247,0.22);border-radius:16px;padding:11px 14px;">
+            <span style="font-size:1.6rem;">${r.reward_icon || '🎁'}</span>
+            <div style="flex:1;">
+              <div class="font-heading font-bold text-sm text-navy">${escHtml(r.reward_name)}</div>
+              <div style="font-size:0.7rem;color:#A855F7;">⏳ Väntar på ditt godkännande</div>
+            </div>
+            <a href="/library" style="font-size:0.72rem;font-weight:700;background:#EDE7F6;color:#7C3AED;border-radius:10px;padding:6px 12px;text-decoration:none;white-space:nowrap;">Granska →</a>
+          </div>
+        `).join('');
+        pendingSection.classList.remove('hidden');
+      } else {
+        pendingSection.classList.add('hidden');
+      }
+
+      // ── All rewards grid ───────────────────────────────────────
+      const rewardsSection = document.getElementById('rewardsSection');
+      const rewardsGrid = document.getElementById('rewardsGrid');
+      const emptyState = document.getElementById('emptyState');
+
+      if (rewards.length === 0) {
+        rewardsSection.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+        rewardsGrid.innerHTML = rewards.map((r, i) => {
+          const isRedeemed = earned.some(rd => rd.reward_id === r.id);
+          const hasPending = pending.some(rd => rd.reward_id === r.id);
+          const canAfford = starBalance >= r.star_cost;
+          const isLocked = !canAfford && !isRedeemed && !hasPending;
+          const pct = Math.min(100, Math.round((starBalance / r.star_cost) * 100));
+
+          let badge = '';
+          if (isRedeemed) badge = `<span class="trg-badge">✅</span>`;
+          else if (hasPending) badge = `<span class="trg-badge">⏳</span>`;
+          else if (canAfford) badge = `<span class="trg-badge">🌟</span>`;
+          else badge = `<span class="trg-badge">🔒</span>`;
+
+          const cardClass = isRedeemed ? 'earned' : hasPending ? 'pending' : canAfford ? 'affordable' : 'locked';
+
+          return `<div class="trg-item ${cardClass}" style="animation-delay:${i * 35}ms;">
+            ${badge}
+            <div class="trg-icon">${r.icon || '🎁'}</div>
+            <div class="trg-name">${escHtml(r.name)}</div>
+            <div class="trg-cost">⭐ ${r.star_cost}</div>
+            ${!isRedeemed && !hasPending ? `<div class="trg-bar"><div class="trg-bar-fill" style="width:${pct}%"></div></div>` : ''}
+          </div>`;
+        }).join('');
+        rewardsSection.classList.remove('hidden');
+      }
+    }
+
+    // ── View state helper ─────────────────────────────────────────
+    function setView(state) {
+      document.getElementById('placeholderState').classList.toggle('hidden', state !== 'placeholder');
+      document.getElementById('loadingState').classList.toggle('hidden', state !== 'loading');
+      document.getElementById('treasuryView').classList.toggle('hidden', state !== 'treasury');
+    }
+
+    // showToast is now in /js/toast.js
+
+    // ── HTML escape ───────────────────────────────────────────────
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+
+  <script src="/js/sw-register.js?v=2.12.0"></script>
+  <script src="/js/feature-check.js?v=2.13.0"></script>
+<script src="/js/mobile-nav.js?v=2.13.0"></script>
+  <script src="/js/help-bubble.js?v=2.12.0"></script>
+</body>
+</html>

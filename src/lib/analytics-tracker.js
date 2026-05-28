@@ -1,0 +1,100 @@
+/**
+ * Analytics tracker — thin wrapper around db/analytics.track().
+ * Import this in routes to fire events without coupling to the DB layer directly.
+ * All functions are fire-and-forget: they never throw, never block the response.
+ */
+
+const analytics = require('../../db/analytics');
+
+// ─── Onboarding funnel ────────────────────────────────────
+
+function trackLandingVisit(familyId) {
+  analytics.track(familyId, 'funnel_landing_visit');
+}
+
+function trackSignupStarted(familyId) {
+  analytics.track(familyId, 'funnel_signup_started');
+}
+
+function trackEmailVerified(familyId) {
+  analytics.track(familyId, 'funnel_email_verified');
+}
+
+function trackFirstChildCreated(familyId) {
+  analytics.track(familyId, 'funnel_first_child_created');
+}
+
+function trackOnboardingCompleted(familyId) {
+  analytics.track(familyId, 'funnel_onboarding_completed');
+}
+
+function trackOnboardingAbandoned(familyId, step) {
+  analytics.track(familyId, 'funnel_onboarding_abandoned', { step });
+}
+
+// ─── Win-back email ────────────────────────────────────────
+
+function trackWinBackEmailSent(familyId, childName) {
+  analytics.track(familyId, 'win_back_email_sent', { child_name: childName });
+}
+
+function trackWinBackReturned(familyId) {
+  analytics.track(familyId, 'win_back_returned');
+}
+
+// ─── Feature usage ────────────────────────────────────────
+
+function trackChildView(familyId) {
+  analytics.track(familyId, 'feature_child_view');
+}
+
+function trackTreasureChest(familyId) {
+  analytics.track(familyId, 'feature_treasure_chest');
+}
+
+function trackScheduleEdit(familyId) {
+  analytics.track(familyId, 'feature_schedule_edit');
+}
+
+function trackDailyLog(familyId) {
+  analytics.track(familyId, 'feature_daily_log');
+}
+
+// ─── PWA ─────────────────────────────────────────────────
+
+function trackPwaInstalled(familyId) {
+  analytics.track(familyId, 'pwa_installed');
+}
+
+function trackPwaBrowser(familyId) {
+  analytics.track(familyId, 'pwa_browser');
+}
+
+// ─── Newsletter ───────────────────────────────────────────
+
+function trackNewsletterSent(familyId, metadata = {}) {
+  analytics.track(familyId, 'newsletter_sent', metadata);
+}
+
+function trackNewsletterUnsubscribed(familyId) {
+  analytics.track(familyId, 'newsletter_unsubscribed');
+}
+
+module.exports = {
+  trackLandingVisit,
+  trackSignupStarted,
+  trackEmailVerified,
+  trackFirstChildCreated,
+  trackOnboardingCompleted,
+  trackOnboardingAbandoned,
+  trackChildView,
+  trackTreasureChest,
+  trackScheduleEdit,
+  trackDailyLog,
+  trackPwaInstalled,
+  trackPwaBrowser,
+  trackNewsletterSent,
+  trackNewsletterUnsubscribed,
+  trackWinBackEmailSent,
+  trackWinBackReturned,
+};

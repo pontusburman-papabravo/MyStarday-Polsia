@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Pedagoganteckningar — Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Serif&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --navy: #1C2340;
+      --amber: #F5A623;
+      --amber-light: #FEF7E0;
+      --bg: #F5F4F0;
+      --card: #FFFFFF;
+      --text: #1C2340;
+      --muted: #5A6378;
+      --border: #E8E4DC;
+      --green-bg: #D1FAE5;
+      --green-border: #22C55E;
+      --amber-bg: #FEF3C7;
+      --amber-border: #F5A623;
+      --red-bg: #FEE2E2;
+      --red-border: #EF4444;
+      --gray-bg: #F3F4F6;
+      --gray-border: #9CA3AF;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding: 0;
+      margin: 0;
+    }
+    h1, h2, h3 { font-family: 'Instrument Serif', serif; }
+
+    /* ── Card ─────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      animation: fadeSlideIn 0.3s ease both;
+    }
+    .card-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 8px;
+    }
+    .card h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--navy);
+      margin: 0 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ── Segment buttons ────────────────────────────── */
+    .segment-group {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .seg-btn {
+      border-radius: 8px;
+      border: 1.5px solid #D1D5DB;
+      background: white;
+      min-width: 60px;
+      min-height: 44px;
+      font-size: 14px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      white-space: nowrap;
+    }
+    .seg-btn:active { transform: scale(0.95); }
+    .seg-btn.selected.seg-green  { background: var(--green-bg);  border-color: var(--green-border);  color: #166534; }
+    .seg-btn.selected.seg-amber  { background: var(--amber-bg);  border-color: var(--amber-border);  color: #92400E; }
+    .seg-btn.selected.seg-red    { background: var(--red-bg);    border-color: var(--red-border);    color: #991B1B; }
+    .seg-btn.selected.seg-gray   { background: var(--gray-bg);   border-color: var(--gray-border);   color: #4B5563; }
+
+    /* ── Mood emoji buttons ────────────────────────── */
+    .mood-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      background: white;
+      font-size: 26px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mood-btn:active { transform: scale(0.93); }
+    .mood-btn.selected { border-color: var(--amber); background: var(--amber-light); }
+
+    /* ── Child dropdown ─────────────────────────────── */
+    .child-dropdown {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 15px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      background: var(--bg);
+      color: var(--navy);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%235A6378' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 5.5L8 9l3.5-3.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+    .child-dropdown:focus { outline: none; border-color: var(--amber); }
+
+    /* ── Textarea ──────────────────────────────────── */
+    textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--navy);
+      resize: none;
+      min-height: 70px;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { outline: none; border-color: var(--amber); }
+
+    /* ── Saved indicator ────────────────────────────── */
+    .saved-indicator {
+      font-size: 12px;
+      color: #22C55E;
+      opacity: 0;
+      transition: opacity 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+    }
+    .saved-indicator.show { opacity: 1; }
+    .saved-indicator.mark-done { opacity: 1; color: #166534; font-weight: 600; }
+
+    /* ── Buttons ───────────────────────────────────── */
+    .btn-mark-done {
+      width: 100%;
+      padding: 15px;
+      border-radius: 14px;
+      border: 2px solid #22C55E;
+      background: #D1FAE5;
+      color: #166534;
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      margin-bottom: 8px;
+    }
+    .btn-mark-done:active { transform: scale(0.98); }
+    .btn-mark-done:hover { background: #A7F3D0; }
+
+    .btn-save-draft {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: white;
+      color: var(--muted);
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-save-draft:active { background: var(--bg); }
+
+    /* ── Loading overlay ────────────────────────────── */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(245,244,240,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--amber);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Animations ─────────────────────────────────── */
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .form-section:nth-child(1) { animation-delay: 0.05s; }
+    .form-section:nth-child(2) { animation-delay: 0.1s; }
+    .form-section:nth-child(3) { animation-delay: 0.15s; }
+    .form-section:nth-child(4) { animation-delay: 0.2s; }
+    .form-section:nth-child(5) { animation-delay: 0.25s; }
+    .form-section:nth-child(6) { animation-delay: 0.3s; }
+    .form-section:nth-child(7) { animation-delay: 0.35s; }
+
+    /* ── Sub-label ─────────────────────────────────── */
+    .sub-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+      margin-top: 10px;
+    }
+
+    /* ── Date input ─────────────────────────────────── */
+    input[type="date"] {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 16px;
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--navy);
+      cursor: pointer;
+    }
+    input[type="date"]:focus { outline: none; border-color: var(--amber); }
+  </style>
+</head>
+<body>
+
+<div id="loading" class="loading-overlay">
+  <div class="spinner"></div>
+  <span style="font-size:14px;color:#5A6378;">Laddar...</span>
+</div>
+
+<div style="max-width:480px;margin:0 auto;padding:16px 16px 80px;">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+    <a href="/pedagog-oversikt" style="text-decoration:none;font-size:24px;color:var(--navy);">←</a>
+    <div>
+      <h1 style="font-size:20px;font-family:'Instrument Serif',serif;">📝 Dagformulär</h1>
+      <p style="font-size:12px;color:var(--muted);" id="subtitle">Observationer</p>
+    </div>
+    <div id="saveStatus" class="saved-indicator">✓ Sparad</div>
+  </div>
+
+  <!-- Child selector (dropdown) -->
+  <div class="form-section">
+    <select id="childSelect" class="child-dropdown" aria-label="Välj barn">
+      <option value="">— Välj barn —</option>
+    </select>
+  </div>
+
+  <!-- Date picker -->
+  <div class="form-section">
+    <input type="date" id="dateInput" max="" aria-label="Datum">
+  </div>
+
+  <!-- Mood -->
+  <div class="card form-section">
+    <h2>😊 HUMÖR</h2>
+    <div style="display:flex;gap:8px;" role="group" aria-label="Humör">
+      <button class="mood-btn" data-field="mood" data-val="1" title="Mycket dåligt">😫</button>
+      <button class="mood-btn" data-field="mood" data-val="2" title="Dåligt">😕</button>
+      <button class="mood-btn" data-field="mood" data-val="3" title="Okej">😐</button>
+      <button class="mood-btn" data-field="mood" data-val="4" title="Bra">🙂</button>
+      <button class="mood-btn" data-field="mood" data-val="5" title="Utmärkt">😄</button>
+    </div>
+  </div>
+
+  <!-- Dagsvila -->
+  <div class="card form-section">
+    <h2>⏰ DAGSVILA</h2>
+
+    <label class="sub-label">Tid sovit:</label>
+    <div class="segment-group" role="group" aria-label="Tid sovit">
+      <button class="seg-btn" data-field="sleep_hours" data-value="0">Ingen</button>
+      <button class="seg-btn" data-field="sleep_hours" data-value="0.5">30 min</button>
+      <button class="seg-btn" data-field="sleep_hours" data-value="1">1 tim</button>
+      <button class="seg-btn" data-field="sleep_hours" data-value="1.5">1,5 tim</button>
+      <button class="seg-btn" data-field="sleep_hours" data-value="2">2 tim+</button>
+    </div>
+
+    <label class="sub-label">Komma till ro:</label>
+    <div class="segment-group" role="group" aria-label="Komma till ro">
+      <button class="seg-btn seg-green" data-field="sleep_quality" data-value="easy">🟢 Snabbt</button>
+      <button class="seg-btn seg-amber" data-field="sleep_quality" data-value="slow">🟡 Varva ner</button>
+      <button class="seg-btn seg-red" data-field="sleep_quality" data-value="difficult">🔴 Svårt</button>
+    </div>
+  </div>
+
+  <!-- Måltider -->
+  <div class="card form-section">
+    <h2>🍽️ MÅLTIDER</h2>
+
+    <label class="sub-label">Frukost:</label>
+    <div class="segment-group" role="group" aria-label="Frukost">
+      <button class="seg-btn seg-green" data-meal="frukost" data-value="good">🟢 Åt bra</button>
+      <button class="seg-btn seg-amber" data-meal="frukost" data-value="little">🟡 Åt lite</button>
+      <button class="seg-btn seg-red" data-meal="frukost" data-value="none">🔴 Åt ej</button>
+      <button class="seg-btn seg-gray" data-meal="frukost" data-value="not_served">⚪ Serverades ej</button>
+    </div>
+
+    <label class="sub-label">Lunch:</label>
+    <div class="segment-group" role="group" aria-label="Lunch">
+      <button class="seg-btn seg-green" data-meal="lunch" data-value="good">🟢 Åt bra</button>
+      <button class="seg-btn seg-amber" data-meal="lunch" data-value="little">🟡 Åt lite</button>
+      <button class="seg-btn seg-red" data-meal="lunch" data-value="none">🔴 Åt ej</button>
+      <button class="seg-btn seg-gray" data-meal="lunch" data-value="not_served">⚪ Serverades ej</button>
+    </div>
+
+    <label class="sub-label">Mellanmål:</label>
+    <div class="segment-group" role="group" aria-label="Mellanmål">
+      <button class="seg-btn seg-green" data-meal="mellanmal" data-value="good">🟢 Åt bra</button>
+      <button class="seg-btn seg-amber" data-meal="mellanmal" data-value="little">🟡 Åt lite</button>
+      <button class="seg-btn seg-red" data-meal="mellanmal" data-value="none">🔴 Åt ej</button>
+      <button class="seg-btn seg-gray" data-meal="mellanmal" data-value="not_served">⚪ Serverades ej</button>
+    </div>
+  </div>
+
+  <!-- Betende -->
+  <div class="card form-section">
+    <h2>🧠 BETEENDE</h2>
+    <textarea id="behaviorField" placeholder="Dagen i gruppen — hur har barnet varit?" rows="3"></textarea>
+  </div>
+
+  <!-- Övriga anteckningar -->
+  <div class="card form-section">
+    <h2>📋 ÖVRIGT</h2>
+    <textarea id="notesField" placeholder="Övriga observationer..." rows="2"></textarea>
+  </div>
+
+  <!-- Markera som klar -->
+  <button id="markDoneBtn" class="btn-mark-done" style="display:none;">✓ Markera som klar</button>
+
+  <!-- Auto-spara-knapp (draft-sparning) -->
+  <button id="saveDraftBtn" class="btn-save-draft">Spara utkast</button>
+
+</div>
+
+<script>
+'use strict';
+
+const params = new URLSearchParams(location.search);
+
+// ── State ─────────────────────────────────────────────────
+let selectedChildId = params.get('childId') || null;
+let selectedDate   = params.get('date')     || new Date().toISOString().slice(0, 10);
+let selectedMood    = null;
+let selectedSleepQuality = null;  // 'easy' | 'slow' | 'difficult' | null
+let children = [];
+
+// Form-state (replaces individual fields for meals)
+let mealsStructured = { frukost: null, lunch: null, mellanmal: null };
+
+// Autosave state
+let formDirty = false;
+let autoSaveTimer = null;
+const DEBOUNCE_MS = 15000; // 15 seconds
+
+// Local draft flag — prevents autosave from re-opening a closed note
+let localIsDraft = true;
+
+// ── Helpers ───────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+
+function showSaved(text, isMarkDone) {
+  const el = $('saveStatus');
+  el.textContent = text;
+  el.classList.add('show');
+  if (isMarkDone) el.classList.add('mark-done');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => {
+    el.classList.remove('show', 'mark-done');
+    el.textContent = '✓ Sparad';
+  }, 3000);
+}
+
+function showError(msg) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;bottom:80px;left:16px;right:16px;background:#EF4444;color:white;padding:12px 16px;border-radius:12px;font-size:14px;font-weight:600;text-align:center;z-index:1000;animation:fadeSlideIn 0.3s;';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// ── Build payload ─────────────────────────────────────────
+function buildPayload(isDraft) {
+  return {
+    childId: selectedChildId,
+    date: selectedDate,
+    mood: selectedMood,
+    sleepQuality: selectedSleepQuality !== null
+      ? (selectedSleepQuality === 'easy' ? 'easy' : selectedSleepQuality === 'slow' ? 'slow' : 'difficult')
+      : null,
+    sleepHours: null, // stored via seg-btn data-value below — we read from DOM
+    meals: null,
+    behavior: $('behaviorField').value.trim() || null,
+    notes: $('notesField').value.trim() || null,
+    mealsStructured: Object.keys(mealsStructured).some(k => mealsStructured[k] !== null)
+      ? { ...mealsStructured }
+      : null,
+    isDraft: isDraft,
+  };
+}
+
+// Read sleep_hours from active selected segment
+function getSleepHours() {
+  const btn = document.querySelector('[data-field="sleep_hours"].selected');
+  return btn ? parseFloat(btn.dataset.value) : null;
+}
+
+// ── Load children (dropdown with family context) ───────────
+async function loadChildren() {
+  try {
+    const res = await fetch('/api/pedagog-notes/children');
+    const json = await res.json();
+    children = json.children || [];
+    renderChildDropdown();
+  } catch (err) {
+    showError('Kunde inte ladda barn');
+  }
+}
+
+function renderChildDropdown() {
+  const sel = $('childSelect');
+  if (children.length === 0) {
+    sel.innerHTML = '<option value="">Inga barn kopplade</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">— Välj barn —</option>';
+  children.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = (c.emoji || '👧') + ' ' + c.name + (c.family_name ? ' · ' + c.family_name : '');
+    if (c.family_label) {
+      opt.textContent = (c.emoji || '👧') + ' ' + c.family_label;
+    }
+    sel.appendChild(opt);
+  });
+
+  if (selectedChildId) {
+    sel.value = selectedChildId;
+    // MarkDone button visible once child is selected
+    $('markDoneBtn').style.display = 'block';
+  }
+
+  sel.addEventListener('change', () => {
+    selectedChildId = sel.value;
+    $('markDoneBtn').style.display = selectedChildId ? 'block' : 'none';
+    if (selectedChildId) loadExistingNote();
+  });
+}
+
+// ── Load existing note ─────────────────────────────────────
+async function loadExistingNote() {
+  if (!selectedChildId || !selectedDate) return;
+  $('loading').style.display = 'flex';
+  try {
+    const res = await fetch(`/api/pedagog-notes?childId=${selectedChildId}&date=${selectedDate}`);
+    const json = await res.json();
+    if (json.note) {
+      const n = json.note;
+      // Mood
+      if (n.mood) {
+        selectedMood = n.mood;
+        updateMoodUI(selectedMood);
+      }
+      // Sleep quality (new string values: easy/slow/difficult)
+      if (n.sleep_quality) {
+        selectedSleepQuality = String(n.sleep_quality);
+        updateSegBtnUI('sleep_quality', selectedSleepQuality);
+      }
+      // Sleep hours (numeric in 0/0.5/1/1.5/2)
+      if (n.sleep_hours != null) {
+        updateSegBtnUI('sleep_hours', String(n.sleep_hours));
+      }
+      // meals_structured
+      if (n.meals_structured && typeof n.meals_structured === 'object') {
+        mealsStructured = { ...n.meals_structured };
+        ['frukost', 'lunch', 'mellanmal'].forEach(meal => {
+          if (mealsStructured[meal]) {
+            updateSegBtnUI('meal_' + meal, mealsStructured[meal]);
+            // Also highlight the correct button
+            document.querySelectorAll(`[data-meal="${meal}"]`).forEach(btn => {
+              btn.classList.toggle('selected', btn.dataset.value === mealsStructured[meal]);
+            });
+          }
+        });
+      } else if (n.meals) {
+        // Legacy fallback — display free-text as-is
+        // Don't populate structured fields from legacy
+      }
+      // Behavior + notes
+      $('behaviorField').value = n.behavior || '';
+      $('notesField').value   = n.notes || '';
+
+      // is_draft state
+      localIsDraft = n.is_draft !== false;
+
+      if (!localIsDraft) {
+        $('markDoneBtn').textContent = '✓ Klar — Sparad';
+        $('markDoneBtn').style.background = '#A7F3D0';
+        $('markDoneBtn').style.borderColor = '#16A34A';
+        $('markDoneBtn').style.color = '#166534';
+      }
+    } else {
+      // New note — reset
+      clearForm();
+    }
+    formDirty = false;
+  } catch (err) {
+    console.error('[PEDAGOG-NOTE] load error:', err);
+  } finally {
+    $('loading').style.display = 'none';
+  }
+}
+
+function clearForm() {
+  selectedMood = null;
+  selectedSleepQuality = null;
+  mealsStructured = { frukost: null, lunch: null, mellanmal: null };
+  localIsDraft = true;
+
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('selected'));
+  $('behaviorField').value = '';
+  $('notesField').value = '';
+
+  // Reset Markera som klar button
+  $('markDoneBtn').textContent = '✓ Markera som klar';
+  $('markDoneBtn').style.background = '';
+  $('markDoneBtn').style.borderColor = '';
+  $('markDoneBtn').style.color = '';
+}
+
+// ── UI helpers ─────────────────────────────────────────────
+function updateMoodUI(val) {
+  document.querySelectorAll('.mood-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.dataset.val) === val);
+  });
+}
+
+function updateSegBtnUI(field, val) {
+  document.querySelectorAll(`[data-field="${field}"]`).forEach(b => {
+    b.classList.toggle('selected', b.dataset.value === val);
+  });
+}
+
+// ── Event: mood buttons ────────────────────────────────────
+document.querySelectorAll('.mood-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    selectedMood = parseInt(btn.dataset.val);
+    updateMoodUI(selectedMood);
+    onFormChange();
+  });
+});
+
+// ── Event: segment buttons (sleep, meals) ──────────────────
+document.querySelectorAll('.seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const field = btn.dataset.field;
+    const meal  = btn.dataset.meal;
+    const val   = btn.dataset.value;
+
+    if (field === 'sleep_hours') {
+      // Deselect siblings in this group
+      document.querySelectorAll(`[data-field="sleep_hours"]`).forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      onFormChange();
+    } else if (field === 'sleep_quality') {
+      document.querySelectorAll(`[data-field="sleep_quality"]`).forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedSleepQuality = val;
+      onFormChange();
+    } else if (meal) {
+      // Meal segment — toggle
+      document.querySelectorAll(`[data-meal="${meal}"]`).forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      mealsStructured[meal] = val;
+      onFormChange();
+    }
+  });
+});
+
+// ── Event: text inputs ─────────────────────────────────────
+[$('behaviorField'), $('notesField')].forEach(el => {
+  el.addEventListener('input', onFormChange);
+});
+
+// ── Form change tracking ───────────────────────────────────
+function onFormChange() {
+  formDirty = true;
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(doAutoSave, DEBOUNCE_MS);
+}
+
+function doAutoSave() {
+  if (!formDirty) return;
+  // Only autosave if note is still in draft (localIsDraft=true means it's NOT marked done)
+  if (!localIsDraft) return;
+  if (!selectedChildId) return;
+  saveNote(true, false); // isAuto=true, isMarkDone=false
+  formDirty = false;
+}
+
+// ── Manual save (draft or done) ────────────────────────────
+async function saveNote(isAuto, isMarkDone) {
+  if (!selectedChildId) {
+    if (!isAuto) showError('Välj ett barn först');
+    return;
+  }
+
+  // Build payload — sleepHours from active seg-btn
+  const payload = buildPayload(isMarkDone ? false : true);
+  payload.sleepHours = getSleepHours();
+
+  try {
+    const res = await fetch('/api/pedagog-notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Sparning misslyckades');
+    }
+    formDirty = false;
+    if (isMarkDone) {
+      localIsDraft = false;
+      showSaved('✓ Klar', true);
+      // Update button appearance
+      $('markDoneBtn').textContent = '✓ Klar — Sparad';
+      $('markDoneBtn').style.background = '#A7F3D0';
+      $('markDoneBtn').style.borderColor = '#16A34A';
+      $('markDoneBtn').style.color = '#166534';
+    } else {
+      showSaved('✓ Sparad', false);
+    }
+  } catch (err) {
+    if (!isAuto) showError(err.message);
+  }
+}
+
+// ── Markera som klar ───────────────────────────────────────
+$('markDoneBtn').addEventListener('click', async () => {
+  clearTimeout(autoSaveTimer);
+  formDirty = false;
+  await saveNote(false, true); // isAuto=false, isMarkDone=true
+});
+
+// ── Save draft ─────────────────────────────────────────────
+$('saveDraftBtn').addEventListener('click', async () => {
+  clearTimeout(autoSaveTimer);
+  formDirty = false;
+  await saveNote(false, false);
+});
+
+// ── Date change ────────────────────────────────────────────
+$('dateInput').addEventListener('change', () => {
+  selectedDate = $('dateInput').value;
+  loadExistingNote();
+});
+
+// ── PWA flush on visibility change ─────────────────────────
+function flushIfDirty() {
+  if (!formDirty) return;
+  if (!selectedChildId) return;
+
+  const payload = JSON.stringify({
+    ...buildPayload(true),
+    sleepHours: getSleepHours(),
+  });
+
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon('/api/pedagog-notes', new Blob([payload], { type: 'application/json' }));
+    formDirty = false;
+  } else {
+    // Fallback: store in clipboard (placeholder — PWA will survive)
+    formDirty = false;
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') flushIfDirty();
+});
+window.addEventListener('pagehide', flushIfDirty);
+document.addEventListener('freeze', flushIfDirty);
+
+// ── Init ──────────────────────────────────────────────────
+(function init() {
+  $('dateInput').max = new Date().toISOString().slice(0, 10);
+  $('dateInput').value = selectedDate;
+
+  loadChildren().then(() => {
+    if (selectedChildId && children.find(c => c.id === selectedChildId)) {
+      $('childSelect').value = selectedChildId;
+      $('markDoneBtn').style.display = 'block';
+      loadExistingNote();
+    }
+  });
+
+  $('loading').style.display = 'none';
+})();
+</script>
+
+</body>
+</html>

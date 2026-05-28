@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Min Stjärndag — Kom igång på 2 minuter">
+  <meta property="og:description" content="Sätt upp barnets schema och belöningar direkt">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://mystarday.se/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>Välkommen — Min Stjärndag</title>
+  <!-- Updated 2026-05-07: Vy-val steg + view_type + 6-stegs wizard -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <script src="/js/platform.js?v=2026-05-28-ios"></script>
+  <script src="/js/dom-utils.js?v=2.12.0"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623', 'gold-light': '#FFF3D6', 'gold-dark': '#D4891A',
+            navy: '#1B2340', 'navy-soft': '#2A3458',
+            sky: '#E8F0FE', lavender: '#EDE7F6', mint: '#E0F5EC', coral: '#FDEAE7',
+            'text-soft': '#5A6178',
+          },
+          fontFamily: { heading: ['Outfit', 'sans-serif'], body: ['Plus Jakarta Sans', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="/css/theme.css?v=2.12.0">
+  <script src="/js/theme.js?v=2.12.0"></script>
+  <script src="/js/auth.js?v=2.13.0"></script>
+  <script src="/js/toast.js?v=2.12.0"></script>
+  <script src="/js/birthday-picker.js?v=2.12.0"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Min Stjärndag">
+  <style>
+    /* Step transitions */
+    .step-card { display: none; }
+    .step-card.active { display: block; animation: stepIn 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) forwards; }
+
+    @keyframes stepIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Progress bar */
+    .progress-step {
+      flex: 1; height: 4px; background: #EDE7F6; border-radius: 9999px;
+      transition: background 0.4s ease;
+    }
+    .progress-step.done { background: #1B2340; }
+    .progress-step.active { background: #F5A623; }
+
+    /* Template selection cards */
+    .day-pref-card {
+      cursor: pointer; border: 2.5px solid #EDE7F6;
+      transition: all 0.2s; border-radius: 16px; background: white;
+    }
+    .day-pref-card:hover { border-color: #F5A623; background: #FFFBF0; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245,166,35,0.15); }
+    .day-pref-card.selected { border-color: #F5A623; background: #FFF3D6; box-shadow: 0 0 0 3px rgba(245,166,35,0.2); }
+
+    /* View type selection cards */
+    .view-type-card {
+      cursor: pointer; border: 2.5px solid #EDE7F6;
+      transition: all 0.2s; border-radius: 16px; background: white;
+      padding: 16px; position: relative;
+    }
+    .view-type-card:hover { border-color: #F5A623; background: #FFFBF0; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245,166,35,0.15); }
+    .view-type-card.selected { border-color: #F5A623; background: #FFF3D6; box-shadow: 0 0 0 3px rgba(245,166,35,0.2); }
+    .view-type-card .selected-badge {
+      display: none; position: absolute; top: -10px; right: -10px;
+      width: 26px; height: 26px; background: #F5A623; color: white;
+      border-radius: 50%; font-size: 13px; font-weight: 700;
+      align-items: center; justify-content: center;
+    }
+    .view-type-card.selected .selected-badge { display: flex; }
+
+    /* Dagsvy mockup sections */
+    .dagsvy-section {
+      border-radius: 8px; padding: 6px 8px; margin-bottom: 4px;
+      font-size: 11px; font-weight: 600; color: white;
+    }
+    .dagsvy-activity {
+      background: white; border-radius: 6px; padding: 4px 7px;
+      font-size: 10px; color: #1B2340; margin-top: 3px;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* Timeline mockup */
+    .timeline-pill {
+      border-radius: 12px; padding: 5px 10px; font-size: 11px;
+      font-weight: 700; color: white; display: inline-block; margin-right: 4px;
+    }
+    .timeline-activity {
+      background: white; border-radius: 8px; border: 1.5px solid #EDE7F6;
+      padding: 6px 8px; font-size: 10px; color: #1B2340; margin-bottom: 4px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .timeline-activity.now-act { border-color: #F5A623; background: #FFF3D6; }
+    .timeline-label {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; margin-bottom: 4px; margin-top: 8px;
+    }
+
+    /* Emoji grid */
+    .emoji-btn { cursor: pointer; border: 2px solid transparent; transition: all 0.15s; border-radius: 12px; }
+    .emoji-btn:hover { background: #E8F0FE; border-color: #F5A623; }
+    .emoji-btn.selected { background: #FFF3D6; border-color: #F5A623; box-shadow: 0 0 0 2px rgba(245,166,35,0.3); }
+
+    /* Schedule preview */
+    .schedule-item {
+      display: flex; align-items: center; gap-10px;
+      padding: 8px 12px; background: white; border-radius: 10px;
+      border: 1.5px solid #EDE7F6; margin-bottom: 6px;
+    }
+
+    /* Template group expand/collapse details */
+    .template-details {
+      max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+      margin-top: 0;
+    }
+    .template-details.open {
+      max-height: 500px; margin-top: 8px;
+    }
+    .template-detail-item {
+      font-size: 11px; color: #1B2340; padding: 3px 6px;
+      background: #F8F9FE; border-radius: 6px; margin-bottom: 2px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .template-toggle-btn {
+      display: inline-flex; align-items: center; gap: 2px;
+      font-size: 10px; color: #F5A623; font-weight: 600;
+      cursor: pointer; margin-top: 4px; border: none; background: none; padding: 0;
+    }
+    .template-toggle-btn .arrow { transition: transform 0.2s; display: inline-block; }
+    .template-toggle-btn .arrow.open { transform: rotate(180deg); }
+
+    /* Star rating display on rewards */
+    .star-rating { display: flex; gap: 1px; justify-content: center; margin-top: 2px; }
+    .star-rating .star-filled { color: #F5A623; font-size: 11px; }
+    .star-rating .star-empty { color: #EDE7F6; font-size: 11px; }
+
+    /* PIN input fields */
+    .pin-input-group { display: flex; gap: 8px; justify-content: center; }
+    .pin-digit {
+      width: 52px; height: 58px; text-align: center; font-size: 24px;
+      font-family: 'Outfit', monospace; font-weight: 800;
+      border: 2.5px solid #EDE7F6; border-radius: 12px; outline: none;
+      color: #1B2340; background: white; transition: border-color 0.2s;
+    }
+    .pin-digit:focus { border-color: #F5A623; background: #FFF3D6; }
+
+    /* Reward cards */
+    .reward-card {
+      cursor: pointer; border: 2.5px solid #EDE7F6; border-radius: 14px;
+      padding: 12px 8px; text-align: center; background: white; transition: all 0.2s;
+      position: relative;
+    }
+    .reward-card:hover { border-color: #F5A623; background: #FFFBF0; transform: translateY(-1px); }
+    .reward-card.selected {
+      border-color: #F5A623; background: #FFF3D6;
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.25);
+    }
+    .reward-card.selected::after {
+      content: '✓';
+      position: absolute; top: -8px; right: -8px;
+      width: 22px; height: 22px; background: #F5A623; color: white;
+      border-radius: 50%; font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* PIN display box */
+    .pin-box {
+      font-family: 'Outfit', monospace; font-size: 32px; font-weight: 800;
+      letter-spacing: 0.25em; color: #1B2340;
+      background: #FFF3D6; border: 2px solid #F5A623; border-radius: 14px;
+      padding: 14px 28px; display: inline-block; margin: 0 auto;
+    }
+
+    /* Summary quick-tip */
+    .tip-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 14px; background: white; border-radius: 14px;
+      border: 1.5px solid #EDE7F6;
+    }
+
+    /* Floating star animation (celebration step) */
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-80px) scale(0.5); }
+    }
+    .float-star {
+      position: absolute; font-size: 24px; pointer-events: none;
+      animation: floatUp 1.2s ease-out forwards;
+    }
+
+    /* Loading step */
+    @keyframes spinStar {
+      0% { transform: rotate(0deg) scale(1); }
+      50% { transform: rotate(180deg) scale(1.2); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+    .spin-star { animation: spinStar 1.2s ease-in-out infinite; display: inline-block; }
+
+    /* Form inputs */
+    .form-input {
+      width: 100%; padding: 13px 16px; border-radius: 12px;
+      border: 2px solid #EDE7F6; outline: none; background: white;
+      color: #1B2340; font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 16px; transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: #F5A623; }
+    .form-input::placeholder { color: #9CA3AF; }
+
+    /* Error box */
+    .error-box {
+      background: #FDEAE7; border-left: 4px solid #EF4444; border-radius: 8px;
+      padding: 12px; font-size: 14px; color: #1B2340; font-weight: 500;
+    }
+
+    /* Social proof badge */
+    .social-proof {
+      background: linear-gradient(135deg, #FFF3D6 0%, #FFF9F0 100%);
+      border: 1.5px solid #F5A623; border-radius: 14px;
+      padding: 14px 16px;
+    }
+  </style>
+</head>
+<body class="bg-white font-body text-navy min-h-screen">
+
+  <!-- Header -->
+  <div class="bg-sky border-b border-lavender px-4 py-3 sticky top-0 z-10">
+    <div class="max-w-lg mx-auto flex items-center justify-between">
+      <!-- Logo -->
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 bg-gold rounded-full flex items-center justify-center shadow-sm">
+          <span class="text-lg">⭐</span>
+        </div>
+        <span class="font-heading font-bold text-navy text-base">Min Stjärndag</span>
+      </div>
+
+      <!-- Step label -->
+      <span id="stepLabel" class="text-xs font-semibold text-text-soft">Steg 1 av 6</span>
+    </div>
+
+    <!-- Progress bar — 6 segments -->
+    <div class="max-w-lg mx-auto mt-3 flex gap-1.5">
+      <div class="progress-step active" id="pb1"></div>
+      <div class="progress-step" id="pb2"></div>
+      <div class="progress-step" id="pb3"></div>
+      <div class="progress-step" id="pb4"></div>
+      <div class="progress-step" id="pb5"></div>
+      <div class="progress-step" id="pb6"></div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="max-w-lg mx-auto px-4 py-6 pb-12">
+
+    <!-- ═══════════════════════════════════════════════════════
+         STEG 1 — Berätta om ditt barn
+    ══════════════════════════════════════════════════════════ -->
+    <div class="step-card active" id="step1">
+      <div class="text-center mb-6">
+        <div class="text-5xl mb-3">👶</div>
+        <h1 class="text-2xl font-heading font-bold text-navy mb-2">Berätta om ditt barn</h1>
+        <p class="text-text-soft text-sm">Välj namn, emoji, födelsedag och ett schema som passar er vardag.</p>
+      </div>
+
+      <div class="space-y-5">
+        <!-- Name -->
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-2">Barnets namn</label>
+          <input type="text" id="childName" placeholder="T.ex. Ella" maxlength="50" class="form-input" />
+        </div>
+
+        <!-- Birthday -->
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-2">Födelsedag <span class="text-text-soft font-normal">(valfri — hjälper oss välja rätt schema)</span></label>
+          <div class="grid grid-cols-3 gap-2">
+            <select id="childBirthdayYear" class="form-input py-3" onchange="updateBirthdayDays();updateBirthdayHidden()">
+              <option value="">År</option>
+            </select>
+            <select id="childBirthdayMonth" class="form-input py-3" onchange="updateBirthdayDays();updateBirthdayHidden()">
+              <option value="">Månad</option>
+            </select>
+            <select id="childBirthdayDay" class="form-input py-3" onchange="updateBirthdayHidden()">
+              <option value="">Dag</option>
+            </select>
+          </div>
+          <input type="hidden" id="childBirthday" />
+        </div>
+
+        <!-- Emoji picker -->
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-2">Välj en emoji</label>
+          <div class="grid grid-cols-8 gap-1.5 mb-3" id="emojiGrid"></div>
+          <input type="text" id="customEmoji" placeholder="Eller skriv din egen emoji…" maxlength="4"
+            class="form-input text-sm py-2.5" />
+        </div>
+
+        <!-- Schema selection (loaded dynamically from admin library) -->
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-2">Välj ett schema</label>
+          <div class="grid grid-cols-2 gap-3" id="templateGroupGrid">
+            <!-- Populated by JS from /api/onboarding/template-groups -->
+            <div class="text-center py-6 col-span-2 text-text-soft text-sm">Laddar scheman…</div>
+          </div>
+        </div>
+
+        <!-- Error -->
+        <div id="step1Error" class="hidden error-box"></div>
+
+        <div class="mt-2">
+          <button id="step1Btn" class="w-full bg-gold hover:bg-gold-dark text-white font-semibold py-3.5 rounded-xl transition-colors text-base font-heading">
+            Nästa steg →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         STEG 2 — Välj barnets vy (NY!)
+    ══════════════════════════════════════════════════════════ -->
+    <div class="step-card" id="step2">
+      <div class="text-center mb-6">
+        <div class="text-5xl mb-3">📱</div>
+        <h1 class="text-2xl font-heading font-bold text-navy mb-2">Vilken vy vill du att <span id="s2vChildName" class="text-gold">barnet</span> ska se?</h1>
+        <p class="text-text-soft text-sm">Välj hur schemat visas när barnet loggar in. Du kan ändra det när som helst i inställningarna.</p>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 mb-5">
+
+        <!-- DAGSVY (default) -->
+        <div class="view-type-card selected" id="viewCardDay" onclick="selectViewType('day')">
+          <div class="selected-badge">✓</div>
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background:#FFF3D6">🌅</div>
+            <div>
+              <div class="font-heading font-bold text-navy text-base">Dagsvy</div>
+              <div class="text-text-soft text-xs">Morgon · Förmiddag · Eftermiddag · Kväll</div>
+            </div>
+          </div>
+
+          <!-- Dagsvy mockup -->
+          <div class="rounded-xl overflow-hidden border border-lavender" style="background:#F8F9FE">
+            <div class="px-3 pt-3 pb-2">
+              <div class="dagsvy-section" style="background:#F5A623">
+                🌅 Morgon
+                <div class="dagsvy-activity">🛏️ Vakna &amp; sträcka på sig</div>
+                <div class="dagsvy-activity">🪥 Borsta tänderna</div>
+              </div>
+              <div class="dagsvy-section" style="background:#F97316">
+                🌤️ Förmiddag
+                <div class="dagsvy-activity">🎒 Packa väskan</div>
+                <div class="dagsvy-activity">🏫 Gå till förskolan</div>
+              </div>
+              <div class="dagsvy-section" style="background:#3B82F6">
+                ☀️ Eftermiddag
+                <div class="dagsvy-activity">🧩 Leka fritt</div>
+              </div>
+              <div class="dagsvy-section mt-1" style="background:#8B5CF6">
+                🌙 Kväll
+                <div class="dagsvy-activity">🍽️ Middag</div>
+                <div class="dagsvy-activity">📕 Godnattsaga</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TIDSLINJE -->
+        <div class="view-type-card" id="viewCardTimeline" onclick="selectViewType('timeline')">
+          <div class="selected-badge">✓</div>
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background:#EDE7F6">⏱️</div>
+            <div>
+              <div class="font-heading font-bold text-navy text-base">Nu/Nästa/Sedan-vy</div>
+              <div class="text-text-soft text-xs">Visar bara vad som händer just nu</div>
+            </div>
+          </div>
+
+          <!-- Timeline mockup -->
+          <div class="rounded-xl overflow-hidden border border-lavender p-3" style="background:#F8F9FE">
+            <div class="timeline-label" style="color:#F5A623">⚡ NU</div>
+            <div class="timeline-activity now-act">
+              <span class="text-base">🪥</span>
+              <span class="font-semibold text-xs">Borsta tänderna</span>
+            </div>
+            <div class="timeline-label" style="color:#3B82F6">➡️ NÄSTA</div>
+            <div class="timeline-activity">
+              <span class="text-base">🎒</span>
+              <span class="text-xs">Packa väskan</span>
+            </div>
+            <div class="timeline-label" style="color:#9CA3AF">🕐 SEDAN</div>
+            <div class="timeline-activity">
+              <span class="text-base">🏫</span>
+              <span class="text-xs">Förskola</span>
+            </div>
+            <div class="timeline-activity">
+              <span class="text-base">🧩</span>
+              <span class="text-xs">Lek</span>
+            </div>
+          </div>
+          <p class="text-text-soft text-xs mt-3 text-center">Du kan även välja Nu/Nästa/Sedan-vy om ditt barn föredrar att fokusera på en sak i taget.</p>
+        </div>
+      </div>
+
+      <div id="step2vError" class="hidden error-box mb-4"></div>
+
+      <div class="flex gap-3">
+        <button onclick="goToStep(1)" class="px-5 py-3.5 bg-lavender hover:bg-purple-200 text-navy font-semibold rounded-xl transition-colors text-sm font-heading flex-shrink-0">
+          ← Tillbaka
+        </button>
+        <button id="step2vBtn" class="flex-1 bg-gold hover:bg-gold-dark text-white font-semibold py-3.5 rounded-xl transition-colors text-base font-heading">
+          Nästa steg →
+        </button>
+      </div>
+      <p class="text-center text-xs text-text-soft mt-3">Hoppar du över? Dagsvy väljs automatiskt.</p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         STEG 3 — Schemat är klart! (f.d. steg 2)
+    ══════════════════════════════════════════════════════════ -->
+    <div class="step-card" id="step3">
+      <div class="text-center mb-6">
+        <div class="text-5xl mb-3">🌟</div>
+        <h1 class="text-2xl font-heading font-bold text-navy mb-2">Schemat är klart!</h1>
+        <p id="s3Subtitle" class="text-text-soft text-sm">Vi har förberett ett startschema för <strong id="s3ChildName" class="text-navy">barnet</strong>.</p>
+      </div>
+
+      <!-- Schedule preview -->
+      <div class="bg-sky border border-lavender rounded-2xl p-4 mb-5">
+        <div class="flex items-center gap-2 mb-3">
+          <span id="s3TemplateIcon" class="text-xl">📅</span>
+          <span class="font-semibold text-navy text-sm" id="s3TemplateLabel">Schema</span>
+          <span class="ml-auto text-xs text-text-soft" id="s3DaysLabel">7 dagar / vecka</span>
+        </div>
+        <div id="s3SchedulePreview" class="space-y-1.5">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Social proof -->
+      <div class="social-proof mb-5 flex gap-3 items-start">
+        <span class="text-2xl flex-shrink-0">💡</span>
+        <div>
+          <p class="font-semibold text-navy text-sm mb-0.5">Visste du?</p>
+          <p class="text-text-soft text-xs leading-relaxed">Visuellt stöd minskar ofta vardagsstressen med upp till 30% — och barn med tydliga rutiner somnar snabbare och vaknar gladare.</p>
+        </div>
+      </div>
+
+      <div id="step3Error" class="hidden error-box mb-4"></div>
+
+      <div class="flex gap-3">
+        <button onclick="goToStep(2)" class="px-5 py-3.5 bg-lavender hover:bg-purple-200 text-navy font-semibold rounded-xl transition-colors text-sm font-heading flex-shrink-0">
+          ← Tillbaka
+        </button>
+        <button id="step3Btn" class="flex-1 bg-gold hover:bg-gold-dark text-white font-semibold py-3.5 rounded-xl transition-colors text-base font-heading">
+          Perfekt, kör vidare! →
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         STEG 4 — Välj de 3 första belöningarna (f.d. steg 3)
+    ══════════════════════════════════════════════════════════ -->
+    <div class="step-card" id="step4">
+      <div class="text-center mb-6">
+        <div class="text-5xl mb-3">⭐</div>
+        <h1 class="text-2xl font-heading font-bold text-navy mb-2">Så fungerar stjärnor</h1>
+        <div class="bg-lavender rounded-xl p-4 text-left">
+          <div class="flex gap-2 items-center mb-1.5">
+            <span class="text-lg">☑️</span>
+            <span class="text-sm font-semibold text-navy">Bocka av</span>
+            <span class="text-text-soft text-sm">→</span>
+            <span class="text-lg">⭐</span>
+            <span class="text-sm font-semibold text-navy">Stjärna</span>
+            <span class="text-text-soft text-sm">→</span>
+            <span class="text-lg">🏆</span>
+            <span class="text-sm font-semibold text-navy">Skattkammaren</span>
+          </div>
+          <p class="text-xs text-text-soft">Vi har fyllt på med roliga belöningar. Välj de som <strong id="s4ChildName" class="text-navy">barnet</strong> ska få kämpa för!</p>
+        </div>
+      </div>
+
+      <!-- Reward grid (3 cols) -->
+      <div class="grid grid-cols-3 gap-3 mb-5" id="rewardGrid">
+        <!-- Populated by JS -->
+      </div>
+
+      <p id="s4SelectCount" class="text-center text-xs text-text-soft mb-4">Välj minst 1 belöning (0 valda)</p>
+
+      <div id="step4Error" class="hidden error-box mb-4"></div>
+
+      <div class="flex gap-3">
+        <button onclick="goToStep(3)" class="px-5 py-3.5 bg-lavender hover:bg-purple-200 text-navy font-semibold rounded-xl transition-colors text-sm font-heading flex-shrink-0">
+          ← Tillbaka
+        </button>
+        <button id="step4Btn" class="flex-1 bg-gold hover:bg-gold-dark text-white font-semibold py-3.5 rounded-xl transition-colors text-base font-heading">
+          Spara belöningar →
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         STEG 5 — Så loggar ni in (f.d. steg 4)
+    ══════════════════════════════════════════════════════════ -->
+    <div class="step-card" id="step5">
+      <div class="text-center mb-6">
+        <div class="text-5xl mb-3">🔑</div>
+        <h1 class="text-2xl font-heading font-bold text-navy mb-2">Så loggar ni in</h1>
+        <p class="text-text-soft text-sm"><strong id="s5ChildName" class="text-navy">Barnet</strong> loggar in med namn och PIN — inga lösenord.</p>
+      </div>
+
+      <!-- PIN display & edit -->
+      <div class="bg-sky border border-lavender rounded-2xl p-5 mb-5 text-center">
+        <p class="text-sm text-text-soft mb-1">Barnets inloggning</p>
+        <p class="font-heading font-bold text-navy text-lg mb-3" id="s5Username">användarnamn</p>
+
+        <p class="text-xs text-text-soft uppercase tracking-widest font-semibold mb-2">PIN-kod</p>
+
+        <!-- Auto-generated PIN (shown first) -->
+        <div id="pinDisplay">
+          <div class="pin-box" id="s5Pin">0000</div>
+          <button onclick="showPinEdit()" class="mt-3 text-sm text-gold font-semibold hover:text-gold-dark transition-colors">
+            ✏️ Välj egen PIN-kod
+          </button>
+        </div>
+
+        <!-- Custom PIN input (hidden until user clicks edit) -->
+        <div id="pinEditSection" class="hidden">
+          <div class="pin-input-group mb-2">
+            <input type="tel" maxlength="1" class="pin-digit" id="pinD1" inputmode="numeric" pattern="[0-9]" />
+            <input type="tel" maxlength="1" class="pin-digit" id="pinD2" inputmode="numeric" pattern="[0-9]" />
+            <input type="tel" maxlength="1" class="pin-digit" id="pinD3" inputmode="numeric" pattern="[0-9]" />
+            <input type="tel" maxlength="1" class="pin-digit" id="pinD4" inputmode="numeric" pattern="[0-9]" />
+          </div>
+          <div id="pinEditError" class="hidden error-box text-xs mb-2"></div>
+          <div class="flex gap-2 justify-center mt-3">
+            <button id="savePinBtn" onclick="saveCustomPin()" class="px-4 py-2 bg-gold hover:bg-gold-dark text-white rounded-lg font-semibold text-sm transition-colors">
+              Spara PIN
+            </button>
+            <button onclick="cancelPinEdit()" class="px-4 py-2 bg-lavender hover:bg-purple-200 text-navy rounded-lg font-semibold text-sm transition-colors">
+              Avbryt
+            </button>
+          </div>
+        </div>
+
+        <p class="text-xs text-text-soft mt-3">Notera PIN-koden — du kan ändra den i inställningar.</p>
+
+        <!-- Save options -->
+        <div class="flex flex-wrap gap-3 mt-4 justify-center">
+          <button id="copyPinBtn" onclick="copyLoginInfo()" class="px-4 py-2.5 bg-lavender hover:bg-purple-200 text-navy rounded-lg font-semibold text-sm transition-colors">
+            📋 Kopiera info
+          </button>
+          <button onclick="emailLoginInfo()" class="px-4 py-2.5 bg-mint hover:bg-green-200 text-navy rounded-lg font-semibold text-sm transition-colors">
+            📧 Skicka till mejl
+          </button>
+        </div>
+      </div>
+
+      <!-- PWA install tip -->
+      <div class="bg-navy rounded-2xl p-4 mb-5 text-white">
+        <div class="flex gap-3 items-start">
+          <span class="text-2xl flex-shrink-0">📲</span>
+          <div>
+            <p class="font-semibold text-sm mb-1">Installera som app</p>
+            <p class="text-xs text-white/70 leading-relaxed">Lägg till Min Stjärndag på hemskärmen — fungerar som en riktig app, fungerar offline, inga appbutiker.</p>
+            <p class="text-xs text-white/50 mt-1.5">iPhone: Dela → Lägg till på hemskärmen &nbsp;·&nbsp; Android: ⋮ → Installera app</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parent coaching tip -->
+      <div class="bg-gold-light border border-gold rounded-2xl p-4 mb-5">
+        <div class="flex gap-3 items-start">
+          <span class="text-xl flex-shrink-0">🌟</span>
+          <div>
+            <p class="font-semibold text-navy text-sm mb-1">Tips till dig som förälder</p>
+            <p class="text-text-soft text-xs leading-relaxed">Sätt er tillsammans ikväll. Visa skattkammaren <em>först</em> för att väcka nyfikenhet — förklara sedan att appen är <strong id="s5ChildNameCoach" class="text-navy">barnets</strong> egen karta för dagen!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="goToStep(4)" class="px-5 py-3.5 bg-lavender hover:bg-purple-200 text-navy font-semibold rounded-xl transition-colors text-sm font-heading flex-shrink-0">
+          ← Tillbaka
+        </button>
+        <button onclick="goToStep(6)" class="flex-1 bg-gold hover:bg-gold-dark text-white font-semibold py-3.5 rounded-xl transition-colors text-base font-heading">
+          Nästa →
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         STEG 6 — Bjud in & kör igång! (f.d. steg 5)
+    ══════════════════════════════════════════════════════════ -->
+    <div class="step-card" id="step6">
+      <div class="text-center mb-6 relative overflow-visible" id="celebrationArea">
+        <div class="text-5xl mb-3">🎉</div>
+        <h1 class="text-2xl font-heading font-bold text-navy mb-2">Nästan klart!</h1>
+        <p class="text-text-soft text-sm">Bjud in en annan vuxen i hushållet — eller hoppa vidare direkt.</p>
+      </div>
+
+      <!-- Invite another adult -->
+      <div class="bg-sky border border-lavender rounded-2xl p-4 mb-5">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xl">👨‍👩‍👧</span>
+          <span class="font-semibold text-navy text-sm">Bjud in en annan vuxen</span>
+          <span class="ml-auto text-xs text-text-soft bg-white px-2 py-0.5 rounded-full border border-lavender">Valfritt</span>
+        </div>
+
+        <div id="inviteForm" class="space-y-3">
+          <div>
+            <input type="text" id="inviteName" placeholder="Namn (t.ex. Erik)" maxlength="60"
+              class="form-input text-sm" />
+          </div>
+          <div>
+            <input type="email" id="inviteEmail" placeholder="E-postadress" maxlength="120"
+              class="form-input text-sm" />
+          </div>
+
+          <!-- Child access checkboxes — populated by JS -->
+          <div id="inviteChildAccess" class="hidden">
+            <p class="text-xs font-semibold text-navy mb-2">Vilka barn ska denna person se?</p>
+            <div id="inviteChildList" class="space-y-1.5"></div>
+          </div>
+
+          <div id="inviteError" class="hidden error-box text-xs"></div>
+          <div id="inviteSuccess" class="hidden bg-mint border border-green-200 rounded-lg px-3 py-2 text-xs font-semibold text-green-700"></div>
+
+          <div class="flex flex-col sm:flex-row gap-2">
+            <button id="inviteBtn" onclick="sendInvite()"
+              class="flex-1 bg-navy hover:bg-navy-soft text-white font-semibold py-2.5 rounded-xl transition-colors text-sm font-heading">
+              📧 Skicka inbjudan
+            </button>
+            <button onclick="skipInvite()"
+              class="flex-shrink-0 px-4 py-2.5 bg-lavender hover:bg-purple-200 text-navy font-semibold rounded-xl transition-colors text-sm font-heading">
+              Hoppa över →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary tips -->
+      <div class="space-y-3 mb-6">
+        <div class="tip-item">
+          <div class="w-10 h-10 bg-gold-light border border-gold rounded-xl flex-shrink-0 flex items-center justify-center font-heading font-bold text-gold text-lg">1</div>
+          <div>
+            <p class="font-semibold text-navy text-sm">Redigera schemat</p>
+            <p class="text-text-soft text-xs leading-relaxed">Gå till Översikt → klicka på barnets kort → anpassa aktiviteterna till er vardag.</p>
+          </div>
+        </div>
+        <div class="tip-item">
+          <div class="w-10 h-10 bg-sky border border-lavender rounded-xl flex-shrink-0 flex items-center justify-center font-heading font-bold text-navy text-lg">2</div>
+          <div>
+            <p class="font-semibold text-navy text-sm">Kolla belöningarna</p>
+            <p class="text-text-soft text-xs leading-relaxed">I barnvyn — tryck på stjärnan — ser barnet hur många stjärnor som krävs för belöningarna.</p>
+          </div>
+        </div>
+        <div class="tip-item">
+          <div class="w-10 h-10 bg-mint border border-green-200 rounded-xl flex-shrink-0 flex items-center justify-center font-heading font-bold text-green-600 text-lg">3</div>
+          <div>
+            <p class="font-semibold text-navy text-sm">Lägg till fler barn</p>
+            <p class="text-text-soft text-xs leading-relaxed">Varje barn får sitt eget schema och sina egna stjärnor. Lägg till via + i dashboarden.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Completing / CTA -->
+      <div id="step6Error" class="hidden error-box mb-4"></div>
+
+      <div class="mt-6" style="position: relative; z-index: 1;">
+        <button id="step6Btn" class="w-full bg-gold hover:bg-gold-dark text-white font-semibold py-4 rounded-xl transition-colors text-base font-heading shadow-md shadow-yellow-200">
+          🏠 Gå till dashboarden
+        </button>
+      </div>
+
+      <p class="text-center text-xs text-text-soft mt-4 pb-4">
+        Välkommen till Min Stjärndag — vi är glada att du är här! 🌟
+      </p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         LOADING overlay
+    ══════════════════════════════════════════════════════════ -->
+    <div id="loadingStep" class="hidden text-center py-16">
+      <div class="spin-star text-5xl mb-4">⭐</div>
+      <p class="font-heading text-xl font-bold text-navy">Bygger ditt schema…</p>
+      <p class="text-text-soft mt-2 text-sm">Tar bara några sekunder!</p>
+    </div>
+
+  </div><!-- /max-w-lg -->
+
+  <!-- Weekend schedule modal — shown after step 1 for school/preschool templates -->
+  <div id="weekendModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center" style="background:rgba(0,0,0,0.4)">
+    <div class="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg mx-auto p-6 animate-slide-up">
+      <div class="text-center mb-5">
+        <div class="text-4xl mb-3">🎉</div>
+        <h2 class="text-xl font-heading font-bold text-navy mb-2">Vill du lägga till helgschema?</h2>
+        <p class="text-text-soft text-sm">Vardagsschemat är klart för mån–fre. Vill du lägga till ett avslappnat helgschema för lördag och söndag?</p>
+      </div>
+
+      <!-- Helg preview -->
+      <div class="bg-sky border border-lavender rounded-xl p-3 mb-5">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-lg">🎉</span>
+          <span class="font-semibold text-navy text-sm">Helgschema</span>
+          <span class="ml-auto text-xs text-text-soft">lör + sön</span>
+        </div>
+        <div class="space-y-1" id="weekendPreviewItems">
+          <div class="text-xs text-navy bg-white rounded-lg px-2.5 py-1.5 border border-lavender">😴 Sova ut</div>
+          <div class="text-xs text-navy bg-white rounded-lg px-2.5 py-1.5 border border-lavender">🥞 Frukost i lugn & ro</div>
+          <div class="text-xs text-navy bg-white rounded-lg px-2.5 py-1.5 border border-lavender">🧩 Leka fritt</div>
+          <div class="text-xs text-navy bg-white rounded-lg px-2.5 py-1.5 border border-lavender">🌳 Utflykt / Park</div>
+          <div class="text-xs text-navy bg-white rounded-lg px-2.5 py-1.5 border border-lavender">❤️ Familjaktivitet</div>
+          <div class="text-xs text-navy bg-white rounded-lg px-2.5 py-1.5 border border-lavender">🍽️ Middag</div>
+        </div>
+      </div>
+
+      <div id="weekendModalError" class="hidden error-box mb-3"></div>
+
+      <div class="flex flex-col gap-2.5">
+        <button id="weekendYesBtn" onclick="applyWeekendSchedule()" class="w-full bg-gold hover:bg-gold-dark text-white font-semibold py-3.5 rounded-xl transition-colors text-base font-heading">
+          ✅ Ja, lägg till helgschema
+        </button>
+        <button id="weekendNoBtn" onclick="skipWeekendSchedule()" class="w-full bg-lavender hover:bg-purple-200 text-navy font-semibold py-3 rounded-xl transition-colors text-sm font-heading">
+          Nej tack, jag fyller i själv senare
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
+  </style>
+
+  <script src="/js/onboarding.js?v=2.12.0"></script>
+
+  <!-- Service Worker Registration (update detection in /js/sw-register.js) -->
+  <script src="/js/sw-register.js?v=2.12.0"></script>
+
+  <!-- Feature-flag frontend gates -->
+  <script src="/js/feature-check.js?v=2.14.0"></script>
+</body>
+</html>

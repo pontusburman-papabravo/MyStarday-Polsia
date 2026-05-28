@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <script src="/js/auth.js?v=2.13.0"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      /* Brand palette */
+      --amber:      #F5A623;
+      --amber-dk:   #D4891A;
+      --amber-lt:   rgba(245,166,35,0.15);
+      --amber-glow: rgba(245,166,35,0.35);
+      --navy:       #0E1628;
+      --navy-2:     #162035;
+      --navy-3:     #1E2D47;
+      --mint:       #22C98A;
+      --mint-lt:    rgba(34,201,138,0.12);
+      --coral:      #FF6B52;
+      --coral-lt:   rgba(255,107,82,0.12);
+      --purple:     #7C4DDB;
+      --purple-lt:  rgba(124,77,219,0.12);
+      --sky:        #3B9EFF;
+      --sky-lt:     rgba(59,158,255,0.12);
+      /* Section accent colors */
+      --morgon-c:   #A855F7;
+      --morgon-lt:  rgba(168,85,247,0.12);
+      --morgon-bd:  rgba(168,85,247,0.25);
+      --dag-c:      #22C98A;
+      --dag-lt:     rgba(34,201,138,0.10);
+      --dag-bd:     rgba(34,201,138,0.22);
+      --kvall-c:    #F5A623;
+      --kvall-lt:   rgba(245,166,35,0.10);
+      --kvall-bd:   rgba(245,166,35,0.22);
+      --natt-c:     #3B9EFF;
+      --natt-lt:    rgba(59,158,255,0.10);
+      --natt-bd:    rgba(59,158,255,0.22);
+      /* Typography */
+      --font-body:    'Syne', system-ui, sans-serif;
+      --font-display: 'Instrument Serif', Georgia, serif;
+      /* Radii */
+      --r-sm:   10px;
+      --r-md:   16px;
+      --r-lg:   20px;
+      --r-xl:   28px;
+      --r-pill: 100px;
+    }
+
+    html { background: #07090f; }
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--navy);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      max-width: 430px;
+      margin: 0 auto;
+    }
+
+    /* ─── Loading ─── */
+    .loading-screen {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: var(--navy); gap: 1rem;
+    }
+    .loading-star { font-size: 2.8rem; animation: loadSpin 1.6s linear infinite; }
+    @keyframes loadSpin { to { transform: rotate(360deg); } }
+    .loading-text { color: rgba(255,255,255,0.4); font-size: 0.82rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    /* ─── Fallback ─── */
+    .fallback-screen {
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100vh; padding: 2rem; text-align: center; gap: 1rem;
+    }
+    .fallback-screen.on { display: flex; }
+    .fallback-icon { font-size: 3.5rem; }
+    .fallback-text { color: rgba(255,255,255,0.4); font-size: 0.9rem; line-height: 1.6; }
+
+    /* ─── Scrollable main ─── */
+    #mainContent { display: none; height: 100%; }
+    .screen {
+      height: 100vh;
+      overflow-y: auto;
+      background:
+        radial-gradient(ellipse 120% 55% at 50% -5%, rgba(245,166,35,0.18) 0%, transparent 58%),
+        linear-gradient(180deg, #0E1628 0%, #11192E 100%);
+      padding-bottom: 88px;
+      -ms-overflow-style: none; scrollbar-width: none;
+    }
+    .screen::-webkit-scrollbar { display: none; }
+
+    /* ─── Top bar ─── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.1rem 1.25rem 0.4rem;
+    }
+    .topbar-left {}
+    .topbar-eyebrow {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: rgba(255,255,255,0.35);
+    }
+    .topbar-name {
+      font-family: var(--font-display);
+      font-size: 1.55rem; color: #fff; line-height: 1.1; margin-top: 0.1rem;
+    }
+
+    /* Avatar with optional progress ring */
+    .avatar-wrap { position: relative; display: inline-flex; flex-shrink: 0; }
+    .avatar-wrap.ring-hidden .avatar-svg { display: none; }
+    .avatar-svg {
+      position: absolute; top: -5px; left: -5px;
+      width: 58px; height: 58px; transform: rotate(-90deg);
+    }
+    .avatar-ring-bg   { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 3; }
+    .avatar-ring-fill { fill: none; stroke: var(--amber); stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 0.6s ease; }
+    .avatar-box {
+      width: 48px; height: 48px; border-radius: 14px;
+      background: rgba(245,166,35,0.12);
+      border: 1.5px solid rgba(245,166,35,0.28);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.7rem; cursor: pointer;
+    }
+
+    /* ─── Star hero ─── */
+    .star-hero {
+      text-align: center; padding: 1.2rem 1.25rem 0.8rem;
+      position: relative; overflow: visible;
+    }
+    /* Decorative sparkle stars */
+    .spk { position: absolute; pointer-events: none; }
+    .spk::after {
+      content: '';
+      display: block;
+      clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+      background: var(--amber);
+    }
+    .spk-1 { top: 10px; left: 18px; animation: sparkAnim 3.2s ease-in-out infinite; }
+    .spk-1::after { width: 13px; height: 13px; }
+    .spk-2 { top: 25px; right: 26px; animation: sparkAnim 4.1s ease-in-out infinite 0.8s; }
+    .spk-2::after { width: 9px; height: 9px; opacity: 0.7; }
+    .spk-3 { bottom: 10px; left: 44px; animation: sparkAnim 5s ease-in-out infinite 1.6s; }
+    .spk-3::after { width: 7px; height: 7px; opacity: 0.5; }
+    @keyframes sparkAnim {
+      0%,100% { opacity: 0.15; transform: scale(1) rotate(0deg); }
+      50%      { opacity: 0.85; transform: scale(1.35) rotate(18deg); }
+    }
+
+    .star-pill {
+      display: inline-flex; align-items: center; gap: 0.7rem;
+      background: rgba(245,166,35,0.1);
+      border: 1px solid rgba(245,166,35,0.22);
+      padding: 0.85rem 2rem; border-radius: var(--r-pill);
+    }
+    .star-icon-shape {
+      width: 38px; height: 38px; flex-shrink: 0;
+      clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+      background: var(--amber);
+    }
+    .star-count {
+      font-family: var(--font-display);
+      font-size: 3.8rem; line-height: 1; color: var(--amber);
+    }
+    .star-label {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; color: rgba(255,255,255,0.38);
+      margin-top: 0.45rem;
+    }
+
+    /* Star goal row */
+    .goal-row {
+      display: none; align-items: center; justify-content: center;
+      gap: 0.45rem; margin-top: 0.6rem;
+      font-size: 0.82rem; font-weight: 700; color: rgba(255,255,255,0.55);
+    }
+    .goal-row.on { display: flex; }
+    .goal-icon {
+      width: 14px; height: 14px; flex-shrink: 0;
+      clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+      background: var(--amber);
+    }
+
+    /* ─── Progress bar ─── */
+    .prog-wrap { padding: 0.6rem 1.25rem 0.2rem; display: none; }
+    .prog-wrap.on { display: block; }
+    .prog-labels { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem; }
+    .prog-text  { font-size: 0.75rem; font-weight: 700; color: rgba(255,255,255,0.45); }
+    .prog-frac  { font-size: 0.72rem; color: rgba(255,255,255,0.3); }
+    .prog-track { height: 9px; background: rgba(255,255,255,0.06); border-radius: var(--r-pill); overflow: hidden; }
+    .prog-fill  {
+      height: 100%; border-radius: var(--r-pill);
+      background: linear-gradient(90deg, var(--amber) 0%, #FFD166 100%);
+      box-shadow: 0 0 10px rgba(245,166,35,0.5);
+      transition: width 0.55s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ─── Timeline pipeline ─── */
+    .pipeline-wrap {
+      padding: 0 1.25rem; margin: 1rem 0 1.4rem;
+      display: none;
+    }
+    .pipeline-wrap.on { display: block; }
+    .pipeline-label {
+      font-size: 0.64rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: rgba(255,255,255,0.28);
+      margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .pipeline-label::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
+
+    .pipeline-track {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: center; gap: 0;
+    }
+    .pip-seg {
+      display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+      padding: 0 0.2rem;
+    }
+    .pip-node {
+      width: 52px; height: 52px; border-radius: 16px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 0; position: relative;
+      border: 1.5px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.04);
+      transition: all 0.25s ease;
+    }
+    .pip-node.done   { background: rgba(34,201,138,0.15); border-color: rgba(34,201,138,0.3); }
+    .pip-node.active { background: rgba(245,166,35,0.18); border-color: rgba(245,166,35,0.4); box-shadow: 0 0 18px rgba(245,166,35,0.22); }
+    .pip-emoji { font-size: 1.4rem; line-height: 1; }
+    .pip-badge {
+      font-size: 0.52rem; font-weight: 800; letter-spacing: 0.06em;
+      text-transform: uppercase; color: rgba(255,255,255,0.4); margin-top: 0.1rem;
+    }
+    .pip-node.done   .pip-badge { color: var(--mint); }
+    .pip-node.active .pip-badge { color: var(--amber); }
+    .pip-name {
+      font-size: 0.62rem; font-weight: 700; color: rgba(255,255,255,0.35);
+      text-align: center; letter-spacing: 0.02em;
+    }
+    .pip-node.active + .pip-name,
+    .pip-seg.active > .pip-name { color: rgba(255,255,255,0.7); }
+
+    .pip-connector {
+      height: 2px; background: rgba(255,255,255,0.07);
+      border-radius: 2px; margin-bottom: 22px; /* align with node center */
+      transition: background 0.4s ease;
+    }
+    .pip-connector.done { background: var(--mint); }
+    .pip-connector.active { background: rgba(245,166,35,0.45); }
+
+    /* ─── Section block ─── */
+    .section-block { margin-bottom: 0.2rem; }
+    .section-head {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.7rem 1.25rem 0.5rem;
+      font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: rgba(255,255,255,0.3);
+    }
+    .section-head::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
+    .section-head.morgon { color: var(--morgon-c); }
+    .section-head.dag    { color: var(--dag-c); }
+    .section-head.kvall  { color: var(--kvall-c); }
+    .section-head.natt   { color: var(--natt-c); }
+    .section-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+    .section-head.morgon .section-dot { background: var(--morgon-c); }
+    .section-head.dag    .section-dot { background: var(--dag-c); }
+    .section-head.kvall  .section-dot { background: var(--kvall-c); }
+    .section-head.natt   .section-dot { background: var(--natt-c); }
+
+    .acts-list { padding: 0 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; padding-bottom: 0.5rem; }
+
+    /* ─── Activity card ─── */
+    .act-card {
+      border-radius: var(--r-lg);
+      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.04);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease;
+      position: relative;
+    }
+    .act-card::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3.5px; border-radius: 3.5px 0 0 3.5px;
+      background: transparent; transition: background 0.2s;
+    }
+    /* Section accent strips */
+    .act-card[data-sec="morgon"]::before { background: var(--morgon-c); }
+    .act-card[data-sec="dag"]::before    { background: var(--dag-c); }
+    .act-card[data-sec="kvall"]::before  { background: var(--kvall-c); }
+    .act-card[data-sec="natt"]::before   { background: var(--natt-c); }
+
+    .act-card.done {
+      background: rgba(34,201,138,0.05);
+      border-color: rgba(34,201,138,0.13);
+    }
+    .act-card.done::before { background: var(--mint) !important; }
+    .act-card.active {
+      background: rgba(245,166,35,0.07);
+      border-color: rgba(245,166,35,0.2);
+    }
+    .act-card.active::before { background: var(--amber) !important; }
+    .act-card.loading { opacity: 0.55; pointer-events: none; }
+
+    .act-main {
+      display: flex; align-items: center; gap: 0.8rem;
+      padding: 0.9rem 1rem 0.9rem 1.15rem;
+    }
+    .act-icon {
+      width: 44px; height: 44px; border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.45rem; flex-shrink: 0;
+    }
+    /* Icon bg per section */
+    .act-card[data-sec="morgon"] .act-icon { background: var(--morgon-lt); }
+    .act-card[data-sec="dag"]    .act-icon { background: var(--dag-lt); }
+    .act-card[data-sec="kvall"]  .act-icon { background: var(--kvall-lt); }
+    .act-card[data-sec="natt"]   .act-icon { background: var(--natt-lt); }
+    .act-card.done .act-icon     { background: var(--mint-lt); }
+    .act-icon.no-sec { background: rgba(245,166,35,0.12); }
+
+    .act-body { flex: 1; min-width: 0; }
+    .act-name {
+      font-size: 0.9rem; font-weight: 700; color: #fff; line-height: 1.25;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .act-card.done .act-name { text-decoration: line-through; color: rgba(255,255,255,0.38); }
+    .act-meta {
+      display: flex; align-items: center; gap: 0.45rem; margin-top: 0.2rem;
+      font-size: 0.68rem; color: rgba(255,255,255,0.32); flex-wrap: wrap;
+    }
+    .act-time-chip {
+      background: rgba(255,255,255,0.06); padding: 0.1rem 0.38rem;
+      border-radius: 5px;
+    }
+    .act-now-label  { color: var(--amber); font-weight: 700; }
+    .act-done-label { color: var(--mint);  font-weight: 700; }
+
+    /* Countdown inline */
+    .act-countdown {
+      display: none; align-items: center; gap: 0.3rem;
+      background: rgba(245,166,35,0.15); border: 1px solid rgba(245,166,35,0.3);
+      border-radius: 6px; padding: 0.18rem 0.5rem;
+      font-size: 0.72rem; font-weight: 800; color: var(--amber);
+      margin-top: 0.3rem;
+    }
+    .act-countdown.on { display: inline-flex; }
+
+    .act-right {
+      display: flex; flex-direction: column; align-items: flex-end;
+      gap: 0.45rem; flex-shrink: 0;
+    }
+    .act-check {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.14);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .act-card.done .act-check {
+      background: var(--mint); border-color: transparent;
+    }
+    .act-card.done .act-check::after {
+      content: '✓'; font-size: 14px; font-weight: 900; color: #fff;
+    }
+    .act-stars {
+      font-size: 0.67rem; font-weight: 800; color: var(--amber);
+      background: rgba(245,166,35,0.1); padding: 0.14rem 0.42rem;
+      border-radius: 5px;
+    }
+    .act-expand-arrow {
+      font-size: 0.75rem; color: rgba(255,255,255,0.2);
+      transition: transform 0.2s ease;
+    }
+    .act-card.expanded .act-expand-arrow { transform: rotate(180deg); }
+
+    /* Sub-steps */
+    .substeps {
+      overflow: hidden; max-height: 0;
+      transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1);
+      background: rgba(0,0,0,0.18);
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .act-card.expanded .substeps { max-height: 600px; }
+    .substep-list { padding: 0.5rem 1rem 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.45rem; }
+    .substep-item {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-size: 0.8rem; color: rgba(255,255,255,0.6); font-weight: 600;
+      padding: 0.35rem 0; cursor: pointer;
+    }
+    .substep-emoji { font-size: 1rem; flex-shrink: 0; }
+    .substep-item.done .substep-name { text-decoration: line-through; color: rgba(255,255,255,0.3); }
+    .substep-check {
+      width: 20px; height: 20px; border-radius: 6px;
+      border: 1.5px solid rgba(255,255,255,0.14); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; margin-left: auto;
+    }
+    .substep-item.done .substep-check {
+      background: var(--mint); border-color: transparent;
+    }
+    .substep-item.done .substep-check::after { content: '✓'; font-size: 10px; font-weight: 900; color: #fff; }
+
+    /* ─── Empty state ─── */
+    .empty-state {
+      text-align: center; padding: 2.5rem 1.25rem;
+      color: rgba(255,255,255,0.35);
+    }
+    .empty-state-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+    .empty-state-text { font-size: 0.88rem; line-height: 1.6; }
+
+    /* ─── Treasure chamber ─── */
+    .treasure-wrap { padding: 0 1.25rem 1.5rem; }
+    .treasure-card {
+      background: linear-gradient(135deg, rgba(124,77,219,0.18) 0%, rgba(124,77,219,0.07) 100%);
+      border: 1px solid rgba(124,77,219,0.22);
+      border-radius: var(--r-xl); padding: 1.2rem; position: relative; overflow: hidden;
+    }
+    .treasure-card::after {
+      content: '🏆'; position: absolute;
+      right: -0.5rem; bottom: -0.8rem;
+      font-size: 4.5rem; opacity: 0.1; transform: rotate(-15deg);
+      pointer-events: none;
+    }
+    .treasure-tag {
+      font-size: 0.64rem; font-weight: 800; letter-spacing: 0.09em;
+      text-transform: uppercase; color: rgba(124,77,219,0.7); margin-bottom: 0.35rem;
+    }
+    .treasure-title {
+      font-family: var(--font-display); font-size: 1.2rem; color: #fff; margin-bottom: 0.9rem;
+    }
+    .treasure-items { display: flex; flex-direction: column; gap: 0.5rem; }
+    .tri {
+      display: flex; align-items: center; gap: 0.65rem;
+      background: rgba(255,255,255,0.05); border-radius: var(--r-md);
+      padding: 0.65rem 0.9rem;
+    }
+    .tri-emoji { font-size: 1.25rem; flex-shrink: 0; }
+    .tri-name { flex: 1; font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.8); }
+    .tri-cost {
+      display: flex; align-items: center; gap: 0.28rem;
+      font-size: 0.76rem; font-weight: 800; color: var(--amber);
+    }
+    .tri-cost-star {
+      width: 10px; height: 10px;
+      clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+      background: var(--amber); flex-shrink: 0;
+    }
+    .tri-btn {
+      background: var(--purple); color: #fff; border: none;
+      border-radius: 8px; padding: 0.3rem 0.72rem;
+      font-size: 0.7rem; font-weight: 800; font-family: var(--font-body);
+      cursor: pointer; transition: background 0.15s, transform 0.1s;
+    }
+    .tri-btn:active:not(:disabled) { transform: scale(0.96); }
+    .tri-btn:hover:not(:disabled) { background: #9B6FEF; }
+    .tri-btn:disabled { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.25); cursor: not-allowed; }
+
+    /* ─── Profile card ─── */
+    .profile-wrap { padding: 0 1.25rem 1rem; display: none; }
+    .profile-wrap.on { display: block; }
+    .profile-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--r-lg); padding: 1rem 1.25rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .profile-emo {
+      width: 54px; height: 54px; border-radius: 16px;
+      background: rgba(245,166,35,0.12);
+      border: 1.5px solid rgba(245,166,35,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.1rem; flex-shrink: 0;
+    }
+    .profile-info { flex: 1; }
+    .profile-name { font-size: 1rem; font-weight: 800; color: #fff; }
+    .profile-sub  { font-size: 0.73rem; color: rgba(255,255,255,0.38); margin-top: 0.12rem; }
+    .profile-streak {
+      display: flex; align-items: center; gap: 0.3rem;
+      background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.2);
+      border-radius: 9px; padding: 0.35rem 0.65rem;
+      font-size: 0.82rem; font-weight: 800; color: var(--amber);
+    }
+
+    /* ─── Bottom nav ─── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px;
+      display: flex; align-items: center; justify-content: space-around;
+      padding: 0.7rem 1.25rem 1.2rem;
+      background: rgba(14,22,40,0.96); backdrop-filter: blur(22px);
+      border-top: 1px solid rgba(255,255,255,0.055);
+      z-index: 200;
+    }
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 0.22rem;
+      cursor: pointer; padding: 0.22rem 0.8rem; border-radius: 10px;
+      transition: background 0.15s; text-decoration: none; color: inherit;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.05); }
+    .nav-icon  { font-size: 1.28rem; opacity: 0.38; transition: opacity 0.15s; }
+    .nav-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(255,255,255,0.28); }
+    .nav-item.active .nav-icon  { opacity: 1; }
+    .nav-item.active .nav-label { color: var(--amber); }
+    .nav-fab {
+      width: 54px; height: 54px; background: var(--amber);
+      border-radius: 16px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 4px 18px rgba(245,166,35,0.42);
+      transition: all 0.15s; margin-top: -14px; flex-shrink: 0;
+    }
+    .nav-fab:hover { background: var(--amber-dk); transform: scale(1.06); }
+    .nav-fab-icon { font-size: 1.55rem; color: var(--navy); font-weight: 900; line-height: 1; }
+
+    /* ─── Toast ─── */
+    .toast {
+      position: fixed; bottom: 96px; left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--mint); color: var(--navy);
+      padding: 0.6rem 1.3rem; border-radius: 12px;
+      font-size: 0.85rem; font-weight: 800;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 9998; max-width: 300px; text-align: center;
+    }
+    .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ─── Animations ─── */
+    @keyframes popIn {
+      0%   { transform: scale(0) rotate(-25deg); opacity: 0; }
+      65%  { transform: scale(1.12) rotate(6deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .pop-in { animation: popIn 0.28s ease forwards; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.35s ease forwards; }
+  </style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loadingScreen" class="loading-screen">
+  <div class="loading-star">⭐</div>
+  <div class="loading-text">Laddar din stjärndag...</div>
+</div>
+
+<!-- All-hidden fallback -->
+<div id="fallbackScreen" class="fallback-screen">
+  <div class="fallback-icon">⚙️</div>
+  <div class="fallback-text">Inga element valda.<br>Be din förälder aktivera något!</div>
+</div>
+
+<!-- Main content -->
+<div id="mainContent">
+<div class="screen" id="scrollArea">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-eyebrow" id="topbarEyebrow">Hej igen,</div>
+      <div class="topbar-name" id="topbarName">Barn!</div>
+    </div>
+    <div class="avatar-wrap" id="avatarWrap">
+      <svg class="avatar-svg" viewBox="0 0 58 58" id="avatarSvg">
+        <circle class="avatar-ring-bg"   cx="29" cy="29" r="24"/>
+        <circle class="avatar-ring-fill" cx="29" cy="29" r="24"
+          stroke-dasharray="0 150.8" stroke-dashoffset="0" id="ringFill"/>
+      </svg>
+      <div class="avatar-box" id="avatarBox">🌸</div>
+    </div>
+  </div>
+
+  <!-- Star hero -->
+  <div class="star-hero">
+    <div class="spk spk-1"></div>
+    <div class="spk spk-2"></div>
+    <div class="spk spk-3"></div>
+    <div class="star-pill">
+      <div class="star-icon-shape"></div>
+      <div class="star-count" id="starCount">0</div>
+    </div>
+    <div class="star-label" id="starLabel">Stjärnor totalt idag</div>
+  </div>
+
+  <!-- Star goal -->
+  <div class="goal-row" id="goalRow">
+    <div class="goal-icon"></div>
+    <span id="goalText">5 stjärnor tills belöning</span>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="prog-wrap" id="progWrap">
+    <div class="prog-labels">
+      <span class="prog-text">Dagens framsteg</span>
+      <span class="prog-frac" id="progFrac">0 av 0</span>
+    </div>
+    <div class="prog-track">
+      <div class="prog-fill" id="progFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Timeline pipeline: NU / NÄSTA / SENARE -->
+  <div class="pipeline-wrap" id="pipelineWrap">
+    <div class="pipeline-label">Dagens schema</div>
+    <div class="pipeline-track" id="pipelineTrack">
+      <!-- Generated by JS -->
+    </div>
+  </div>
+
+  <!-- Activities container -->
+  <div id="actsContainer"></div>
+
+  <!-- Treasure chamber -->
+  <div class="treasure-wrap" id="treasureWrap">
+    <div class="section-head" style="padding-left:0">🏆&nbsp; Skattkammaren</div>
+    <div class="treasure-card">
+      <div class="treasure-tag">Dina belöningar</div>
+      <div class="treasure-title">Vad vill du spara till?</div>
+      <div class="treasure-items" id="treasureItems">
+        <!-- Generated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile card -->
+  <div class="profile-wrap" id="profileWrap">
+    <div class="profile-card">
+      <div class="profile-emo" id="profileEmo">🌸</div>
+      <div class="profile-info">
+        <div class="profile-name" id="profileName">Barnet</div>
+        <div class="profile-sub" id="profileSub">0 stjärnor</div>
+      </div>
+      <div class="profile-streak" id="profileStreak">
+        🔥&nbsp;<span id="streakNum">0</span>&nbsp;dagar
+      </div>
+    </div>
+  </div>
+
+</div><!-- /screen -->
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <a href="#" class="nav-item active" id="navHome">
+    <div class="nav-icon">✅</div>
+    <div class="nav-label">Schema</div>
+  </a>
+  <a href="#" class="nav-item" id="navStars">
+    <div class="nav-icon">⭐</div>
+    <div class="nav-label">Stjärnor</div>
+  </a>
+  <div class="nav-fab" id="navFab">
+    <div class="nav-fab-icon">+</div>
+  </div>
+  <a href="#" class="nav-item" id="navTreasure">
+    <div class="nav-icon">🏆</div>
+    <div class="nav-label">Skatt</div>
+  </a>
+  <a href="#" class="nav-item" id="navProfile">
+    <div class="nav-icon">👤</div>
+    <div class="nav-label">Profil</div>
+  </a>
+</nav>
+
+</div><!-- /mainContent -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// child-new.html — V2 child view (visual redesign)
+// Owns: view_config-driven UI, activity cards with sub-steps, timeline pipeline, countdown.
+// Does NOT own: auth (auth.js), API transport (auth.js).
+
+const QS = new URLSearchParams(location.search);
+const childId = QS.get('child');
+
+if (!Auth.requireAuth()) { /* redirected */ }
+else if (!childId) { location.href = '/child-login'; }
+
+/* ─── State ─── */
+let vc          = null;   // view config
+let childData   = null;
+let dailyLog    = null;
+let rewards     = [];
+let starBalance = 0;
+let streak      = 0;
+let pendingRedeem = null;
+let countdownIntervals = {};
+
+/* ─── Utils ─── */
+const esc = s => {
+  if (s == null) return '';
+  const d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+};
+
+const q    = id => document.getElementById(id);
+const cls  = (el, ...c) => el && el.classList;
+
+function toast(msg, ms = 2200) {
+  const t = q('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  setTimeout(() => t.classList.remove('on'), ms);
+}
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+function fmtTime(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+}
+
+function normSec(s) {
+  if (!s) return 'dag';
+  const l = s.toLowerCase();
+  if (l.includes('morgon') || l.includes('morning'))  return 'morgon';
+  if (l.includes('kväll') || l.includes('kvall') || l.includes('evening')) return 'kvall';
+  if (l.includes('natt') || l.includes('night'))      return 'natt';
+  return 'dag';
+}
+
+const SEC_LABELS = { morgon: 'Morgon ☀️', dag: 'Eftermiddag 🌤', kvall: 'Kväll 🌙', natt: 'Natt 🌑' };
+const SEC_ORDER  = ['morgon', 'dag', 'kvall', 'natt'];
+
+/* ─── Progress ring ─── */
+function setRing(done, total) {
+  const circ = 2 * Math.PI * 24; // r=24
+  const fill = total > 0 ? (done / total) * circ : 0;
+  const ring = q('ringFill');
+  if (!ring) return;
+  ring.setAttribute('stroke-dasharray', `${fill.toFixed(1)} ${(circ - fill).toFixed(1)}`);
+  ring.setAttribute('stroke',
+    done === 0   ? 'rgba(255,255,255,0.15)' :
+    done === total ? '#22C98A' : '#F5A623'
+  );
+}
+
+/* ─── Countdown ─── */
+function startCountdown(itemId, targetIso) {
+  if (countdownIntervals[itemId]) clearInterval(countdownIntervals[itemId]);
+  const badgeEl = q('cd-' + itemId);
+  if (!badgeEl) return;
+
+  function tick() {
+    const diff = new Date(targetIso).getTime() - Date.now();
+    if (diff <= 0) {
+      badgeEl.textContent = '⏰ Nu!';
+      clearInterval(countdownIntervals[itemId]);
+      return;
+    }
+    const m = Math.floor(diff / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    badgeEl.textContent = `⏱ ${m}:${String(s).padStart(2,'0')}`;
+  }
+  tick();
+  countdownIntervals[itemId] = setInterval(tick, 1000);
+}
+
+/* ─── Is current activity? ─── */
+function isCurrent(item) {
+  if (!item.scheduled_time) return false;
+  const diff = (Date.now() - new Date(item.scheduled_time).getTime()) / 60000;
+  return diff >= -15 && diff <= 45;
+}
+
+/* ─── Load view config ─── */
+async function loadViewConfig() {
+  try {
+    vc = await Auth.api(`/api/children/${childId}/view-config`);
+  } catch {
+    vc = { view_mode: 'new', show_countdown_timer: true, show_timeline_pipeline: true,
+           show_child_profile_card: true, show_progress_ring: true, show_star_goal: true };
+  }
+}
+
+/* ─── Apply view config ─── */
+function applyViewConfig() {
+  const cfg = vc || {};
+
+  // Progress ring
+  if (cfg.show_progress_ring === false) q('avatarWrap').classList.add('ring-hidden');
+
+  // Star goal
+  if (cfg.show_star_goal !== false) q('goalRow').classList.add('on');
+
+  // Progress bar (always show if schedule exists)
+  // show_progress_ring toggle repurposed to also hide progress bar? Per spec, progress bar is separate.
+  // Show progress bar by default alongside timeline
+  q('progWrap').classList.add('on');
+
+  // Timeline
+  if (cfg.show_timeline_pipeline !== false) q('pipelineWrap').classList.add('on');
+
+  // Profile card
+  if (cfg.show_child_profile_card !== false) q('profileWrap').classList.add('on');
+
+  // Fallback when everything is toggled off
+  const allOff = (
+    cfg.show_countdown_timer   === false &&
+    cfg.show_timeline_pipeline === false &&
+    cfg.show_child_profile_card=== false &&
+    cfg.show_progress_ring     === false &&
+    cfg.show_star_goal         === false
+  );
+  if (allOff) {
+    q('fallbackScreen').classList.add('on');
+    q('mainContent').style.display = 'none';
+  }
+}
+
+/* ─── Load child data ─── */
+async function loadChildData() {
+  try {
+    const children = await Auth.api('/api/children');
+    childData = children.find(c => c.id === childId);
+    if (!childData) { location.href = '/child-login'; return; }
+
+    const name  = childData.name || 'Barn';
+    const emoji = childData.emoji || '🌸';
+
+    q('topbarName').textContent = name + '! ' + emoji;
+    q('avatarBox').textContent  = emoji;
+    q('profileEmo').textContent = emoji;
+    q('profileName').textContent = name;
+
+    // Greeting based on time
+    const h = new Date().getHours();
+    q('topbarEyebrow').textContent =
+      h < 10 ? 'God morgon,' :
+      h < 13 ? 'Hej,' :
+      h < 18 ? 'Hej igen,' : 'God kväll,';
+
+    // Streak
+    try {
+      const sd = await Auth.api(`/api/children/${childId}/streak`);
+      streak = sd?.current_streak || 0;
+      q('streakNum').textContent = streak;
+    } catch { /* no streak */ }
+  } catch {
+    location.href = '/child-login';
+  }
+}
+
+/* ─── Load daily log + rewards ─── */
+async function loadData() {
+  try {
+    const [logData, rewardData] = await Promise.all([
+      Auth.api(`/api/me/daily-log?date=${todayStr()}`).catch(() => null),
+      Auth.api('/api/me/rewards').catch(() => []),
+    ]);
+
+    dailyLog = logData;
+    rewards  = Array.isArray(rewardData) ? rewardData : (rewardData?.rewards || []);
+
+    // Star balance
+    starBalance = typeof rewardData?.starBalance === 'number' ? rewardData.starBalance
+                : typeof rewardData?.star_balance === 'number' ? rewardData.star_balance
+                : rewards.reduce((a, r) => a, 0); // fallback — keep 0
+
+    // Try dedicated balance call
+    try {
+      const bal = await Auth.api(`/api/children/${childId}/star-balance`);
+      if (typeof bal?.balance === 'number') starBalance = bal.balance;
+      else if (typeof bal?.stars === 'number') starBalance = bal.stars;
+    } catch { /* use value from rewards */ }
+
+    q('starCount').textContent = starBalance;
+    q('profileSub').textContent = starBalance + ' stjärnor';
+    q('starLabel').textContent  = 'Stjärnor idag';
+
+    // Progress
+    if (logData?.items) {
+      const tot  = logData.total  ?? logData.items.length;
+      const done = logData.completed ?? logData.items.filter(i => i.completed).length;
+      q('progFrac').textContent = `${done} av ${tot}`;
+      q('progFill').style.width = tot > 0 ? Math.round((done/tot)*100) + '%' : '0%';
+      setRing(done, tot);
+    }
+
+    // Star goal
+    if (vc?.show_star_goal !== false) {
+      const avail = rewards.filter(r => !r.redeemed).sort((a,b) => a.cost - b.cost);
+      const next  = avail[0];
+      if (next) {
+        const diff = Math.max(0, next.cost - starBalance);
+        q('goalText').textContent = diff === 0
+          ? '🎉 Du kan lösa in ' + next.name + '!'
+          : diff + ' stjärna' + (diff===1?'':'r') + ' tills ' + next.name;
+      } else {
+        q('goalRow').classList.remove('on');
+      }
+    }
+
+    renderPipeline();
+    renderActivities();
+    renderRewards();
+  } catch (err) {
+    console.error('[CHILD-NEW] loadData:', err);
+    renderEmpty();
+  }
+}
+
+/* ─── Render pipeline ─── */
+function renderPipeline() {
+  const track = q('pipelineTrack');
+  if (!track || !dailyLog?.items?.length) return;
+
+  const now = new Date();
+  const items = dailyLog.items;
+
+  // Determine which sections exist
+  const secPresent = SEC_ORDER.filter(s => items.some(i => normSec(i.section) === s));
+  if (secPresent.length < 2) {
+    q('pipelineWrap').classList.remove('on');
+    return;
+  }
+
+  // Classify each section: done / active / upcoming
+  function secState(sec) {
+    const secItems = items.filter(i => normSec(i.section) === sec);
+    if (!secItems.length) return null;
+    if (secItems.every(i => i.completed)) return 'done';
+    if (secItems.some(i => isCurrent(i) || (!i.completed && secItems.some(j => j.completed)))) return 'active';
+    // If all future: check if this is the earliest incomplete section
+    const firstIncomplete = secPresent.find(s => {
+      const si = items.filter(i => normSec(i.section) === s);
+      return si.some(i => !i.completed);
+    });
+    if (sec === firstIncomplete) return 'active';
+    return 'upcoming';
+  }
+
+  // NU = active section, NÄSTA = next after active, SENARE = rest
+  const states = {};
+  let foundActive = false;
+  for (const sec of secPresent) {
+    const st = secState(sec);
+    states[sec] = st;
+  }
+
+  // Override labels: NU for first non-done, NÄSTA for second, SENARE for rest
+  const order = ['NU', 'NÄSTA', 'SENARE'];
+  const nonDone = secPresent.filter(s => states[s] !== 'done');
+  const pipSecs = secPresent.length <= 3 ? secPresent : secPresent.slice(0, 3);
+
+  // Build pipeline HTML
+  const SEC_EMOJIS = { morgon: '☀️', dag: '🌤', kvall: '🌙', natt: '🌑' };
+  const SEC_NAMES  = { morgon: 'Morgon', dag: 'Dag', kvall: 'Kväll', natt: 'Natt' };
+
+  let html = '';
+  for (let i = 0; i < pipSecs.length; i++) {
+    const sec = pipSecs[i];
+    const st  = states[sec];
+    const lbl = st === 'done' ? 'KLAR' : (order[nonDone.indexOf(sec)] || order[2]);
+
+    if (i > 0) {
+      const prevDone = states[pipSecs[i-1]] === 'done';
+      const prevActive = states[pipSecs[i-1]] === 'active' || (nonDone[0] === pipSecs[i-1]);
+      html += `<div class="pip-connector ${prevDone ? 'done' : (prevActive ? 'active' : '')}"></div>`;
+    }
+
+    html += `
+      <div class="pip-seg">
+        <div class="pip-node ${st === 'done' ? 'done' : (lbl === 'NU' ? 'active' : '')}">
+          <div class="pip-emoji">${st === 'done' ? '✅' : SEC_EMOJIS[sec]}</div>
+          <div class="pip-badge">${lbl}</div>
+        </div>
+        <div class="pip-name">${SEC_NAMES[sec]}</div>
+      </div>`;
+  }
+
+  track.innerHTML = html;
+}
+
+/* ─── Render activities ─── */
+function renderActivities() {
+  const container = q('actsContainer');
+  if (!dailyLog?.items?.length) { renderEmpty(); return; }
+
+  // Group by section
+  const groups = {};
+  for (const item of dailyLog.items) {
+    const sec = normSec(item.section);
+    (groups[sec] = groups[sec] || []).push(item);
+  }
+
+  let html = '';
+  const now = new Date();
+
+  for (const sec of SEC_ORDER) {
+    const items = groups[sec];
+    if (!items?.length) continue;
+
+    html += `<div class="section-block fade-up">
+      <div class="section-head ${sec}">
+        <div class="section-dot"></div>${SEC_LABELS[sec]}
+      </div>
+      <div class="acts-list">`;
+
+    for (const item of items) {
+      const done    = !!item.completed;
+      const active  = !done && isCurrent(item);
+      const hasSubs = Array.isArray(item.sub_steps) && item.sub_steps.length > 0;
+      const cls     = [done ? 'done' : '', active ? 'active' : ''].filter(Boolean).join(' ');
+
+      // Countdown (shown inside card meta)
+      const showCd = vc?.show_countdown_timer !== false && active && item.scheduled_time;
+      const cdHtml = showCd
+        ? `<div class="act-countdown on" id="cd-${item.id}">⏱ ...</div>`
+        : '';
+
+      // Sub-steps HTML
+      let subsHtml = '';
+      if (hasSubs) {
+        subsHtml = `<div class="substeps"><div class="substep-list">`;
+        for (const sub of item.sub_steps) {
+          const subDone = !!sub.completed;
+          subsHtml += `<div class="substep-item ${subDone ? 'done' : ''}" onclick="event.stopPropagation();toggleSub('${item.id}','${sub.id || sub.name}',${subDone})">
+            <span class="substep-emoji">${sub.emoji || '•'}</span>
+            <span class="substep-name">${esc(sub.name)}</span>
+            <div class="substep-check"></div>
+          </div>`;
+        }
+        subsHtml += `</div></div>`;
+      }
+
+      html += `
+        <div class="act-card ${cls}" data-id="${item.id}" data-sec="${sec}"
+             onclick="handleCardClick('${item.id}',${done},${hasSubs})">
+          <div class="act-main">
+            <div class="act-icon ${!sec ? 'no-sec' : ''}">${item.emoji || '⭐'}</div>
+            <div class="act-body">
+              <div class="act-name">${esc(item.name)}</div>
+              <div class="act-meta">
+                ${item.scheduled_time ? `<span class="act-time-chip">${fmtTime(item.scheduled_time)}</span>` : ''}
+                ${active && !done ? '<span class="act-now-label">→ Nu!</span>' : ''}
+                ${done ? '<span class="act-done-label">Klar ✓</span>' : ''}
+                ${item.star_value > 1 ? `<span style="color:rgba(255,255,255,0.25)">+${item.star_value}★</span>` : ''}
+              </div>
+              ${cdHtml}
+            </div>
+            <div class="act-right">
+              <div class="act-check${done ? ' pop-in' : ''}"></div>
+              <div class="act-stars">+${item.star_value || 1}★</div>
+              ${hasSubs ? '<div class="act-expand-arrow">▾</div>' : ''}
+            </div>
+          </div>
+          ${subsHtml}
+        </div>`;
+    }
+
+    html += `</div></div>`;
+  }
+
+  container.innerHTML = html;
+
+  // Start countdowns
+  if (vc?.show_countdown_timer !== false) {
+    for (const item of (dailyLog?.items || [])) {
+      if (!item.completed && isCurrent(item) && item.scheduled_time) {
+        startCountdown(item.id, item.scheduled_time);
+      }
+    }
+  }
+}
+
+/* ─── Card click: toggle done OR expand sub-steps ─── */
+function handleCardClick(itemId, isDone, hasSubs) {
+  if (hasSubs) {
+    // Expand/collapse sub-steps
+    const card = document.querySelector(`.act-card[data-id="${itemId}"]`);
+    if (card) card.classList.toggle('expanded');
+    return;
+  }
+  toggleActivity(itemId, isDone);
+}
+
+async function toggleActivity(itemId, currentlyDone) {
+  const card = document.querySelector(`.act-card[data-id="${itemId}"]`);
+  if (!card) return;
+  card.classList.add('loading');
+
+  try {
+    const action = currentlyDone ? 'uncomplete' : 'complete';
+    await Auth.api(`/api/me/daily-log-items/${itemId}/${action}`, { method: 'PUT' });
+
+    const item = dailyLog?.items?.find(i => i.id === itemId);
+    if (item) item.completed = !currentlyDone;
+
+    starBalance += currentlyDone ? -(item?.star_value || 1) : (item?.star_value || 1);
+    starBalance = Math.max(0, starBalance);
+    q('starCount').textContent = starBalance;
+    q('profileSub').textContent = starBalance + ' stjärnor';
+
+    // Update progress
+    if (dailyLog?.items) {
+      const tot  = dailyLog.total ?? dailyLog.items.length;
+      const done = dailyLog.items.filter(i => i.completed).length;
+      q('progFrac').textContent = `${done} av ${tot}`;
+      q('progFill').style.width = tot > 0 ? Math.round((done/tot)*100)+'%' : '0%';
+      setRing(done, tot);
+    }
+
+    renderActivities();
+    renderPipeline();
+    toast(currentlyDone ? 'Ångrade ↩' : '⭐ Bra jobbat!');
+  } catch {
+    card.classList.remove('loading');
+    toast('Kunde inte spara. Försök igen.');
+  }
+}
+
+async function toggleSub(itemId, subId, currentlyDone) {
+  // Best-effort optimistic update — sub_steps completions stored locally
+  const item = dailyLog?.items?.find(i => i.id === itemId);
+  if (!item?.sub_steps) return;
+  const sub = item.sub_steps.find(s => (s.id || s.name) === subId);
+  if (sub) sub.completed = !currentlyDone;
+  renderActivities();
+  toast(currentlyDone ? 'Ångrade ↩' : '✅ Klar!');
+}
+
+/* ─── Render rewards ─── */
+function renderRewards() {
+  const container = q('treasureItems');
+  const avail = rewards.filter(r => !r.redeemed).slice(0, 5);
+
+  if (!avail.length) {
+    container.innerHTML = '<p style="color:rgba(255,255,255,0.38);font-size:0.82rem;text-align:center;padding:0.5rem 0">Inga belöningar ännu</p>';
+    return;
+  }
+
+  container.innerHTML = avail.map(r => {
+    const canAfford = starBalance >= r.cost;
+    return `<div class="tri">
+      <div class="tri-emoji">${r.emoji || '🎁'}</div>
+      <div class="tri-name">${esc(r.name)}</div>
+      <div class="tri-cost"><div class="tri-cost-star"></div>${r.cost}</div>
+      <button class="tri-btn" ${canAfford ? '' : 'disabled'}
+        onclick="redeemReward('${r.id}',${canAfford})">
+        ${canAfford ? 'Lös in' : r.cost+'★'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function redeemReward(rewardId, canAfford) {
+  if (!canAfford) { toast('Du behöver fler stjärnor! ⭐'); return; }
+  if (pendingRedeem) return;
+  pendingRedeem = rewardId;
+  try {
+    const res = await Auth.api(`/api/me/rewards/${rewardId}/redeem`, { method: 'POST' });
+    toast('🎉 Grattis! Belöning inlöst!');
+    if (typeof res?.starBalance === 'number') starBalance = res.starBalance;
+    q('starCount').textContent = starBalance;
+    q('profileSub').textContent = starBalance + ' stjärnor';
+    rewards = await Auth.api('/api/me/rewards').catch(() => rewards);
+    renderRewards();
+  } catch {
+    toast('Kunde inte lösa in. Försök igen.');
+  } finally {
+    pendingRedeem = null;
+  }
+}
+
+/* ─── Empty state ─── */
+function renderEmpty() {
+  q('actsContainer').innerHTML = `
+    <div class="empty-state fade-up">
+      <div class="empty-state-icon">🌟</div>
+      <div class="empty-state-text">Inga aktiviteter idag!<br>Njut av din lediga dag ⭐</div>
+    </div>`;
+}
+
+/* ─── Nav tabs ─── */
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    // Scroll to section based on nav
+    const id = el.id;
+    if (id === 'navTreasure') q('treasureWrap')?.scrollIntoView({ behavior: 'smooth' });
+    else if (id === 'navProfile') q('profileWrap')?.scrollIntoView({ behavior: 'smooth' });
+    else q('scrollArea')?.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+});
+
+q('navFab').onclick = () => toast('Kommer snart! ⭐');
+
+/* ─── Init ─── */
+async function init() {
+  try {
+    await loadViewConfig();
+    applyViewConfig();
+    await Promise.all([loadChildData(), loadData()]);
+  } catch (err) {
+    console.error('[CHILD-NEW] init error:', err);
+  } finally {
+    q('loadingScreen').style.display = 'none';
+    q('mainContent').style.display = '';
+  }
+}
+
+init();
+</script>
+</body>
+</html>

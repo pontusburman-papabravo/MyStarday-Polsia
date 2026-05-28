@@ -1,0 +1,63 @@
+/**
+ * Component-based feature gating middleware.
+ * Owns: checking family_subscriptions.components for required components.
+ * Does NOT own: Stripe, payment UI, trial logic.
+ */
+
+const familySubscriptions = require('../../db/family-subscriptions');
+
+/**
+ * Middleware factory that requires a specific subscription component.
+ * Returns 403 if the family lacks the component or it has expired.
+ *
+ * Usage: router.get('/reports', requireComponent('reporting'), handler)
+ *
+ * @param {string} componentName - Component to require (e.g. 'basic_app', 'reporting')
+ * @returns {Function} Express middleware
+ */
+function requireComponent(componentName) {
+  return async (req, res, next) => {
+    // Skip if no authenticated user (let auth middleware handle that)
+    if (!req.user?.familyId && !req.user?.family_id) return next();
+
+    const familyId = req.user.familyId || req.user.family_id;
+
+    try {
+      const sub = await familySubscriptions.getByFamilyId(familyId);
+
+      // No subscription record — allow through (legacy families without record)
+      if (!sub) return next();
+
+      // lifetime_free families always have access to basic_app
+      if (sub.tier === 'lifetime_free') return next();
+
+      // Check component exists and is not expired
+      const comp = (sub.components || []).find(c => c.component === componentName);
+      if (!comp) {
+        return res.status(403).json({
+          error: 'Komponent saknas',
+          code: 'COMPONENT_MISSING',
+          component: componentName,
+          upgrade_url: '/upgrade',
+        });
+      }
+
+      if (comp.expires_at && new Date(comp.expires_at) < new Date()) {
+        return res.status(403).json({
+          error: 'Komponent utgången',
+          code: 'COMPONENT_EXPIRED',
+          component: componentName,
+          upgrade_url: '/upgrade',
+        });
+      }
+
+      next();
+    } catch (err) {
+      req.log?.error({ msg: 'component check failed', operation: 'requireComponent', error: err.message });
+      // Fail open — don't block if the check itself errors
+      next();
+    }
+  };
+}
+
+module.exports = { requireComponent };

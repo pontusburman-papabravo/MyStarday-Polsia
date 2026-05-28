@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Pedagogöversikt — Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Serif&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --navy: #1C2340;
+      --amber: #F5A623;
+      --amber-light: #FEF7E0;
+      --bg: #F5F4F0;
+      --card: #FFFFFF;
+      --text: #1C2340;
+      --muted: #5A6378;
+      --border: #E8E4DC;
+      --green: #22C55E;
+      --amber2: #F59E0B;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; padding: 0; margin: 0; }
+    h1, h2, h3 { font-family: 'Instrument Serif', serif; }
+
+    .pedagog-row { cursor: pointer; user-select: none; }
+    .pedagog-row:hover { background: #F0EDE7; }
+    .pedagog-row.selected { background: #E8F0FE; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeSlideIn 0.3s ease both; }
+
+    .loading-overlay { position: fixed; inset: 0; background: rgba(245,244,240,0.9); display: flex; align-items: center; justify-content: center; z-index: 999; flex-direction: column; gap: 16px; }
+    .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--amber); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 359px) {
+      .emoji-col { display: none; }
+      .pedagog-row td:nth-child(2)::before { content: attr(data-emoji) ' '; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading" class="loading-overlay">
+  <div class="spinner"></div>
+  <span style="font-size:14px;color:#5A6378;">Laddar...</span>
+</div>
+
+<div style="max-width:560px;margin:0 auto;padding:16px 16px 80px;">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+    <a href="/dashboard" style="text-decoration:none;font-size:24px;">←</a>
+    <div>
+      <h1 style="font-size:22px;">📋 Pedagogöversikt</h1>
+      <p class="progress" id="progress" style="font-size:12px;color:#5A6378;margin:0;">(– av – klara)</p>
+    </div>
+  </div>
+
+  <!-- Filter + Date -->
+  <div class="filter-bar" style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+    <input type="date" id="date-picker"
+      style="flex:1;padding:10px 14px;border:2px solid #E8E4DC;border-radius:12px;font-size:14px;font-family:Syne,sans-serif;background:#fff;color:#1C2340;">
+    <select id="status-filter"
+      style="padding:10px 14px;border:2px solid #E8E4DC;border-radius:12px;font-size:14px;font-family:Syne,sans-serif;background:#fff;color:#1C2340;min-width:130px;">
+      <option value="all">Visa alla</option>
+      <option value="missing">Endast saknas</option>
+      <option value="done">Endast klara</option>
+      <option value="draft">Endast utkast</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="background:#F5F4F0;">
+          <th style="padding:12px 14px;text-align:left;font-size:11px;font-weight:600;color:#5A6378;text-transform:uppercase;letter-spacing:0.05em;">&nbsp;</th>
+          <th style="padding:12px 14px;text-align:left;font-size:11px;font-weight:600;color:#5A6378;text-transform:uppercase;letter-spacing:0.05em;">BARN</th>
+          <th style="padding:12px 14px;text-align:left;font-size:11px;font-weight:600;color:#5A6378;text-transform:uppercase;letter-spacing:0.05em;">STATUS</th>
+        </tr>
+      </thead>
+      <tbody id="children-tbody">
+        <!-- rows injected by JS -->
+      </tbody>
+    </table>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="empty-state" style="display:none;padding:48px 24px;text-align:center;">
+      <p style="font-size:14px;color:#5A6378;">Inga barn kopplade.<br>Be en förälder bjuda in dig som pedagog.</p>
+    </div>
+  </div>
+
+  <!-- Selection bar -->
+  <div class="selection-bar" style="display:none;margin-top:12px;background:white;border-radius:16px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <span style="font-size:14px;">Vald: <strong id="selected-child" style="color:#1C2340;">—</strong></span>
+      <a href="#" id="open-form-btn"
+        style="display:inline-block;padding:10px 20px;background:#F5A623;color:#1C2340;border-radius:12px;font-size:14px;font-weight:700;text-decoration:none;font-family:Syne,sans-serif;box-shadow:0 2px 8px rgba(245,166,35,0.25);">
+        Öppna formulär →
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const MOOD_EMOJIS = { 1: '😫', 2: '😕', 3: '😐', 4: '🙂', 5: '😄' };
+
+let children = [];
+let selectedChildId = null;
+
+// ── Helpers ─────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+
+function formatTime(isoString) {
+  if (!isoString) return '';
+  return new Date(isoString).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderStatus(child) {
+  if (child.is_draft === false) {
+    const emoji = MOOD_EMOJIS[child.mood] || '';
+    const time = child.saved_at ? ' · ' + formatTime(child.saved_at) : '';
+    return `<span class="text-green-600 font-medium">✓ KLAR ${emoji}${time}</span>`;
+  }
+  if (child.is_draft === true) {
+    return '<span class="text-amber-600 font-medium">◐ UTKAST</span>';
+  }
+  return '<span style="color:#94A3B8;">○ SAKNAS</span>';
+}
+
+function updateProgress() {
+  const done = children.filter(c => c.is_draft === false).length;
+  $('progress').textContent = `(${done} av ${children.length} klara)`;
+}
+
+function updateSelectionBar(childId) {
+  const bar = document.querySelector('.selection-bar');
+  if (!bar) return;
+  if (!childId) {
+    bar.style.display = 'none';
+    return;
+  }
+  const child = children.find(c => c.id === childId);
+  if (!child) return;
+  bar.style.display = 'block';
+  $('selected-child').textContent = child.family_label;
+  const dateVal = $('date-picker').value;
+  $('open-form-btn').href = `/pedagog-note?childId=${childId}&date=${dateVal}`;
+}
+
+function renderChildren(list) {
+  const tbody = $('children-tbody');
+  const empty = $('empty-state');
+
+  if (!list || list.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    document.querySelector('.selection-bar').style.display = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  tbody.innerHTML = list.map(child => `
+    <tr class="pedagog-row fade-in ${selectedChildId === child.id ? 'selected' : ''}"
+        data-child-id="${child.id}"
+        data-family-label="${encodeURIComponent(child.family_label)}"
+        data-emoji="${child.emoji || '👧'}">
+      <td class="emoji-col" style="padding:14px 14px;font-size:22px;width:44px;">${child.emoji || '👧'}</td>
+      <td style="padding:14px 12px;" data-emoji="${child.emoji || '👧'}">${child.family_label}</td>
+      <td style="padding:14px 14px;font-size:13px;">${renderStatus(child)}</td>
+    </tr>
+  `).join('');
+
+  // Attach click handlers
+  tbody.querySelectorAll('.pedagog-row').forEach(row => {
+    row.addEventListener('click', () => {
+      document.querySelectorAll('.pedagog-row').forEach(r => r.classList.remove('selected'));
+      row.classList.add('selected');
+      selectedChildId = row.dataset.childId;
+      updateSelectionBar(selectedChildId);
+    });
+  });
+
+  updateProgress();
+}
+
+// ── Load overview ────────────────────────────────────────
+async function loadOverview(date) {
+  try {
+    const res = await fetch(`/api/pedagog-notes/overview?date=${date}`);
+    if (!res.ok) throw new Error(res.statusText);
+    const data = await res.json();
+    children = data.children || [];
+    applyFilter();
+    if (selectedChildId) updateSelectionBar(selectedChildId);
+  } catch (err) {
+    console.error('[PEDAGOG-OVERSIKT] load error:', err);
+  } finally {
+    $('loading').style.display = 'none';
+  }
+}
+
+// ── Filter ──────────────────────────────────────────────
+function applyFilter() {
+  const filter = $('status-filter').value;
+  let list = children;
+
+  if (filter === 'missing') {
+    list = children.filter(c => c.is_draft === null);
+  } else if (filter === 'done') {
+    list = children.filter(c => c.is_draft === false);
+  } else if (filter === 'draft') {
+    list = children.filter(c => c.is_draft === true);
+  }
+
+  renderChildren(list);
+}
+
+// ── Event listeners ──────────────────────────────────────
+$('date-picker').addEventListener('change', () => {
+  $('loading').style.display = 'flex';
+  selectedChildId = null;
+  document.querySelector('.selection-bar').style.display = 'none';
+  loadOverview($('date-picker').value);
+});
+
+$('status-filter').addEventListener('change', applyFilter);
+
+// ── Init ────────────────────────────────────────────────
+(function init() {
+  const today = new Date().toISOString().slice(0, 10);
+  $('date-picker').value = today;
+  loadOverview(today);
+})();
+</script>
+
+</body>
+</html>

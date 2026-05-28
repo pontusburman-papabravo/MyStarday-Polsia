@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapporter — Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623', 'gold-light': '#FFF3D6', navy: '#1C2340', 'navy-soft': '#2A3458',
+            sky: '#E8F0FE', lavender: '#EDE7F6', mint: '#E0F5EC', coral: '#FDEAE7', 'text-soft': '#5A6178',
+            cream: '#FDFAF4',
+          },
+          fontFamily: { heading: ['Outfit', 'sans-serif'], body: ['Plus Jakarta Sans', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="/css/theme.css">
+  <script src="/js/platform.js?v=2026-05-28-ios"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/toast.js"></script>
+  <style>
+    html, body { overflow-x: hidden; max-width: 100vw; }
+    * { box-sizing: border-box; }
+    main { padding-bottom: max(80px, calc(env(safe-area-inset-bottom, 0px) + 80px)); }
+
+    /* Tab underline */
+    .tab-active { border-bottom: 3px solid #F5A623; color: #1C2340; font-weight: 700; }
+    .tab-inactive { border-bottom: 3px solid transparent; color: #5A6178; }
+    .tab-inactive:hover { color: #1C2340; }
+
+    /* Observation section */
+    .obs-card { background: #FFF9E6; border: 1px solid #F5A623; border-radius: 12px; padding: 12px; }
+    .obs-card.important { border-color: #EF4444; background: #FEF2F2; }
+    .obs-section-header { font-size: 12px; font-weight: 700; color: #F5A623; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 0 8px; }
+    .obs-section-header.em { color: #8B5CF6; }
+    .obs-section-header.kvall { color: #0EA5E9; }
+    .obs-date-badge { font-size: 11px; color: #9CA3AF; margin-bottom: 4px; }
+    .obs-content { font-size: 14px; color: #1C2340; line-height: 1.5; }
+    .obs-emoji { font-size: 14px; }
+
+    /* Checkbox: warm gold accent */
+    input[type="checkbox"] { accent-color: #F5A623; width: 20px; height: 20px; }
+
+    /* Field card selected state */
+    .field-card { border: 2px solid #EDE7F6; transition: border-color 0.15s, background 0.15s; cursor: pointer; }
+    .field-card:hover { border-color: #F5A62340; }
+    .field-card.selected { border-color: #F5A623; background: #FFF3D6; }
+
+    /* Activity card: note focus */
+    .activity-report-card { border-left: 4px solid #F5A623; background: white; }
+    .activity-report-card:hover { box-shadow: 0 4px 12px rgba(28,35,64,0.08); }
+
+    /* Note textarea: subtle background */
+    .note-textarea { background: #FDFAF4; border: 1px solid #EDE7F6; resize: vertical; min-height: 60px; font-size: 14px; }
+    .note-textarea:focus { border-color: #F5A623; outline: none; box-shadow: 0 0 0 3px #FFF3D6; }
+
+    /* Child selector pills */
+    .child-pill { border: 2px solid #EDE7F6; cursor: pointer; transition: all 0.15s; }
+    .child-pill.selected { border-color: #F5A623; background: #FFF3D6; font-weight: 700; }
+    .child-pill:hover:not(.selected) { border-color: #F5A62380; }
+
+    /* Period pill */
+    .period-pill { border: 2px solid #EDE7F6; cursor: pointer; padding: 8px 16px; border-radius: 12px; transition: all 0.15s; font-size: 14px; }
+    .period-pill.selected { border-color: #F5A623; background: #FFF3D6; font-weight: 600; }
+    .period-pill:hover:not(.selected) { border-color: #F5A62380; }
+
+    /* Step indicator */
+    .step-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+    .step-done { background: #10B981; color: white; }
+    .step-active { background: #F5A623; color: white; }
+    .step-todo { background: #EDE7F6; color: #5A6178; }
+
+    /* QR code container */
+    #qrContainer { display: none; }
+    #qrContainer.show { display: flex; }
+
+    /* Share link box */
+    .share-url-box { background: #FDFAF4; border: 1px solid #EDE7F6; border-radius: 12px; padding: 12px 16px; word-break: break-all; font-family: monospace; font-size: 13px; color: #1C2340; }
+
+    /* Zero-data day */
+    .zero-data-day { background: #F5F5F5; border: 1px dashed #D1D5DB; border-radius: 12px; padding: 16px; text-align: center; color: #9CA3AF; font-size: 14px; }
+
+    /* Shared report row */
+    .report-row { border-bottom: 1px solid #EDE7F6; }
+    .report-row:last-child { border-bottom: none; }
+    .report-status-badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+    .status-active { background: #D1FAE5; color: #065F46; }
+    .status-expired { background: #FEE2E2; color: #991B1B; }
+    .status-revoked { background: #EDE7F6; color: #5A6178; }
+
+    /* Filter button */
+    .filter-btn { transition: all 0.15s; }
+    .filter-btn:hover:not(.border-gold) { border-color: #F5A62360; color: #1C2340; }
+  </style>
+</head>
+<body class="bg-cream font-body text-navy min-h-screen">
+
+  <!-- Nav -->
+  <nav class="w-full bg-navy text-white p-4 flex items-center gap-3">
+    <a href="/dashboard" class="text-white text-lg hover:text-gold transition-colors" title="Tillbaka">←</a>
+    <h1 class="text-xl font-heading font-bold flex items-center gap-2">
+      📊 Rapporter
+    </h1>
+  </nav>
+
+  <!-- Tab bar -->
+  <div class="bg-white border-b border-lavender sticky top-0 z-10">
+    <div class="flex">
+      <button class="flex-1 py-3 text-sm font-semibold tab-active" id="tabCreate" onclick="switchTab('create')">Skapa rapport</button>
+      <button class="flex-1 py-3 text-sm font-semibold tab-inactive" id="tabActivity" onclick="switchTab('activity')">Aktiviteter</button>
+      <button class="flex-1 py-3 text-sm font-semibold tab-inactive" id="tabShared" onclick="switchTab('shared')">Delade rapporter</button>
+    </div>
+  </div>
+
+  <main class="p-4 max-w-lg mx-auto">
+
+    <!-- ══════════════════════════════════════════
+         TAB: CREATE REPORT
+    ══════════════════════════════════════════ -->
+    <div id="createTab">
+
+      <!-- ── Child selector ── -->
+      <div class="mb-6">
+        <h3 class="text-sm font-semibold text-text-soft mb-2 uppercase tracking-wide">1. Välj barn</h3>
+        <div id="childSelector" class="flex flex-wrap gap-2">
+          <div class="text-text-soft text-sm py-4">Laddar...</div>
+        </div>
+      </div>
+
+      <!-- ── Period selector ── -->
+      <div class="mb-6">
+        <h3 class="text-sm font-semibold text-text-soft mb-2 uppercase tracking-wide">2. Välj tidsperiod</h3>
+        <div class="flex flex-wrap gap-2 mb-3">
+          <button class="period-pill" data-period="week" onclick="selectPeriod('week')">Senaste veckan</button>
+          <button class="period-pill selected" data-period="month" onclick="selectPeriod('month')">Senaste månaden</button>
+          <button class="period-pill" data-period="custom" onclick="selectPeriod('custom')">Anpassad period</button>
+        </div>
+        <!-- Custom date inputs (hidden by default) -->
+        <div id="customDateInputs" class="hidden flex flex-col gap-2 mt-2">
+          <div class="flex gap-2">
+            <div class="flex-1">
+              <label class="text-xs text-text-soft mb-1 block">Från</label>
+              <input type="date" id="dateFrom" class="w-full border border-lavender rounded-xl px-3 py-2 text-sm" style="max-width:100%;box-sizing:border-box;">
+            </div>
+            <div class="flex-1">
+              <label class="text-xs text-text-soft mb-1 block">Till</label>
+              <input type="date" id="dateTo" class="w-full border border-lavender rounded-xl px-3 py-2 text-sm" style="max-width:100%;box-sizing:border-box;">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Fields selector ── -->
+      <div class="mb-6">
+        <h3 class="text-sm font-semibold text-text-soft mb-3 uppercase tracking-wide">3. Välj innehåll</h3>
+        <div class="grid grid-cols-1 gap-2">
+          <label class="field-card selected flex items-center gap-3 px-4 py-3 rounded-xl" data-field="activities" onclick="toggleField(this)">
+            <input type="checkbox" checked class="flex-shrink-0" id="field_activities">
+            <div>
+              <span class="font-semibold text-sm">📋 Schemalagda aktiviteter</span>
+              <p class="text-xs text-text-soft mt-0.5">Alla aktiviteter i rapporten</p>
+            </div>
+          </label>
+          <label class="field-card selected flex items-center gap-3 px-4 py-3 rounded-xl" data-field="completion" onclick="toggleField(this)">
+            <input type="checkbox" checked class="flex-shrink-0" id="field_completion">
+            <div>
+              <span class="font-semibold text-sm">📈 Genomförandegrad (%)</span>
+              <p class="text-xs text-text-soft mt-0.5">Procent klarat per dag och totalt</p>
+            </div>
+          </label>
+          <label class="field-card selected flex items-center gap-3 px-4 py-3 rounded-xl" data-field="section_summary" onclick="toggleField(this)">
+            <input type="checkbox" checked class="flex-shrink-0" id="field_section_summary">
+            <div>
+              <span class="font-semibold text-sm">🌅 Sektionssammanfattning</span>
+              <p class="text-xs text-text-soft mt-0.5">Morgon / Dag / Kväll / Natt</p>
+            </div>
+          </label>
+          <label class="field-card selected flex items-center gap-3 px-4 py-3 rounded-xl" data-field="parent_notes" onclick="toggleField(this)">
+            <input type="checkbox" checked class="flex-shrink-0" id="field_parent_notes">
+            <div>
+              <span class="font-semibold text-sm">📝 Förälderns anteckningar</span>
+              <p class="text-xs text-text-soft mt-0.5">Dina egna anteckningar på aktiviteter</p>
+            </div>
+          </label>
+          <label class="field-card selected flex items-center gap-3 px-4 py-3 rounded-xl" data-field="child_notes" onclick="toggleField(this)">
+            <input type="checkbox" checked class="flex-shrink-0" id="field_child_notes">
+            <div>
+              <span class="font-semibold text-sm">💬 Barnets anteckningar</span>
+              <p class="text-xs text-text-soft mt-0.5">Barnets egna anteckningar</p>
+            </div>
+          </label>
+          <label class="field-card selected flex items-center gap-3 px-4 py-3 rounded-xl" data-field="stars" onclick="toggleField(this)">
+            <input type="checkbox" checked class="flex-shrink-0" id="field_stars">
+            <div>
+              <span class="font-semibold text-sm">⭐ Stjärnor</span>
+              <p class="text-xs text-text-soft mt-0.5">Intjänade stjärnor i perioden</p>
+            </div>
+          </label>
+          <label class="field-card selected flex items-center gap-3 px-4 py-3 rounded-xl" data-field="rewards" onclick="toggleField(this)">
+            <input type="checkbox" checked class="flex-shrink-0" id="field_rewards">
+            <div>
+              <span class="font-semibold text-sm">🏆 Belöningar</span>
+              <p class="text-xs text-text-soft mt-0.5">Begärda och godkända belöningar</p>
+            </div>
+          </label>
+          <label class="field-card flex items-center gap-3 px-4 py-3 rounded-xl" data-field="emotions" onclick="toggleField(this)">
+            <input type="checkbox" class="flex-shrink-0" id="field_emotions">
+            <div>
+              <span class="font-semibold text-sm">😊 Känsloregistrering</span>
+              <p class="text-xs text-text-soft mt-0.5">Opt-in – endast om registrerad</p>
+            </div>
+          </label>
+          <label class="field-card flex items-center gap-3 px-4 py-3 rounded-xl" data-field="pedagog_notes" id="pedagogNotesFieldCard" onclick="toggleField(this)">
+            <input type="checkbox" class="flex-shrink-0" id="field_pedagog_notes">
+            <div>
+              <span class="font-semibold text-sm">📝 Pedagoganteckningar</span>
+              <p class="text-xs text-text-soft mt-0.5">Dagliga observationer från pedagogen</p>
+            </div>
+          </label>
+        </div>
+        <p id="fieldError" class="hidden text-red-500 text-xs mt-2">Välj minst ett innehåll</p>
+      </div>
+
+      <!-- ── Parent summary ── -->
+      <div class="mb-6">
+        <h3 class="text-sm font-semibold text-text-soft mb-3 uppercase tracking-wide">4. Föräldrasammanfattning <span class="text-text-soft font-normal">(valfritt)</span></h3>
+        <textarea id="parentSummary" rows="4" maxlength="1000"
+          placeholder="Beskriv hur perioden har varit i stort — t.ex. förändringar i medicin, skolbyte, eller annat som kan påverka rutinerna. Undvik personnummer och diagnoser."
+          class="note-textarea w-full rounded-xl px-4 py-3"></textarea>
+        <p class="text-xs text-amber-700 mt-2 flex items-start gap-1">
+          <span>⚠️</span>
+          <span>Skriv <strong>inte</strong> personnummer, diagnoser eller andra känsliga personuppgifter. Fokusera på observationer kring rutiner och mående.</span>
+        </p>
+      </div>
+
+      <!-- ── Label ── -->
+      <div class="mb-6">
+        <h3 class="text-sm font-semibold text-text-soft mb-2 uppercase tracking-wide">Namn på rapporten</h3>
+        <input type="text" id="reportLabel" placeholder="t.ex. Rapport till skolan" maxlength="100"
+          class="w-full border border-lavender rounded-xl px-4 py-3 text-sm focus:border-gold focus:outline-none">
+      </div>
+
+      <!-- ── PIN toggle ── -->
+      <div class="mb-6 bg-white rounded-xl border border-lavender p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="font-semibold text-sm">🔐 Skydda med PIN-kod</p>
+            <p class="text-xs text-text-soft mt-0.5">Valfri 4–6 siffer PIN för rapporten</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="pinToggle" class="sr-only peer" onchange="togglePinField()">
+            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gold/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold"></div>
+          </label>
+        </div>
+        <div id="pinInputWrap" class="hidden mt-3">
+          <input type="password" id="pinCode" placeholder="4–6 siffror" maxlength="6" inputmode="numeric"
+            class="w-full border border-lavender rounded-xl px-4 py-3 text-center text-lg tracking-widest font-mono focus:border-gold focus:outline-none"
+            oninput="this.value = this.value.replace(/[^0-9]/g, '')" autocomplete="off">
+          <p id="pinError" class="hidden text-red-500 text-xs mt-1">PIN måste vara 4–6 siffror</p>
+        </div>
+      </div>
+
+      <!-- ── Anonym delning ── -->
+      <div class="mb-6 bg-white rounded-xl border border-lavender p-4">
+        <div class="flex items-start gap-3">
+          <input type="checkbox" id="anonymousToggle" class="flex-shrink-0 mt-0.5" style="accent-color:#F5A623;width:20px;height:20px;">
+          <div>
+            <p class="font-semibold text-sm">🔒 Anonym delning</p>
+            <p class="text-xs text-text-soft mt-0.5">Döljer barnets namn och emoji i rapporten — rekommenderas för BUP/vårdgivare</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Create button ── -->
+      <button type="button" id="createBtn" formnovalidate onclick="createReport()"
+        class="w-full py-4 bg-gold hover:bg-yellow-500 text-white font-heading font-bold text-lg rounded-xl transition-colors shadow-md">
+        Skapa rapport
+      </button>
+      <div id="createError" class="hidden text-red-500 text-sm text-center mt-3"></div>
+
+      <!-- ── QR / URL result ── -->
+      <div id="qrContainer" class="flex-col items-center mt-6 p-4 bg-white rounded-xl border border-lavender gap-4">
+        <h3 class="font-heading font-bold text-navy text-lg text-center">🎉 Rapport skapad!</h3>
+        <p class="text-sm text-text-soft text-center">Dela denna länk med pedagogen eller terapeuten:</p>
+        <div class="share-url-box w-full text-sm" id="shareUrlDisplay"></div>
+        <button onclick="copyShareUrl()" class="w-full py-3 bg-navy hover:bg-navy-soft text-white font-semibold rounded-xl transition-colors text-sm">
+          📋 Kopiera länk
+        </button>
+        <div class="flex flex-col items-center gap-2">
+          <p class="text-xs text-text-soft">QR-kod</p>
+          <div id="qrCodeBox" class="bg-white p-3 rounded-xl border border-lavender"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TAB: ACTIVITY VIEW
+    ══════════════════════════════════════════ -->
+    <div id="activityTab" class="hidden">
+
+      <!-- Child selector for activity view -->
+      <div class="mb-4">
+        <div id="activityChildSelector" class="flex flex-wrap gap-2">
+          <div class="text-text-soft text-sm py-2">Laddar...</div>
+        </div>
+      </div>
+
+      <!-- Period selector for activity view -->
+      <div class="mb-4 flex flex-wrap gap-2 items-center">
+        <button class="period-pill" data-ap="week" onclick="selectActivityPeriod('week')">Senaste veckan</button>
+        <button class="period-pill selected" data-ap="month" onclick="selectActivityPeriod('month')">Senaste månaden</button>
+        <button class="period-pill" data-ap="custom" onclick="selectActivityPeriod('custom')">Anpassad</button>
+        <div id="activityCustomDates" class="hidden flex gap-2 items-center">
+          <input type="date" id="actDateFrom" class="border border-lavender rounded-lg px-2 py-1 text-xs" style="max-width:130px;box-sizing:border-box;">
+          <input type="date" id="actDateTo" class="border border-lavender rounded-lg px-2 py-1 text-xs" style="max-width:130px;box-sizing:border-box;">
+        </div>
+        <button onclick="loadActivityView()" class="px-3 py-1 bg-navy text-white text-xs rounded-lg font-semibold">Visa</button>
+        <button onclick="openObsModal()" class="ml-auto px-3 py-1 bg-gold hover:bg-yellow-500 text-white text-xs rounded-lg font-semibold flex items-center gap-1">
+          + Observation
+        </button>
+      </div>
+
+      <!-- Anteckningar quick-write bar -->
+      <div id="obsWriteBar" class="hidden mb-4">
+        <button onclick="openObsModal()" class="w-full py-3 bg-amber-50 border-2 border-dashed border-amber-400 rounded-xl text-sm text-amber-800 font-semibold hover:bg-amber-100 transition-colors">
+          📝 Skriv allmän observation
+        </button>
+      </div>
+
+      <!-- Loading state -->
+      <div id="activityLoading" class="hidden text-center py-8 text-text-soft">
+        <div class="text-2xl mb-2">⏳</div>
+        <p class="text-sm">Laddar aktiviteter...</p>
+      </div>
+
+      <!-- Error state -->
+      <div id="activityError" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm"></div>
+
+      <!-- Empty state -->
+      <div id="activityEmpty" class="hidden text-center py-8">
+        <div class="text-4xl mb-3">🗂️</div>
+        <p class="text-text-soft font-semibold">Inga aktiviteter för vald period</p>
+        <p class="text-xs text-text-soft mt-1">Välj en annan period eller barn</p>
+      </div>
+
+      <!-- Anteckningar section (above activities) -->
+      <div id="observationsSection" class="mb-5"></div>
+
+      <!-- Activity list -->
+      <div id="activityList" class="hidden flex flex-col gap-3"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TAB: SHARED REPORTS (History)
+    ══════════════════════════════════════════ -->
+    <div id="sharedTab" class="hidden">
+
+      <!-- Filter bar -->
+      <div id="sharedFilters" class="mb-4 flex gap-2">
+        <button class="filter-btn text-xs px-3 py-1.5 rounded-full font-semibold border-2 border-gold bg-gold text-white" data-filter="all" onclick="setSharedFilter('all')">
+          Alla (<span id="filterCountAll">0</span>)
+        </button>
+        <button class="filter-btn text-xs px-3 py-1.5 rounded-full font-semibold border-2 border-lavender text-text-soft" data-filter="active" onclick="setSharedFilter('active')">
+          Aktiva (<span id="filterCountActive">0</span>)
+        </button>
+        <button class="filter-btn text-xs px-3 py-1.5 rounded-full font-semibold border-2 border-lavender text-text-soft" data-filter="inactive" onclick="setSharedFilter('inactive')">
+          Inaktiva (<span id="filterCountInactive">0</span>)
+        </button>
+      </div>
+
+      <!-- Loading -->
+      <div id="sharedLoading" class="text-center py-8 text-text-soft">
+        <div class="text-2xl mb-2">⏳</div>
+        <p class="text-sm">Laddar...</p>
+      </div>
+
+      <!-- Empty state (no links at all) -->
+      <div id="sharedEmpty" class="hidden text-center py-8">
+        <div class="text-4xl mb-3">📭</div>
+        <p class="text-text-soft font-semibold">Inga delade rapporter ännu</p>
+        <p class="text-xs text-text-soft mt-1">Skapa en rapport och dela den med en pedagog eller terapeut</p>
+      </div>
+
+      <!-- Empty state for filtered view -->
+      <div id="sharedFilterEmpty" class="hidden text-center py-8">
+        <div class="text-3xl mb-2">🔍</div>
+        <p class="text-text-soft font-semibold" id="filterEmptyLabel">Inga rapporter i denna kategori</p>
+      </div>
+
+      <!-- Report list -->
+      <div id="sharedList" class="hidden flex flex-col gap-4"></div>
+    </div>
+
+  </main>
+
+  <!-- Edit note modal -->
+  <div id="noteModal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center p-4" onclick="if(event.target===this)closeNoteModal()">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-md shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-heading font-bold text-navy" id="noteModalTitle">Redigera anteckning</h3>
+        <button onclick="closeNoteModal()" class="w-8 h-8 rounded-full bg-lavender hover:bg-lavender/80 flex items-center justify-center text-text-soft text-lg">✕</button>
+      </div>
+      <textarea id="noteModalText" rows="4" maxlength="1000"
+        class="note-textarea w-full rounded-xl px-4 py-3"
+        placeholder="Skriv din anteckning..."></textarea>
+      <p id="noteModalError" class="hidden text-red-500 text-xs mt-2"></p>
+      <div class="flex gap-2 mt-4">
+        <button onclick="closeNoteModal()" class="flex-1 py-3 bg-lavender hover:bg-purple-100 text-navy font-semibold rounded-xl transition-colors">Avbryt</button>
+        <button onclick="saveNote()" class="flex-1 py-3 bg-gold hover:bg-yellow-500 text-white font-semibold rounded-xl transition-colors">Spara</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Revoke/delete confirmation dialog -->
+  <input type="hidden" id="revokeLinkId" value="">
+  <div id="revokeDialog" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4" onclick="if(event.target===this)closeRevokeDialog()">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="text-2xl">⚠️</span>
+        <h3 class="font-heading font-bold text-navy text-lg">Ta bort rapport?</h3>
+      </div>
+      <p class="text-sm text-text-soft mb-5">Vad vill du göra med denna rapport?</p>
+      <div class="flex flex-col gap-3">
+        <button onclick="archiveReport()" class="w-full py-3 bg-lavender hover:bg-purple-200 text-navy font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
+          📂 Arkivera — sluta dela, behåll i arkivvy
+        </button>
+        <button onclick="permanentlyDeleteReport()" class="w-full py-3 bg-coral hover:bg-red-200 text-navy font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
+          🗑️ Ta bort — ta bort permanent
+        </button>
+        <button onclick="closeRevokeDialog()" class="w-full py-3 bg-gray-100 hover:bg-gray-200 text-text-soft font-semibold rounded-xl transition-colors">
+          Avbryt
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Write observation (Allmän observation) modal -->
+  <div id="obsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-4" onclick="if(event.target===this)closeObsModal()">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-md shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📝</span>
+          <h3 class="font-heading font-bold text-navy" id="obsModalTitle">Allmän observation</h3>
+        </div>
+        <button onclick="closeObsModal()" class="w-8 h-8 rounded-full bg-lavender hover:bg-lavender/80 flex items-center justify-center text-text-soft text-lg">✕</button>
+      </div>
+      <!-- Created date (read-only, shown when editing existing observation) -->
+      <div id="obsDateInfo" class="hidden mb-3">
+        <span class="text-xs text-text-soft bg-lavender px-3 py-1 rounded-full" id="obsDateDisplay"></span>
+      </div>
+      <textarea id="obsContent" rows="4" maxlength="2000"
+        class="note-textarea w-full rounded-xl px-4 py-3 text-sm"
+        placeholder="Skriv din allmänna observation — t.ex. hur dagen har varit, särskilda händelser, reflektioner..."
+        style="min-height:100px;resize:vertical;"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+      <div class="flex items-center justify-between mt-3 mb-4">
+        <label class="flex items-center gap-2 text-sm text-navy cursor-pointer">
+          <input type="checkbox" id="obsImportant" class="accent-red-500 w-4 h-4">
+          <span class="text-xs text-red-600 font-semibold">⚠️ Viktigt</span>
+        </label>
+        <span id="obsCharCount" class="text-xs text-text-soft">0/2000</span>
+      </div>
+      <p id="obsError" class="hidden text-red-500 text-xs mb-3"></p>
+      <button onclick="saveObservation()" id="obsSaveBtn"
+        class="w-full py-3 bg-gold hover:bg-yellow-500 text-white font-semibold rounded-xl transition-colors text-sm">
+        Spara
+      </button>
+    </div>
+  </div>
+
+  <script src="/js/reports.js?v=2.24"></script>
+  <script>
+    // QRCode.js via CDN — inject inline renderer
+    (function() {
+      // We'll use the qrcode-generator CDN library
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
+      s.onload = function() { /* library available globally as qrcode() */ };
+      document.head.appendChild(s);
+    })();
+  </script>
+</body>
+</html>

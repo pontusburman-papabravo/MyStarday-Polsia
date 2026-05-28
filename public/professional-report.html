@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapport — Min Stjärndag</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⭐</text></svg>">
+  <style>
+    :root {
+      --amber:    #F5A623;
+      --amber-dk: #D4891A;
+      --amber-lt: #FFF3D6;
+      --navy:     #1C2340;
+      --cream:    #FDFAF4;
+      --white:    #FFFFFF;
+      --text-1:   #1A1A2E;
+      --text-2:   #5A6378;
+      --shadow:    0 2px 8px rgba(28,35,64,0.10);
+      --radius:   14px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: var(--cream);
+      color: var(--text-1);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+
+    /* ── Site bar ── */
+    .site-bar {
+      background: var(--navy);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .site-bar-text { color: rgba(255,255,255,0.75); font-size: 13px; }
+    .site-bar-stars { color: var(--amber); font-size: 16px; }
+
+    /* ── Disclaimer ── */
+    .disclaimer {
+      background: #FFFBEA;
+      border-left: 4px solid var(--amber);
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #6B4F00;
+      border-radius: 0 10px 10px 0;
+      margin-bottom: 20px;
+      line-height: 1.55;
+    }
+
+    /* ── Context Header (föräldrasammanfattning) ── */
+    .context-header {
+      background: #EEF2FF;
+      border: 1px solid #C7D2FE;
+      border-left: 4px solid #6366F1;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 16px 18px;
+      margin-bottom: 20px;
+    }
+    .context-header-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4338CA;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .context-header-body {
+      font-size: 15px;
+      color: #3730A3;
+      line-height: 1.6;
+      font-style: italic;
+    }
+    .context-header-body::before { content: '\u201C'; }
+    .context-header-body::after  { content: '\u201D'; }
+
+    /* ── Report header ── */
+    .report-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .report-child-name {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--navy);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .report-emoji { font-size: 30px; line-height: 1; }
+    .report-range { color: var(--text-2); font-size: 14px; margin-top: 4px; }
+    .report-meta  { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+
+    /* ── Block ── */
+    .block {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+    .block-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .block-title .emoji { font-size: 18px; }
+
+    /* ── Section summary progress bars ── */
+    .section-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #F0EDE6;
+    }
+    .section-row:last-child { border-bottom: none; }
+    .section-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-1);
+      min-width: 110px;
+    }
+    .section-bar-wrap {
+      flex: 1;
+      height: 10px;
+      background: #EDE9FE;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .section-bar-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.4s ease;
+    }
+    .section-bar-fill.green  { background: #22C55E; }
+    .section-bar-fill.amber  { background: var(--amber); }
+    .section-bar-fill.red    { background: #EF4444; }
+    .section-pct {
+      font-size: 14px;
+      font-weight: 700;
+      min-width: 40px;
+      text-align: right;
+    }
+    .section-pct.green  { color: #16A34A; }
+    .section-pct.amber  { color: var(--amber-dk); }
+    .section-pct.red    { color: #DC2626; }
+
+    /* ── Day blocks ── */
+    .day-block {
+      border: 1px solid #E8E4DC;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .day-block-header {
+      background: #F8F6F1;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--navy);
+      border-bottom: 1px solid #E8E4DC;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .day-block-content { padding: 12px 16px; }
+    .day-block.no-data .day-block-header { color: var(--text-2); font-weight: 500; }
+
+    /* ── Activity row ── */
+    .activity-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid #F5F3EE;
+    }
+    .activity-row:last-child { border-bottom: none; }
+    .activity-icon { font-size: 20px; line-height: 1; flex-shrink: 0; width: 28px; text-align: center; }
+    .activity-name { font-size: 14px; font-weight: 500; flex: 1; }
+    .activity-status { font-size: 16px; flex-shrink: 0; }
+    .activity-stars { font-size: 13px; color: var(--amber); margin-left: 6px; }
+
+    /* ── Notes ── */
+    .note-block {
+      background: #FAFAF7;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin: 6px 0;
+      font-size: 13px;
+    }
+    .note-block.parent { border-left: 3px solid #6366F1; }
+    .note-block.child  { border-left: 3px solid #F59E0B; }
+    .note-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+    .note-label.parent { color: #4338CA; }
+    .note-label.child  { color: #B45309; }
+    .note-text { color: var(--text-1); line-height: 1.5; }
+
+    /* ── Emotions row ── */
+    .emotion-day {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #F0EDE6;
+      font-size: 14px;
+    }
+    .emotion-day:last-child { border-bottom: none; }
+    .emotion-date { color: var(--text-2); min-width: 90px; }
+    .emotion-face { font-size: 20px; }
+    .emotion-label { color: var(--text-1); }
+
+    /* ── Stars big number ── */
+    .big-stat {
+      text-align: center;
+      padding: 24px 0 8px;
+    }
+    .big-stat-number {
+      font-size: 56px;
+      font-weight: 800;
+      color: var(--amber);
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .big-stat-label { font-size: 13px; color: var(--text-2); margin-top: 6px; }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 360px;
+    }
+    th {
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--text-2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 2px solid var(--amber);
+      padding: 6px 10px 8px;
+    }
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #F0EDE6;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    .pct-bar-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .pct-bar {
+      height: 6px;
+      background: #EDE9FE;
+      border-radius: 3px;
+      width: 60px;
+      min-width: 40px;
+      overflow: hidden;
+    }
+    .pct-bar-fill {
+      height: 100%;
+      background: var(--amber);
+      border-radius: 3px;
+    }
+    .pct-num {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--navy);
+      min-width: 36px;
+      text-align: right;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .status-approved  { background: #DCFCE7; color: #166534; }
+    .status-pending   { background: #FEF9C3; color: #854D0E; }
+    .status-rejected  { background: #FEE2E2; color: #991B1B; }
+
+    /* ── Reward list ── */
+    .reward-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #F0EDE6;
+      gap: 12px;
+    }
+    .reward-item:last-child { border-bottom: none; }
+    .reward-name { font-weight: 500; font-size: 14px; flex: 1; }
+    .reward-date { font-size: 12px; color: var(--text-2); flex-shrink: 0; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 20px 16px;
+      color: var(--text-2);
+      font-size: 14px;
+    }
+
+    /* ── PIN screen ── */
+    .pin-wrap {
+      text-align: center;
+      padding: 52px 24px;
+    }
+    .pin-icon   { font-size: 48px; margin-bottom: 12px; }
+    .pin-title  { font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+    .pin-sub    { font-size: 14px; color: var(--text-2); margin-bottom: 28px; }
+    .pin-input {
+      font-size: 28px;
+      text-align: center;
+      width: 180px;
+      padding: 14px 16px;
+      border: 2px solid #E2DDD5;
+      border-radius: 12px;
+      letter-spacing: 0.25em;
+      background: var(--white);
+      color: var(--navy);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .pin-input:focus { border-color: var(--amber); }
+    .pin-btn {
+      display: block;
+      width: 180px;
+      margin: 16px auto 0;
+      padding: 14px 24px;
+      background: var(--navy);
+      color: var(--white);
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      min-height: 48px;
+    }
+    .pin-btn:hover:not(:disabled) { background: #2A3556; }
+    .pin-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .pin-error { color: #C0392B; font-size: 13px; margin-top: 12px; min-height: 20px; }
+
+    /* ── Error/loading screens ── */
+    .error-screen, .loading-screen {
+      text-align: center;
+      padding: 56px 24px;
+      color: var(--text-2);
+    }
+    .error-screen { color: var(--text-1); }
+    .loading-dots { display: flex; gap: 6px; justify-content: center; margin-top: 12px; }
+    .loading-dots span {
+      width: 8px; height: 8px;
+      background: var(--amber);
+      border-radius: 50%;
+      animation: dot-bounce 1.2s infinite;
+    }
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dot-bounce {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ── Action buttons ── */
+    .no-print { text-align: center; margin: 28px 0 8px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .btn-print, .btn-pdf {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 22px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 48px;
+      transition: background 0.2s, opacity 0.2s;
+      text-decoration: none;
+    }
+    .btn-print {
+      background: var(--navy);
+      color: var(--white);
+    }
+    .btn-print:hover { background: #2A3556; }
+    .btn-pdf {
+      background: var(--amber);
+      color: var(--navy);
+    }
+    .btn-pdf:hover { background: var(--amber-dk); color: var(--white); }
+    .btn-pdf:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* ── Sticky toolbar ── */
+    .report-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      padding: 10px 16px;
+      margin: 0 -16px 16px;
+    }
+    .toolbar-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .toolbar-filters {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .toolbar-filter {
+      padding: 5px 12px;
+      border: 2px solid #E2DDD5;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      background: white;
+      color: #5A6178;
+      transition: all 0.15s;
+    }
+    .toolbar-filter:hover { border-color: #F5A623; color: #1C2340; }
+    .toolbar-filter.active { background: #F5A623; border-color: #F5A623; color: white; }
+    .toolbar-right { display: flex; align-items: center; gap: 10px; }
+    .toolbar-branding { font-size: 11px; color: #B0A89E; }
+    .toolbar-pdf-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; background: var(--amber); color: var(--navy);
+      border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background 0.2s; min-height: 36px;
+    }
+    .toolbar-pdf-btn:hover { background: var(--amber-dk); color: white; }
+    .toolbar-pdf-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    @media (max-width: 480px) {
+      .toolbar-row { flex-direction: column; align-items: stretch; }
+      .toolbar-right { justify-content: space-between; }
+    }
+
+    /* ── Playful export container (offscreen for capture) ── */
+    #playfulExportRoot {
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: 'Nunito', sans-serif;
+      background: #F5E6C8;
+    }
+
+    /* ── Footer ── */
+    .report-footer {
+      text-align: center;
+      font-size: 11px;
+      color: #B0A89E;
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid #EDE9FE;
+    }
+
+    /* ── Anonymous notice ── */
+    .anonymous-notice {
+      background: #F3E8FF;
+      border: 1px solid #C084FC;
+      border-left: 4px solid #9333EA;
+      border-radius: 0 10px 10px 0;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #6B21A8;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Trend chart section ── */
+    .trend-filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .trend-filter {
+      padding: 6px 14px;
+      border: 2px solid #E2DDD5;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: white;
+      color: #5A6178;
+      transition: all 0.15s;
+    }
+    .trend-filter:hover { border-color: #F5A623; color: #1C2340; }
+    .trend-filter.active { background: #F5A623; border-color: #F5A623; color: white; }
+    .trend-chart-wrap {
+      position: relative;
+      height: 200px;
+    }
+
+    /* ── Emotions per section ── */
+    .emotion-section-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid #F0EDE6;
+    }
+    .emotion-section-row:last-child { border-bottom: none; }
+    .emotion-section-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-1);
+      min-width: 100px;
+    }
+    .emotion-section-face {
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+    .emotion-section-score {
+      font-size: 13px;
+      color: var(--text-2);
+      flex-shrink: 0;
+    }
+
+    /* ── Print CSS ── */
+    @media print {
+      .site-bar, .no-print, .report-toolbar { display: none !important; }
+      body { background: white; padding: 0; margin: 0; }
+      .container { max-width: 100%; padding: 0; }
+      .disclaimer { border: 1px solid var(--amber); border-left: 4px solid var(--amber); }
+      .block {
+        box-shadow: none;
+        border: 1px solid #E2DDD5;
+        page-break-inside: avoid;
+        margin-bottom: 12px;
+        border-radius: 8px;
+      }
+      .context-header { border-color: #6366F1; }
+      .section-bar-fill.green, .section-bar-fill.amber, .section-bar-fill.red {
+        print-color-adjust: exact; -webkit-print-color-adjust: exact;
+      }
+      .day-block { page-break-inside: avoid; }
+      table { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="site-bar">
+  <span class="site-bar-stars">⭐</span>
+  <span class="site-bar-text">Min Stjärndag</span>
+</div>
+
+<div class="container">
+
+  <!-- Disclaimer (always visible) -->
+  <div class="disclaimer" id="disclaimer">
+    ⚠️ <strong>Viktigt:</strong> Denna sida visar en sammanställning av vald
+    aktivitets- och belöningsstatistik som en vårdnadshavare aktivt valt att dela.
+    Den är avsedd som underlag för samtal och ersätter inte journalföring eller
+    officiell dokumentation inom skola, hälso- och sjukvård eller socialtjänst.
+    Min Stjärndag är inte ett journalsystem.
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-screen" id="loadingScreen">
+    <p>Laddar rapport…</p>
+    <div class="loading-dots"><span></span><span></span><span></span></div>
+  </div>
+
+  <!-- PIN entry -->
+  <div class="pin-wrap" id="pinScreen" style="display:none">
+    <div class="pin-icon">🔒</div>
+    <div class="pin-title">Skyddad rapport</div>
+    <div class="pin-sub">Ange koden som du fått av föräldern</div>
+    <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+      class="pin-input" id="pinInput" placeholder="••••" autocomplete="off" autofocus>
+    <button class="pin-btn" id="pinBtn" type="button">Öppna rapport</button>
+    <div class="pin-error" id="pinError" aria-live="polite"></div>
+  </div>
+
+  <!-- Sticky toolbar — visible immediately, not inside report content -->
+  <div class="report-toolbar no-print" id="reportToolbar" style="display:none">
+    <div class="toolbar-row">
+      <div class="toolbar-filters" id="toolbarFilters">
+        <button class="toolbar-filter active" data-filter="all">Alla</button>
+        <button class="toolbar-filter" data-filter="morgon">Morgon</button>
+        <button class="toolbar-filter" data-filter="dag">Dag</button>
+        <button class="toolbar-filter" data-filter="kvall">Kväll</button>
+      </div>
+      <div class="toolbar-right">
+        <span class="toolbar-branding">Rapport från Min Stjärndag · mystarday.se</span>
+        <button class="toolbar-pdf-btn" id="btnToolbarPdf">⬇ Ladda ner PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report content -->
+  <div id="reportContent" style="display:none">
+
+    <!-- Anonymous notice (hidden by default) -->
+    <div class="anonymous-notice" id="anonymousNotice" style="display:none">
+      <span style="font-size:20px">🔒</span>
+      <span>Den här rapporten har anonymiserats — barnets namn och emoji visas inte.</span>
+    </div>
+
+    <!-- Report header -->
+    <div class="report-header">
+      <div class="report-child-name">
+        <span class="report-emoji" id="reportEmoji"></span>
+        <span id="reportLabel"></span>
+      </div>
+      <div class="report-range" id="reportRange"></div>
+      <div class="report-meta" id="reportMeta"></div>
+    </div>
+
+    <!-- Dynamic blocks -->
+    <div id="reportBlocks"></div>
+
+    <!-- Footer -->
+    <div class="report-footer">
+      Rapport från Min Stjärndag · mystarday.se
+    </div>
+
+    <!-- Action buttons -->
+    <div class="no-print">
+      <button class="btn-pdf" id="btnPdf">
+        ⬇ Ladda ner PDF
+      </button>
+      <button class="btn-print" onclick="window.print()">
+        🖨 Skriv ut
+      </button>
+    </div>
+  </div>
+
+  <!-- Error screen -->
+  <div class="error-screen" id="errorScreen" style="display:none">
+    <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+    <div class="pin-title" id="errorTitle" style="text-align:center">Rapporten hittades inte</div>
+    <div id="errorSub" style="font-size:14px;color:var(--text-2);margin-top:8px;">Länken kan ha återkallats eller gått ut.</div>
+  </div>
+
+</div>
+
+<!-- Hidden container for playful PDF export (captured by html2canvas) -->
+<div id="playfulExportRoot"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  var currentPublicId = null;
+  var _reportData = null; // store fetched report data for playful export
+
+  var $ = function(id) { return document.getElementById(id); };
+  var loadingScreen = $('loadingScreen');
+  var pinScreen     = $('pinScreen');
+  var reportContent = $('reportContent');
+  var errorScreen   = $('errorScreen');
+  var pinInput      = $('pinInput');
+  var pinBtn        = $('pinBtn');
+  var pinError      = $('pinError');
+  var reportEmoji   = $('reportEmoji');
+  var reportLabel   = $('reportLabel');
+  var reportRange   = $('reportRange');
+  var reportMeta    = $('reportMeta');
+  var reportBlocks  = $('reportBlocks');
+  var errorTitle    = $('errorTitle');
+  var errorSub      = $('errorSub');
+
+  // ── Helpers ─────────────────────────────────────────────
+
+  var MONTHS_SV = ['jan','feb','mar','apr','maj','jun',
+                   'jul','aug','sep','okt','nov','dec'];
+
+  // Normalize date: accepts YYYY-MM-DD string, Date object, or ISO string with T.
+  // Returns "D month" string or '' on invalid.
+  function fmtDate(str) {
+    if (!str) return '';
+    var d;
+    if (typeof str === 'object' && str instanceof Date) {
+      d = str;
+    } else if (typeof str === 'string') {
+      d = new Date(str.indexOf('T') !== -1 ? str : str + 'T12:00:00');
+    } else {
+      return '';
+    }
+    if (isNaN(d.getTime())) return '';
+    var m = d.getMonth();
+    return d.getDate() + ' ' + (MONTHS_SV[m] || '?');
+  }
+
+  // Returns YYYY-MM-DD in local time (avoids UTC offset issues in summer)
+  function localDateStr(date) {
+    return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+  }
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+
+  function fmtRange(from, to) {
+    if (!from && !to) return '';
+    if (from && to && from !== to) return fmtDate(from) + ' – ' + fmtDate(to);
+    if (from) return 'fr.o.m. ' + fmtDate(from);
+    if (to)   return 't.o.m. ' + fmtDate(to);
+    return '';
+  }
+
+  function esc(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function showScreen(name) {
+    loadingScreen.style.display  = name === 'loading'  ? '' : 'none';
+    pinScreen.style.display      = name === 'pin'      ? '' : 'none';
+    reportContent.style.display  = name === 'report'   ? '' : 'none';
+    errorScreen.style.display    = name === 'error'    ? '' : 'none';
+  }
+
+  function showError(title, sub) {
+    errorTitle.textContent = title || 'Något gick fel';
+    errorSub.textContent   = sub   || '';
+    showScreen('error');
+  }
+
+  function progressColor(pct) {
+    if (pct >= 80) return 'green';
+    if (pct >= 50) return 'amber';
+    return 'red';
+  }
+
+  // ── Block renderers ──────────────────────────────────────
+
+  function renderSectionSummary(data) {
+    if (!data || data.length === 0) return renderEmpty();
+    var html = '';
+    data.forEach(function(item) {
+      var cls = progressColor(item.completion_pct);
+      html += '<div class="section-row">';
+      html += '<span class="section-label">' + esc(item.section) + '</span>';
+      html += '<div class="section-bar-wrap">';
+      html += '<div class="section-bar-fill ' + cls + '" style="width:' + item.completion_pct + '%"></div>';
+      html += '</div>';
+      html += '<span class="section-pct ' + cls + '">' + item.completion_pct + '%</span>';
+      html += '</div>';
+    });
+    return html;
+  }
+
+  function renderCompletion(data) {
+    if (!data || data.length === 0) return renderEmpty();
+    var html = '<div class="table-wrap"><table>';
+    html += '<thead><tr><th>Datum</th><th style="text-align:center">Utförda</th><th style="text-align:center">Totalt</th><th style="text-align:right">%</th></tr></thead><tbody>';
+    data.forEach(function(r) {
+      var pct = r.total > 0 ? Math.round((r.completed / r.total) * 100) : 0;
+      var w   = Math.max(4, Math.round(pct * 0.6));
+      html += '<tr>';
+      html += '<td>' + fmtDate(r.date) + '</td>';
+      html += '<td style="text-align:center;font-weight:600;color:var(--navy)">' + r.completed + '</td>';
+      html += '<td style="text-align:center;color:var(--text-2)">' + r.total + '</td>';
+      html += '<td><div class="pct-bar-cell">';
+      html += '<div class="pct-bar"><div class="pct-bar-fill" style="width:' + w + '%"></div></div>';
+      html += '<span class="pct-num">' + pct + '%</span></div></td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  /**
+   * Render activities block: day-by-day with notes.
+   * data: { [date]: [{ activity_name, activity_icon, completed, star_value, parent_note, child_note }] }
+   */
+  function renderActivities(data, dateFrom, dateTo) {
+    var byDate = data || {};
+    var html   = '';
+
+    // Normalize dateFrom/dateTo: handle string or Date object
+    var start;
+    if (typeof dateFrom === 'object' && dateFrom instanceof Date && !isNaN(dateFrom.getTime())) {
+      start = dateFrom;
+    } else if (typeof dateFrom === 'string') {
+      start = new Date(dateFrom.indexOf('T') !== -1 ? dateFrom : dateFrom + 'T00:00:00');
+    } else {
+      return renderEmpty();
+    }
+    var end;
+    if (typeof dateTo === 'object' && dateTo instanceof Date && !isNaN(dateTo.getTime())) {
+      end = dateTo;
+    } else if (typeof dateTo === 'string') {
+      end = new Date(dateTo.indexOf('T') !== -1 ? dateTo : dateTo + 'T00:00:00');
+    } else {
+      end = start;
+    }
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return renderEmpty();
+
+    var cur = new Date(start);
+
+    while (cur <= end) {
+      var dateStr = localDateStr(cur);
+      var dayName = ['Söndag','Måndag','Tisdag','Onsdag','Torsdag','Fredag','Lördag'][cur.getDay()];
+      var dayDate = cur.getDate() + ' ' + MONTHS_SV[cur.getMonth()];
+
+      var items = byDate[dateStr] || [];
+      var hasData = items.length > 0;
+
+      html += '<div class="day-block' + (hasData ? '' : ' no-data') + '">';
+      html += '<div class="day-block-header">📅 ' + dayName + ' ' + dayDate + '</div>';
+      html += '<div class="day-block-content">';
+
+      if (!hasData) {
+        html += '<div style="color:var(--text-2);font-size:13px;font-style:italic;padding:8px 0;">Ingen data registrerad</div>';
+      } else {
+        items.forEach(function(item) {
+          html += '<div class="activity-row">';
+          html += '<span class="activity-icon">' + esc(item.activity_icon || '⭐') + '</span>';
+          html += '<span class="activity-name">' + esc(item.activity_name) + '</span>';
+          html += '<span class="activity-status">' + (item.completed ? '✅' : '⬜') + '</span>';
+          if (item.star_value > 0) html += '<span class="activity-stars">+' + item.star_value + '⭐</span>';
+          html += '</div>';
+
+          if (item.parent_note) {
+            html += '<div class="note-block parent">';
+            html += '<div class="note-label parent">Vårdnadshavare</div>';
+            html += '<div class="note-text">' + esc(item.parent_note) + '</div>';
+            html += '</div>';
+          }
+          if (item.child_note) {
+            html += '<div class="note-block child">';
+            html += '<div class="note-label child">Barnet</div>';
+            html += '<div class="note-text">' + esc(item.child_note) + '</div>';
+            html += '</div>';
+          }
+        });
+      }
+
+      html += '</div></div>';
+
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    return html || renderEmpty();
+  }
+
+  /**
+   * Render parent_notes standalone block.
+   * data: { [date]: [{ activity_name, activity_icon, parent_note }] }
+   */
+  function renderParentNotes(data) {
+    var byDate = data || {};
+    var dates  = Object.keys(byDate).sort();
+    if (dates.length === 0) return renderEmpty();
+
+    var html = '';
+    dates.forEach(function(date) {
+      var items = byDate[date];
+      items.forEach(function(item) {
+        html += '<div class="note-block parent" style="margin-bottom:10px;">';
+        html += '<div class="note-label parent">' + esc(item.activity_icon || '⭐') + ' ' + esc(item.activity_name) + '</div>';
+        html += '<div class="note-text">' + esc(item.parent_note) + '</div>';
+        html += '</div>';
+      });
+    });
+    return html;
+  }
+
+  /**
+   * Render child_notes standalone block.
+   * data: { [date]: [{ activity_name, activity_icon, child_note }] }
+   */
+  function renderChildNotes(data) {
+    var byDate = data || {};
+    var dates  = Object.keys(byDate).sort();
+    if (dates.length === 0) return renderEmpty();
+
+    var html = '';
+    dates.forEach(function(date) {
+      var items = byDate[date];
+      items.forEach(function(item) {
+        html += '<div class="note-block child" style="margin-bottom:10px;">';
+        html += '<div class="note-label child">' + esc(item.activity_icon || '⭐') + ' ' + esc(item.activity_name) + '</div>';
+        html += '<div class="note-text">' + esc(item.child_note) + '</div>';
+        html += '</div>';
+      });
+    });
+    return html;
+  }
+
+  /**
+   * Render pedagog_notes standalone block.
+   * data: [{ date, mood, sleep_quality, sleep_hours, meals, meals_structured, behavior, notes, pedagog_name }]
+   * Only published notes (is_draft=false) are returned from the DB layer.
+   * meals_structured: { frukost: "good"|"little"|"none"|"not_served", lunch: ..., mellanmal: ... }
+   * sleep_quality: "easy" | "slow" | "difficult" (new string format)
+   */
+  function renderPedagogNotes(data) {
+    if (!data || data.length === 0) return renderEmpty();
+
+    var mealsLabelMap = { good: 'Åt bra', little: 'Åt lite', none: 'Åt ej', not_served: 'Serverades ej' };
+    var sleepLabelMap = { easy: 'Somnade snabbt', slow: 'Varvade ner', difficult: 'Svårt att somna' };
+    var moodFaces = ['', '😫', '😕', '😐', '🙂', '😄'];
+
+    var html = '';
+    data.forEach(function(note) {
+      var moodFace = moodFaces[parseInt(note.mood)] || '😐';
+      html += '<div class="pedagog-note-block" style="margin-bottom:14px;padding:12px 14px;border-left:3px solid #7C3AED;background:#F5F3FF;border-radius:4px;">';
+
+      // Date + pedagog attribution
+      html += '<div style="font-size:12px;color:#6B7280;margin-bottom:8px;">' + fmtDate(String(note.date));
+      if (note.pedagog_name) {
+        html += ' · <span style="font-style:italic;">' + esc(note.pedagog_name) + '</span>';
+      }
+      html += '</div>';
+
+      // Humör
+      if (note.mood) {
+        html += '<div style="margin-bottom:6px;"><strong>Humör:</strong> ' + moodFace + ' (' + note.mood + '/5)</div>';
+      }
+
+      // Dagsvila: tid + komma till ro
+      if (note.sleep_hours != null || note.sleep_quality) {
+        var sleepParts = [];
+        if (note.sleep_hours != null) {
+          var hrs = parseFloat(note.sleep_hours);
+          sleepParts.push(hrs === 0 ? 'Ingen vila' : hrs === 0.5 ? '30 min' : hrs < 2 ? hrs + ' tim' : '2+ tim');
+        }
+        if (note.sleep_quality && sleepLabelMap[note.sleep_quality]) {
+          sleepParts.push(sleepLabelMap[note.sleep_quality]);
+        }
+        if (sleepParts.length > 0) {
+          html += '<div style="margin-bottom:6px;"><strong>Sömn:</strong> ' + esc(sleepParts.join(' · ')) + '</div>';
+        }
+      }
+
+      // Måltider: structured or free-text fallback
+      if (note.meals_structured && typeof note.meals_structured === 'object') {
+        var mealsParts = [];
+        var mealKeys = { frukost: 'Frukost', lunch: 'Lunch', mellanmal: 'Mellanmål' };
+        Object.keys(mealKeys).forEach(function(key) {
+          var val = note.meals_structured[key];
+          if (val && mealsLabelMap[val]) {
+            mealsParts.push(mealKeys[key] + ': ' + mealsLabelMap[val]);
+          }
+        });
+        if (mealsParts.length > 0) {
+          html += '<div style="margin-bottom:6px;"><strong>Måltider:</strong> ' + esc(mealsParts.join(' · ')) + '</div>';
+        }
+      } else if (note.meals) {
+        html += '<div style="margin-bottom:6px;"><strong>Måltider:</strong> ' + esc(note.meals) + '</div>';
+      }
+
+      // Betende
+      if (note.behavior) {
+        html += '<div style="margin-bottom:6px;"><strong>Dagen i gruppen:</strong> ' + esc(note.behavior) + '</div>';
+      }
+
+      // Övriga anteckningar
+      if (note.notes) {
+        html += '<div style="margin-top:4px;font-style:italic;color:#5A6378;">' + esc(note.notes) + '</div>';
+      }
+
+      html += '</div>';
+    });
+    return html;
+  }
+
+  function renderStars(data) {
+    if (!data || data.total == null) return renderEmpty();
+    return '<div class="big-stat"><div class="big-stat-number"><span>⭐</span>' + data.total + '</div><div class="big-stat-label">intjänade stjärnor</div></div>';
+  }
+
+  function renderRewards(data) {
+    if (!data) return renderEmpty();
+    var html = '';
+
+    // Counts table
+    if (data.counts && data.counts.length > 0) {
+      html += '<div class="table-wrap"><table>';
+      html += '<thead><tr><th>Status</th><th style="text-align:center">Antal</th></tr></thead><tbody>';
+      data.counts.forEach(function(r) {
+        var label = r.status === 'approved' ? 'Godkända ✓' :
+                    r.status === 'pending'  ? 'Väntande ⏳' :
+                    r.status === 'denied'  ? 'Avslagna ✗'  : esc(r.status);
+        var badge = r.status === 'approved' ? 'status-approved' :
+                     r.status === 'pending'  ? 'status-pending'  :
+                     r.status === 'denied'  ? 'status-rejected' : '';
+        html += '<tr>';
+        html += '<td><span class="status-badge ' + badge + '">' + label + '</span></td>';
+        html += '<td style="text-align:center;font-weight:600;color:var(--navy)">' + r.count + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+
+    // Recent list
+    if (data.recent && data.recent.length > 0) {
+      html += '<div style="margin-top:14px;font-size:13px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.04em;padding-bottom:6px;border-bottom:1px solid #EDE9FE;">Nyligen inlösta</div>';
+      data.recent.slice(0, 10).forEach(function(r) {
+        var badge = r.status === 'approved' ? 'status-approved' :
+                     r.status === 'pending'  ? 'status-pending'  :
+                     r.status === 'denied'  ? 'status-rejected' : '';
+        var label = r.status === 'approved' ? 'Godkänd ✓' :
+                    r.status === 'pending'  ? 'Väntande ⏳' :
+                    r.status === 'denied'  ? 'Avslagen ✗'  : esc(r.status);
+        var dateStr = '';
+        if (r.created_at) {
+          var d = new Date(r.created_at);
+          dateStr = d.getDate() + ' ' + MONTHS_SV[d.getMonth()];
+        }
+        html += '<div class="reward-item">';
+        html += '<span class="reward-name">' + esc(r.reward_name) + '</span>';
+        if (dateStr) html += '<span class="reward-date">' + dateStr + '</span>';
+        html += '<span class="status-badge ' + badge + '">' + label + '</span>';
+        html += '</div>';
+      });
+    }
+
+    return html || renderEmpty();
+  }
+
+  function renderEmotions(data) {
+    if (!data || data.length === 0) return renderEmpty();
+    var html = '';
+    data.forEach(function(r) {
+      var face  = '';
+      var label = '';
+      var lvl   = parseInt(r.level);
+      if (lvl >= 4) { face = '😊'; label = 'Jätteglad'; }
+      else if (lvl >= 3) { face = '🙂'; label = 'Glad'; }
+      else if (lvl >= 2) { face = '😐'; label = 'Okej'; }
+      else { face = '😔'; label = 'Ledsen'; }
+      html += '<div class="emotion-day">';
+      html += '<span class="emotion-date">' + fmtDate(r.date) + '</span>';
+      html += '<span class="emotion-face">' + face + '</span>';
+      html += '<span class="emotion-label">' + esc(label) + '</span>';
+      html += '</div>';
+    });
+    return html;
+  }
+
+  function renderEmpty() {
+    return '<div class="empty-state">Ingen data i perioden</div>';
+  }
+
+  /**
+   * Render trend chart: line chart of daily completion %.
+   * Uses Chart.js (loaded via CDN). Filter: All | Morgon | Dag | Kväll.
+   */
+  var _trendChart = null;
+  var _trendFilter = 'all'; // 'all' | 'morgon' | 'dag' | 'kvall'
+  var _trendCompletionData = null;
+  var _trendBySectionData = null;
+
+  function renderTrendChart(completionData, bySectionData) {
+    if (!completionData || completionData.length === 0) return renderEmpty();
+    _trendCompletionData = completionData;
+    _trendBySectionData = bySectionData || null;
+
+    // Filter buttons are in the sticky toolbar now (no inline filters here)
+    return '<div class="trend-chart-wrap"><canvas id="trendCanvas"></canvas></div>';
+  }
+
+  function setTrendFilter(filter) {
+    _trendFilter = filter;
+    // Update toolbar filter buttons
+    document.querySelectorAll('.toolbar-filter').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.toolbar-filter[data-filter="' + filter + '"]').forEach(function(b) { b.classList.add('active'); });
+    renderTrendChartWithFilter();
+  }
+
+  function getFilteredTrendData(filter, completionData, bySectionData) {
+    var labels = [];
+    var values = [];
+
+    if (filter === 'all') {
+      completionData.forEach(function(d) {
+        labels.push(fmtDate(d.date));
+        var pct = d.total > 0 ? Math.round((d.completed / d.total) * 100) : 0;
+        values.push(pct);
+      });
+    } else {
+      // Filter by section using completion_by_section data
+      var sectionFilter = filter; // 'morgon' | 'dag' | 'kvall'
+      var weekly = {};
+      var source = (bySectionData && bySectionData.length > 0) ? bySectionData : completionData;
+
+      source.forEach(function(d) {
+        // d is either {date, section, completed, total} (bySection) or {date, completed, total} (plain)
+        if (bySectionData) {
+          if (d.section !== sectionFilter) return;
+        }
+        var dt = new Date(d.date);
+        var weekStart = new Date(dt);
+        weekStart.setDate(dt.getDate() - dt.getDay() + 1); // Monday
+        var key = weekStart.toISOString().slice(0, 10);
+        if (!weekly[key]) weekly[key] = { completed: 0, total: 0 };
+        weekly[key].completed += d.completed;
+        weekly[key].total += d.total;
+      });
+      var keys = Object.keys(weekly).sort();
+      keys.forEach(function(k) {
+        var dt = new Date(k + 'T12:00:00');
+        labels.push(dt.getDate() + ' ' + MONTHS_SV[dt.getMonth()]);
+        var w = weekly[k];
+        values.push(w.total > 0 ? Math.round((w.completed / w.total) * 100) : 0);
+      });
+    }
+
+    return { labels: labels, values: values };
+  }
+
+  function renderTrendChartWithFilter() {
+    if (!_trendCompletionData) return;
+    var canvas = document.getElementById('trendCanvas');
+    if (!canvas) return;
+    var data = getFilteredTrendData(_trendFilter, _trendCompletionData, _trendBySectionData);
+    if (data.labels.length === 0) return;
+
+    if (_trendChart) { _trendChart.destroy(); _trendChart = null; }
+
+    _trendChart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: data.labels,
+        datasets: [{
+          label: 'Genomförande %',
+          data: data.values,
+          borderColor: '#F5A623',
+          backgroundColor: 'rgba(245,166,35,0.15)',
+          borderWidth: 2,
+          pointBackgroundColor: '#F5A623',
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          fill: true,
+          tension: 0.3,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) { return ctx.parsed.y + '%'; }
+            }
+          }
+        },
+        scales: {
+          y: {
+            min: 0,
+            max: 100,
+            ticks: {
+              callback: function(v) { return v + '%'; },
+              color: '#5A6178',
+              font: { size: 11 }
+            },
+            grid: { color: 'rgba(0,0,0,0.05)' }
+          },
+          x: {
+            ticks: { color: '#5A6178', font: { size: 10 }, maxRotation: 45 },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Render emotions grouped by section (avg score per section).
+   * Requires blocks.emotions_per_section.
+   */
+  function renderEmotionsPerSection(data) {
+    if (!data || data.length === 0) return renderEmpty();
+    var html = '';
+    data.forEach(function(item) {
+      var avg = parseFloat(item.avg_score) || 0;
+      var face = avg >= 4.5 ? '😄' : avg >= 3.5 ? '🙂' : avg >= 2.5 ? '😐' : avg >= 1.5 ? '😕' : '😔';
+      var sectionLabel = item.section === 'morgon' ? 'Morgon' :
+                          item.section === 'dag' ? 'Dag' :
+                          item.section === 'kvall' ? 'Kväll' :
+                          item.section === 'natt' ? 'Natt' :
+                          item.section === 'formiddag' ? 'Förmiddag' :
+                          item.section === 'eftermiddag' ? 'Eftermiddag' : item.section;
+      html += '<div class="emotion-section-row">';
+      html += '<span class="emotion-section-name">' + esc(sectionLabel) + '</span>';
+      html += '<span class="emotion-section-face">' + face + '</span>';
+      html += '<span class="emotion-section-score">' + avg.toFixed(1) + '/5 (' + item.count + ' dagar)</span>';
+      html += '</div>';
+    });
+    return html;
+  }
+
+  /**
+   * Render all blocks based on fields array.
+   * Order per spec: section_summary → activities → stars → rewards → completion → trend_chart → emotions
+   * (parent_notes + child_notes are rendered inline within activities block;
+   * standalone parent_notes/child_notes blocks only show if NO activities field)
+   */
+  function renderBlocks(fields, blocks, dateFrom, dateTo) {
+    if (!fields || fields.length === 0) return '';
+
+    var ORDER = ['trend_chart','section_summary','activities','parent_notes','child_notes','stars','rewards','completion','emotions'];
+    var html  = '';
+
+    ORDER.forEach(function(field) {
+      // trend_chart: auto-show when completion data exists
+      if (field === 'trend_chart') {
+        if (!blocks.completion || blocks.completion.length === 0) return;
+      } else {
+        if (!fields.includes(field)) return;
+        if (!blocks[field] && field !== 'activities') return; // activities renders zero-data days
+      }
+
+      var title = '';
+      var icon  = '';
+      var content = '';
+
+      switch (field) {
+        case 'section_summary':
+          title   = 'Genomförande per dagdel';
+          icon    = '📊';
+          content = renderSectionSummary(blocks.section_summary);
+          break;
+        case 'activities':
+          title   = 'Aktiviteter';
+          icon    = '📋';
+          content = renderActivities(blocks.activities, dateFrom, dateTo);
+          break;
+        case 'parent_notes':
+          title   = 'Anteckningar från vårdnadshavare';
+          icon    = '📝';
+          content = renderParentNotes(blocks.parent_notes);
+          break;
+        case 'child_notes':
+          title   = 'Barnets anteckningar';
+          icon    = '💬';
+          content = renderChildNotes(blocks.child_notes);
+          break;
+        case 'pedagog_notes':
+          title   = 'Pedagoganteckningar';
+          icon    = '📝';
+          content = renderPedagogNotes(blocks.pedagog_notes);
+          break;
+        case 'completion':
+          title   = 'Daglig genomförandegrad';
+          icon    = '✅';
+          content = renderCompletion(blocks.completion);
+          break;
+        case 'trend_chart':
+          title   = '📈 Trend — Genomförande %';
+          icon    = '📈';
+          content = renderTrendChart(blocks.completion, blocks.completion_by_section);
+          break;
+        case 'stars':
+          title   = 'Stjärnor';
+          icon    = '⭐';
+          content = renderStars(blocks.stars);
+          break;
+        case 'rewards':
+          title   = 'Belöningar';
+          icon    = '🎁';
+          content = renderRewards(blocks.rewards);
+          break;
+        case 'emotions':
+          title   = 'Känslor';
+          icon    = '😊';
+          content = (renderEmotionsPerSection(blocks.emotions_per_section) || '') + (renderEmotions(blocks.emotions) || '');
+          break;
+      }
+
+      if (content && content !== renderEmpty()) {
+        html += '<div class="block">';
+        html += '<div class="block-title"><span class="emoji">' + icon + '</span> ' + esc(title) + '</div>';
+        html += content;
+        html += '</div>';
+      }
+    });
+
+    return html;
+  }
+
+  // ── Fetch helpers ────────────────────────────────────────
+
+  function getStoredToken() {
+    try { return sessionStorage.getItem('rpt_' + currentPublicId) || null; }
+    catch (_) { return null; }
+  }
+
+  function storeToken(token) {
+    try { sessionStorage.setItem('rpt_' + currentPublicId, token); }
+    catch (_) {}
+  }
+
+  function fetchWithToken(url) {
+    var token = getStoredToken();
+    var headers = {};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    return fetch(url, { method: 'GET', headers, credentials: 'same-origin', signal: AbortSignal.timeout(15000) });
+  }
+
+  // ── Fetch report ─────────────────────────────────────────
+
+  async function fetchReport() {
+    var url = '/api/public/report/' + currentPublicId;
+    try {
+      var res = await fetchWithToken(url);
+
+      if (res.status === 403) {
+        try {
+          var data = await res.json().catch(function() { return {}; });
+          if (data && data.pin_required) { showScreen('pin'); pinInput.focus(); return; }
+        } catch (_) { /* non-JSON body */ }
+        showError('Sidan kunde inte laddas.', 'Försök igen senare.');
+        return;
+      }
+      if (res.status === 404) {
+        showError('Rapporten hittades inte', 'Länken kan ha återkallats eller gått ut.');
+        return;
+      }
+      if (!res.ok) {
+        showError('Något gick fel', 'Försök igen senare. (Status ' + res.status + ')');
+        return;
+      }
+
+      var json = await res.json().catch(function() { return null; });
+      if (!json) { showError('Ingen data returnerades.', 'Försök igen senare.'); return; }
+      renderReport(json);
+    } catch (err) {
+      console.error('[fetchReport]', err);
+      var msg = (err.name === 'TimeoutError' || err.name === 'AbortError')
+        ? 'Timeout — databasen svarade inte. Försök igen.'
+        : 'Något gick fel. Försök igen.';
+      showError(msg, '');
+    }
+  }
+
+  async function submitPin() {
+    var pin = pinInput.value.trim();
+    if (!pin) { pinError.textContent = 'Ange koden.'; pinInput.focus(); return; }
+    pinBtn.disabled = true;
+    pinBtn.textContent = 'Verifierar…';
+    pinError.textContent = '';
+
+    try {
+      var res = await fetch('/api/public/report/' + currentPublicId + '/session', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: pin }),
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (res.status === 401) {
+        pinError.textContent = 'Fel kod, försök igen.';
+        pinInput.value = '';
+        pinInput.focus();
+        pinBtn.disabled = false;
+        pinBtn.textContent = 'Öppna rapport';
+        return;
+      }
+      if (res.status === 403) {
+        pinError.textContent = 'Sidan kunde inte laddas. Försök igen.';
+        pinInput.value = '';
+        pinBtn.disabled = false;
+        pinBtn.textContent = 'Öppna rapport';
+        return;
+      }
+      if (!res.ok) {
+        pinError.textContent = 'Ett fel inträffade. Försök igen.';
+        pinBtn.disabled = false;
+        pinBtn.textContent = 'Öppna rapport';
+        return;
+      }
+
+      var data = await res.json().catch(function() { return null; });
+      if (!data) return;
+      if (data.token) storeToken(data.token);
+      showScreen('loading');
+      fetchReport();
+    } catch (_) {
+      pinError.textContent = 'Kunde inte ansluta. Försök igen.';
+      pinBtn.disabled = false;
+      pinBtn.textContent = 'Öppna rapport';
+    }
+  }
+
+  // ── Render report ────────────────────────────────────────
+
+  function renderReport(data) {
+    // Guard: if called with undefined/null, show error and stop
+    if (!data || typeof data !== 'object') {
+      showError('Rapporten kunde inte laddas.', 'Ogiltig data från servern.');
+      return;
+    }
+    _reportData = data; // store for playful PDF export
+    // Snake_case → camelCase mapping (API uses snake_case)
+    data.emoji    = data.child_emoji;
+    data.dateFrom = data.date_from;
+    data.dateTo   = data.date_to;
+    // Header
+    if (data.label) {
+      reportLabel.textContent = data.label;
+    } else {
+      reportLabel.textContent = 'Rapport';
+    }
+    // Anonymous: hide emoji + show notice; anonymous report hides child info
+    if (data.anonymous) {
+      reportEmoji.style.display = 'none';
+      $('anonymousNotice').style.display = '';
+    } else {
+      reportEmoji.style.display = '';
+      if (data.emoji) reportEmoji.textContent = data.emoji;
+    }
+    reportRange.textContent = fmtRange(data.dateFrom, data.dateTo);
+    if (data.generated_at) {
+      var d = new Date(data.generated_at);
+      reportMeta.textContent = 'Genererad ' + d.getDate() + ' ' + MONTHS_SV[d.getMonth()] + ' ' + d.getFullYear();
+    }
+
+    // Build HTML blocks
+    var html = '';
+
+    // 1. Context Header (föräldrasammanfattning) — FIRST, before all data
+    if (data.parent_summary && data.parent_summary.trim()) {
+      html += '<div class="context-header">';
+      html += '<div class="context-header-title">📋 Sammanfattning från vårdnadshavare</div>';
+      html += '<div class="context-header-body">' + esc(data.parent_summary.trim()) + '</div>';
+      html += '</div>';
+    }
+
+    // 2. Dynamic blocks
+    html += renderBlocks(data.fields, data.blocks, data.dateFrom, data.dateTo);
+
+    reportBlocks.innerHTML = html;
+    showScreen('report');
+
+    // Show sticky toolbar (moved outside #reportContent so it's visible on load)
+    var toolbar = $('reportToolbar');
+    if (toolbar) toolbar.style.display = '';
+
+    // If no completion_by_section data, hide filter buttons (only branding + PDF shown)
+    if (!data.blocks || !data.blocks.completion_by_section || data.blocks.completion_by_section.length === 0) {
+      var filtersEl = $('toolbarFilters');
+      if (filtersEl) filtersEl.style.display = 'none';
+    }
+
+    // Initialize Chart.js trend chart after DOM is ready
+    setTimeout(function() {
+      if (typeof Chart !== 'undefined' && _trendCompletionData) {
+        renderTrendChartWithFilter();
+      }
+    }, 100);
+  }
+
+  // ── Playful PDF export (primary download) ──────────────
+
+  /**
+   * Render playful report HTML into the offscreen container.
+   * html2canvas captures this at 2x scale, then jsPDF saves it.
+   * Known Safari limitation: fonts may render with slight differences
+   * if Google Fonts CDN is slow. CORS on fonts is generally fine.
+   */
+  function renderPlayfulReport(container, vm) {
+    var esc = function(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+    var h = '';
+
+    // Beige dotted background + orange border
+    h += '<div style="width:1080px;height:1920px;background:#F5E6C8;position:relative;overflow:hidden;font-family:Nunito,sans-serif;color:#1C2340;padding:0;">';
+
+    // Orange border frame
+    h += '<div style="position:absolute;top:24px;left:24px;right:24px;bottom:24px;border:4px solid #E8944A;border-radius:24px;pointer-events:none;z-index:1;"></div>';
+
+    // Dotted pattern overlay (subtle)
+    h += '<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle,#E2C9A0 1px,transparent 1px);background-size:24px 24px;opacity:0.25;z-index:0;"></div>';
+
+    // Content wrapper
+    h += '<div style="position:relative;z-index:2;padding:60px 56px;">';
+
+    // Header: MIN STJÄRNDAG ⭐
+    h += '<div style="text-align:center;margin-bottom:8px;">';
+    h += '<span style="font-size:28px;font-weight:900;letter-spacing:4px;color:#1C2340;">MIN STJÄRNDAG ⭐</span>';
+    h += '</div>';
+
+    // Title
+    h += '<div style="text-align:center;font-size:36px;font-weight:800;color:#1C2340;margin-bottom:12px;">' + esc(vm.title) + '</div>';
+
+    // Period band
+    h += '<div style="text-align:center;margin-bottom:28px;">';
+    h += '<span style="display:inline-block;background:#E8944A;color:white;padding:8px 28px;border-radius:24px;font-size:18px;font-weight:700;letter-spacing:2px;">' + esc(vm.period) + '</span>';
+    h += '</div>';
+
+    // Medal + pills row
+    h += '<div style="display:flex;align-items:flex-start;justify-content:center;gap:40px;margin-bottom:28px;flex-wrap:wrap;">';
+
+    // Stars medal
+    if (vm.showStars) {
+      h += '<div style="text-align:center;">';
+      h += '<div style="font-size:64px;">🏅</div>';
+      h += '<div style="font-size:42px;font-weight:900;color:#E8944A;">' + vm.starsTotal + '</div>';
+      h += '<div style="font-size:16px;color:#5A6378;">stjärnor</div>';
+      h += '</div>';
+    }
+
+    // Stat pills
+    h += '<div style="display:flex;flex-direction:column;gap:10px;">';
+    if (vm.avgPct > 0) {
+      h += '<div style="background:white;border-radius:20px;padding:10px 24px;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,0.08);">📊 Genomsnitt: <strong>' + vm.avgPct + '%</strong></div>';
+    }
+    if (vm.bestDay) {
+      h += '<div style="background:white;border-radius:20px;padding:10px 24px;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,0.08);">🌟 Bästa: <strong>' + esc(vm.bestDay) + ' (' + vm.bestPct + '%)</strong></div>';
+    }
+    if (vm.worstDay) {
+      h += '<div style="background:white;border-radius:20px;padding:10px 24px;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,0.08);">📉 Sämsta: <strong>' + esc(vm.worstDay) + ' (' + vm.worstPct + '%)</strong></div>';
+    }
+    if (vm.daysWithData > 0) {
+      h += '<div style="background:white;border-radius:20px;padding:10px 24px;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,0.08);">☀️ Dagar med data: <strong>' + vm.daysWithData + '</strong></div>';
+    }
+    h += '</div>';
+    h += '</div>';
+
+    // Parent summary
+    if (vm.parentSummary) {
+      h += '<div style="background:white;border-radius:16px;padding:18px 24px;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,0.06);">';
+      h += '<div style="font-size:14px;font-weight:700;color:#E8944A;margin-bottom:6px;">📋 SAMMANFATTNING</div>';
+      h += '<div style="font-size:16px;color:#1C2340;font-style:italic;line-height:1.5;">"' + esc(vm.parentSummary.length > 200 ? vm.parentSummary.slice(0,197)+'...' : vm.parentSummary) + '"</div>';
+      h += '</div>';
+    }
+
+    // Rewards
+    if (vm.showRewards && vm.rewardsCounts.length > 0) {
+      h += '<div style="background:white;border-radius:16px;padding:14px 24px;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,0.06);">';
+      h += '<div style="font-size:14px;font-weight:700;color:#E8944A;margin-bottom:6px;">🎁 BELÖNINGAR</div>';
+      h += '<div style="font-size:16px;">' + vm.rewardsCounts.map(function(r){ return esc(r.count + ' ' + r.label); }).join(' · ') + '</div>';
+      h += '</div>';
+    }
+
+    // Top 5
+    if (vm.top5.length > 0) {
+      h += '<div style="background:white;border-radius:16px;padding:14px 24px;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,0.06);">';
+      h += '<div style="font-size:14px;font-weight:700;color:#E8944A;margin-bottom:8px;">🏆 TOPP 5 AKTIVITETER</div>';
+      vm.top5.forEach(function(a, i) {
+        h += '<div style="font-size:15px;padding:4px 0;display:flex;align-items:center;gap:8px;">';
+        h += '<span style="font-weight:800;color:#E8944A;">' + (i+1) + '.</span>';
+        h += '<span>' + esc(a.name) + '</span>';
+        h += '<span style="color:#5A6378;margin-left:auto;">' + a.done + ' ggr</span>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+
+    // Section cards (dagdelar)
+    if (vm.sections.length > 0) {
+      h += '<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;justify-content:center;">';
+      var sectionColors = { Morgon:'#FEF3C7', Dag:'#DBEAFE', Kväll:'#E9D5FF', Natt:'#E0E7FF' };
+      var sectionIcons = { Morgon:'🌅', Dag:'☀️', Kväll:'🌙', Natt:'🌃' };
+      vm.sections.forEach(function(s) {
+        var bg = sectionColors[s.label] || '#F3F4F6';
+        var icon = sectionIcons[s.label] || '📌';
+        h += '<div style="background:' + bg + ';border-radius:14px;padding:14px 20px;min-width:140px;text-align:center;">';
+        h += '<div style="font-size:28px;">' + icon + '</div>';
+        h += '<div style="font-size:14px;font-weight:700;">' + esc(s.label) + '</div>';
+        h += '<div style="font-size:28px;font-weight:900;color:#1C2340;">' + s.pct + '%</div>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+
+    // Weekly table
+    if (vm.weeks.length > 0) {
+      h += '<div style="background:white;border-radius:16px;padding:14px 24px;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,0.06);">';
+      h += '<div style="font-size:14px;font-weight:700;color:#E8944A;margin-bottom:8px;">📅 VECKOVIS</div>';
+      vm.weeks.forEach(function(w) {
+        h += '<div style="display:flex;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid #F0EDE6;">';
+        h += '<span style="font-size:14px;min-width:100px;">' + esc(w.label) + '</span>';
+        h += '<div style="flex:1;height:8px;background:#EDE9FE;border-radius:4px;overflow:hidden;">';
+        h += '<div style="height:100%;width:' + w.pct + '%;background:#F5A623;border-radius:4px;"></div>';
+        h += '</div>';
+        h += '<span style="font-size:14px;font-weight:700;min-width:40px;text-align:right;">' + w.pct + '%</span>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+
+    // Notes
+    if (vm.notes.length > 0) {
+      h += '<div style="background:white;border-radius:16px;padding:14px 24px;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,0.06);">';
+      h += '<div style="font-size:14px;font-weight:700;color:#E8944A;margin-bottom:6px;">📝 ANTECKNINGAR</div>';
+      vm.notes.forEach(function(n) {
+        h += '<div style="font-size:14px;padding:4px 0;"><strong>' + esc(n.date) + ':</strong> ' + esc(n.text) + '</div>';
+      });
+      h += '</div>';
+    }
+
+    // Pedagog notes
+    if (vm.showPedagog && vm.pedagogNotes.length > 0) {
+      h += '<div style="background:white;border-radius:16px;padding:14px 24px;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,0.06);">';
+      h += '<div style="font-size:14px;font-weight:700;color:#7C3AED;margin-bottom:6px;">👩‍🏫 PEDAGOGANTECKNINGAR</div>';
+      vm.pedagogNotes.forEach(function(n) {
+        h += '<div style="font-size:14px;padding:4px 0;">';
+        h += '<strong>' + esc(n.date) + '</strong>';
+        if (n.pedagog) h += ' <span style="color:#5A6378;">(' + esc(n.pedagog) + ')</span>';
+        if (n.mood) h += ' · Humör: ' + esc(n.mood);
+        if (n.notes) h += '<br><span style="color:#5A6378;font-style:italic;">' + esc(n.notes) + '</span>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+
+    // Quote bubble
+    if (vm.quote) {
+      h += '<div style="background:#1C2340;color:white;border-radius:16px;padding:18px 28px;margin-bottom:20px;text-align:center;">';
+      h += '<div style="font-size:18px;font-style:italic;line-height:1.5;">"' + esc(vm.quote.length > 150 ? vm.quote.slice(0,147)+'...' : vm.quote) + '"</div>';
+      h += '</div>';
+    }
+
+    // Footer
+    h += '<div style="text-align:center;font-size:14px;color:#8A7E6D;margin-top:16px;">';
+    h += 'mystarday.se · @mystarday';
+    h += '</div>';
+
+    h += '</div>'; // content wrapper
+    h += '</div>'; // outer
+
+    container.innerHTML = h;
+  }
+
+  /**
+   * Fetch playful viewModel and render → html2canvas → jsPDF → download.
+   * Falls back to backend PDF if html2canvas/jsPDF are unavailable.
+   */
+  async function downloadPlayfulPdf(btn) {
+    if (!btn) return;
+    btn.disabled = true;
+    btn.textContent = '⏳ Genererar...';
+
+    try {
+      // Fetch viewModel from /playful endpoint
+      var url = '/api/public/report/' + currentPublicId + '/playful';
+      var token = getStoredToken();
+      var headers = {};
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      var res = await fetch(url, { method: 'GET', headers: headers, credentials: 'same-origin', signal: AbortSignal.timeout(15000) });
+      if (res.status === 403) { showScreen('pin'); btn.disabled = false; btn.textContent = '⬇ Ladda ner PDF'; return; }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var json = await res.json();
+      var vm = json.viewModel;
+      if (!vm) throw new Error('No viewModel');
+
+      // Render into hidden container
+      var container = document.getElementById('playfulExportRoot');
+      renderPlayfulReport(container, vm);
+
+      // Wait for fonts to load
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      // Small delay for rendering
+      await new Promise(function(r) { setTimeout(r, 300); });
+
+      // html2canvas capture
+      if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
+        throw new Error('html2canvas/jsPDF not loaded');
+      }
+      var canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#F5E6C8',
+        width: 1080,
+        height: 1920,
+        logging: false,
+      });
+
+      // jsPDF: 1 page, custom size matching 1080×1920 ratio (in mm)
+      var pdfW = 108; // mm (arbitrary, maintains ratio)
+      var pdfH = 192; // mm
+      var pdf = new jspdf.jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [pdfW, pdfH],
+      });
+      var imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
+
+      var label = vm.childName || 'rapport';
+      var safeLabel = label.replace(/[^a-zA-Z0-9\u00C0-\u017E _-]/g, '').trim() || 'rapport';
+      var today = new Date();
+      var dateStr = today.getFullYear() + '-' + pad(today.getMonth()+1) + '-' + pad(today.getDate());
+      pdf.save('rapport-' + safeLabel + '-' + dateStr + '.pdf');
+
+      // Clean up
+      container.innerHTML = '';
+      btn.disabled = false;
+      btn.textContent = '⬇ Ladda ner PDF';
+    } catch (err) {
+      console.error('[PlayfulPDF]', err);
+      btn.disabled = false;
+      btn.textContent = '⬇ Ladda ner PDF';
+      alert('Kunde inte generera PDF. Försök igen.');
+    }
+  }
+
+  // ── Events ───────────────────────────────────────────────
+
+  pinBtn.addEventListener('click', submitPin);
+  pinInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') submitPin(); });
+  pinInput.addEventListener('input', function() {
+    this.value = this.value.replace(/\//, '').replace(/\\/, '').slice(0, 6);
+  });
+
+  // Bottom PDF button → playful export
+  $('btnPdf').addEventListener('click', function() { downloadPlayfulPdf(this); });
+  // Toolbar PDF button → playful export
+  $('btnToolbarPdf').addEventListener('click', function() { downloadPlayfulPdf(this); });
+
+  // Toolbar filter buttons
+  $('toolbarFilters').addEventListener('click', function(e) {
+    var btn = e.target.closest('.toolbar-filter');
+    if (!btn) return;
+    var filter = btn.getAttribute('data-filter');
+    if (filter) setTrendFilter(filter);
+  });
+
+  // ── Bootstrap ─────────────────────────────────────────────
+
+  function init() {
+    var match = window.location.pathname.match(/^\/r\/([^\/]+)/);
+    if (!match) { showError('Sidan hittades inte', 'Ogiltig rapportlänk.'); return; }
+    currentPublicId = match[1];
+    fetchReport();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

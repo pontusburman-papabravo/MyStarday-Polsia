@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Min Stjärndag V2.0 — Föräldrapanel Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --amber:     #F5A623;
+      --amber-dk:  #D4891A;
+      --amber-lt:  #FFF0CC;
+      --amber-glow:rgba(245,166,35,0.14);
+      --navy:      #0E1628;
+      --navy-2:    #162035;
+      --navy-3:    #1E2D48;
+      --cream:     #FBF8F2;
+      --cream-2:   #F4F0E6;
+      --sidebar:   #0E1628;
+      --text:      #0E1628;
+      --text-2:    #4A566B;
+      --text-3:    #8A96AB;
+      --coral:     #FF6B52;
+      --mint:      #22C98A;
+      --purple:    #7C4DDB;
+      --border:    rgba(14,22,40,0.08);
+      --r-sm:      8px;
+      --r-md:      14px;
+      --r-lg:      20px;
+      --r-xl:      28px;
+      --font-body: 'Syne', system-ui, sans-serif;
+      --font-display: 'Instrument Serif', Georgia, serif;
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--text);
+      background: var(--cream);
+      display: flex;
+    }
+
+    /* ── Star shape ── */
+    .star-shape {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+      background: var(--amber);
+    }
+
+    .star-shape.sm  { font-size: 12px; }
+    .star-shape.md  { font-size: 18px; }
+    .star-shape.lg  { font-size: 28px; }
+    .star-shape.dim { background: rgba(255,255,255,0.15); }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 240px;
+      min-width: 240px;
+      background: var(--sidebar);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem 1rem;
+      overflow-y: auto;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.25rem 0.5rem;
+      margin-bottom: 2.5rem;
+      text-decoration: none;
+    }
+
+    .sidebar-logo-mark {
+      width: 34px;
+      height: 34px;
+      background: var(--amber);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sidebar-logo-mark .star-shape {
+      font-size: 16px;
+      background: var(--navy);
+    }
+
+    .sidebar-logo-text {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: white;
+      letter-spacing: -0.01em;
+    }
+
+    .sidebar-section {
+      margin-bottom: 0.5rem;
+    }
+
+    .sidebar-section-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.28);
+      padding: 0 0.5rem;
+      margin-bottom: 0.4rem;
+      margin-top: 1.25rem;
+    }
+
+    .sidebar-nav {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .sidebar-nav-item {
+      border-radius: var(--r-sm);
+      overflow: hidden;
+    }
+
+    .sidebar-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.6rem 0.75rem;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.55);
+      border-radius: var(--r-sm);
+      transition: all 0.15s;
+    }
+
+    .sidebar-nav-link:hover {
+      color: rgba(255,255,255,0.85);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .sidebar-nav-link.active {
+      background: rgba(245,166,35,0.15);
+      color: var(--amber);
+    }
+
+    .sidebar-nav-link .icon {
+      font-size: 1rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .sidebar-user {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .sidebar-user:hover { background: rgba(255,255,255,0.06); }
+
+    .sidebar-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .sidebar-user-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .sidebar-user-role {
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.35);
+    }
+
+    /* ── Main area ── */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 2rem;
+      background: var(--cream);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+
+    .topbar-left h1 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      color: var(--navy);
+      font-weight: 400;
+    }
+
+    .topbar-left .topbar-date {
+      font-size: 0.8rem;
+      color: var(--text-3);
+      margin-top: 0.1rem;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .topbar-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.9rem;
+      background: var(--amber-lt);
+      border: 1px solid rgba(212,137,26,0.18);
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--amber-dk);
+    }
+
+    .topbar-chip .star-shape { font-size: 11px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.55rem 1.1rem;
+      border-radius: var(--r-md);
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .btn-amber {
+      background: var(--amber);
+      color: var(--navy);
+      box-shadow: 0 2px 8px rgba(245,166,35,0.3);
+    }
+
+    .btn-amber:hover {
+      background: var(--amber-dk);
+      transform: translateY(-1px);
+    }
+
+    /* ── Content ── */
+    .content {
+      padding: 2rem;
+      flex: 1;
+    }
+
+    /* ── Day summary cards ── */
+    .summary-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .summary-card {
+      background: white;
+      border-radius: var(--r-lg);
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      transition: box-shadow 0.15s;
+    }
+
+    .summary-card:hover { box-shadow: 0 6px 20px rgba(14,22,40,0.07); }
+
+    .summary-card.highlight {
+      background: var(--navy);
+      border-color: transparent;
+    }
+
+    .summary-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+
+    .summary-card.highlight .summary-label { color: rgba(255,255,255,0.4); }
+
+    .summary-value {
+      font-family: var(--font-display);
+      font-size: 2.25rem;
+      line-height: 1;
+      color: var(--navy);
+    }
+
+    .summary-card.highlight .summary-value { color: white; }
+
+    .summary-delta {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.72rem;
+      color: var(--mint);
+      font-weight: 600;
+    }
+
+    .summary-delta.down { color: var(--coral); }
+
+    /* ── Section header ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .section-header h2 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      color: var(--navy);
+      font-weight: 400;
+    }
+
+    .section-header a {
+      font-size: 0.78rem;
+      color: var(--text-3);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .section-header a:hover { color: var(--text-2); }
+
+    /* ── Children grid ── */
+    .children-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .child-card {
+      background: white;
+      border-radius: var(--r-xl);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .child-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(14,22,40,0.1);
+    }
+
+    .child-card-header {
+      padding: 1.25rem 1.25rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .child-emoji-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+    }
+
+    .child-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .child-age {
+      font-size: 0.75rem;
+      color: var(--text-3);
+      margin-top: 0.1rem;
+    }
+
+    .child-stars-badge {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--amber-lt);
+      border: 1px solid rgba(212,137,26,0.15);
+      padding: 0.35rem 0.7rem;
+      border-radius: 100px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--amber-dk);
+    }
+
+    .child-stars-badge .star-shape { font-size: 11px; }
+
+    .child-progress-wrap {
+      padding: 0 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .progress-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.4rem;
+    }
+
+    .progress-text {
+      font-size: 0.75rem;
+      color: var(--text-3);
+    }
+
+    .progress-pct {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .progress-bar {
+      height: 7px;
+      background: var(--cream-2);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 100px;
+      background: linear-gradient(90deg, var(--amber) 0%, #FFD166 100%);
+      transition: width 0.4s ease;
+    }
+
+    .progress-fill.full { background: linear-gradient(90deg, var(--mint) 0%, #6EE7B7 100%); }
+
+    /* Activities inside child card */
+    .child-activities {
+      padding: 0.75rem 1.25rem;
+      background: var(--cream);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .activity-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-size: 0.78rem;
+      color: var(--text-2);
+    }
+
+    .act-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .act-check.done { background: var(--mint); }
+    .act-check.done::after { content: '✓'; font-size: 10px; color: white; font-weight: 700; }
+    .act-check.pending { border: 1.5px solid rgba(14,22,40,0.15); }
+
+    .act-label { flex: 1; }
+    .act-label.done { text-decoration: line-through; color: var(--text-3); }
+
+    .act-stars {
+      font-size: 0.68rem;
+      color: var(--amber-dk);
+      font-weight: 700;
+    }
+
+    .child-card-footer {
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-sm {
+      flex: 1;
+      padding: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: var(--r-sm);
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .btn-sm-outline {
+      background: var(--cream);
+      color: var(--text-2);
+      border: 1px solid var(--border);
+    }
+
+    .btn-sm-outline:hover { background: var(--cream-2); }
+
+    .btn-sm-amber {
+      background: var(--amber);
+      color: var(--navy);
+      font-weight: 700;
+    }
+
+    .btn-sm-amber:hover { background: var(--amber-dk); }
+
+    /* ── Week chart (mini) ── */
+    .week-chart-wrap {
+      background: white;
+      border-radius: var(--r-xl);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+    }
+
+    .week-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.5rem;
+      height: 90px;
+      margin-top: 1.5rem;
+    }
+
+    .week-bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .week-bar {
+      width: 100%;
+      border-radius: 6px 6px 0 0;
+      min-height: 4px;
+      background: var(--amber);
+      opacity: 0.75;
+      transition: opacity 0.15s;
+    }
+
+    .week-bar:hover { opacity: 1; }
+
+    .week-bar.today {
+      opacity: 1;
+      background: var(--amber);
+      box-shadow: 0 0 12px rgba(245,166,35,0.4);
+    }
+
+    .week-bar.empty { background: var(--cream-2); }
+
+    .week-day-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .week-day-label.today { color: var(--amber-dk); }
+
+    /* ── Recent activity feed ── */
+    .activity-feed {
+      background: white;
+      border-radius: var(--r-xl);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .feed-item {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    .feed-item:last-child { border-bottom: none; }
+    .feed-item:hover { background: var(--cream); }
+
+    .feed-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .feed-text {
+      flex: 1;
+    }
+
+    .feed-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--navy);
+    }
+
+    .feed-action {
+      font-size: 0.78rem;
+      color: var(--text-2);
+      margin-top: 0.1rem;
+    }
+
+    .feed-time {
+      font-size: 0.7rem;
+      color: var(--text-3);
+    }
+
+    .feed-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .feed-badge.star {
+      background: var(--amber-lt);
+      color: var(--amber-dk);
+    }
+
+    .feed-badge.reward {
+      background: rgba(124,77,219,0.1);
+      color: var(--purple);
+    }
+
+    /* ── Two-column layout ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1.5rem;
+    }
+
+    /* ── V2 badge ── */
+    .v2-badge {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--amber);
+      color: var(--navy);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 0.5rem 0.9rem;
+      border-radius: 100px;
+      box-shadow: 0 4px 16px rgba(245,166,35,0.4);
+      z-index: 999;
+      text-transform: uppercase;
+    }
+
+    /* ── Quick nav links ── */
+    .page-nav {
+      background: var(--navy-2);
+      padding: 0.4rem 0.5rem;
+      margin-bottom: 1.5rem;
+      border-radius: var(--r-sm);
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .page-nav a {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.45);
+      text-decoration: none;
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+
+    .page-nav a:hover, .page-nav a.active {
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.9);
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(14,22,40,0.12); border-radius: 10px; }
+  </style>
+</head>
+<body>
+
+<div class="v2-badge">V2.0 Mockup</div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <a href="/V2.0" class="sidebar-logo">
+    <div class="sidebar-logo-mark">
+      <div class="star-shape"></div>
+    </div>
+    <span class="sidebar-logo-text">Min Stjärndag</span>
+  </a>
+
+  <!-- Mock page links -->
+  <div class="page-nav">
+    <a href="/V2.0">Landing</a>
+    <a href="/V2.0/dashboard.html" class="active">Panel</a>
+    <a href="/V2.0/child.html">Barnvy</a>
+  </div>
+
+  <ul class="sidebar-nav">
+    <li class="sidebar-nav-item">
+      <a href="#" class="sidebar-nav-link active">
+        <span class="icon">🏠</span> Min panel
+      </a>
+    </li>
+    <li class="sidebar-nav-item">
+      <a href="#" class="sidebar-nav-link">
+        <span class="icon">👨‍👩‍👧‍👦</span> Familj
+      </a>
+    </li>
+    <li class="sidebar-nav-item">
+      <a href="#" class="sidebar-nav-link">
+        <span class="icon">📋</span> Daglig logg
+      </a>
+    </li>
+  </ul>
+
+  <div class="sidebar-section-label">Verktyg</div>
+  <ul class="sidebar-nav">
+    <li class="sidebar-nav-item">
+      <a href="#" class="sidebar-nav-link">
+        <span class="icon">✨</span> Aktiviteter
+      </a>
+    </li>
+    <li class="sidebar-nav-item">
+      <a href="#" class="sidebar-nav-link">
+        <span class="icon">📅</span> Veckoschema
+      </a>
+    </li>
+    <li class="sidebar-nav-item">
+      <a href="#" class="sidebar-nav-link">
+        <span class="icon">🏆</span> Skattkammaren
+      </a>
+    </li>
+    <li class="sidebar-nav-item">
+      <a href="#" class="sidebar-nav-link">
+        <span class="icon">📊</span> Statistik
+      </a>
+    </li>
+  </ul>
+
+  <div class="sidebar-section-label">Konto</div>
+  <ul class="sidebar-nav">
+    <li class="sidebar-nav-item">
+      <a href="#" class="sidebar-nav-link">
+        <span class="icon">⚙️</span> Inställningar
+      </a>
+    </li>
+  </ul>
+
+  <div class="sidebar-bottom">
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">👩</div>
+      <div>
+        <div class="sidebar-user-name">Sara Andersson</div>
+        <div class="sidebar-user-role">sara@example.com</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main area -->
+<div class="main">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Min panel</h1>
+      <div class="topbar-date">Måndag 4 maj 2026 · Vecka 19</div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-chip">
+        <div class="star-shape sm"></div>
+        Familjen: 44 stjärnor idag
+      </div>
+      <a href="#" class="btn btn-amber">+ Lägg till barn</a>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Summary cards -->
+    <div class="summary-row">
+      <div class="summary-card highlight">
+        <div class="summary-label">Stjärnor idag</div>
+        <div class="summary-value" style="color: var(--amber);">44</div>
+        <div class="summary-delta">↑ 12 mer än igår</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Aktiviteter klara</div>
+        <div class="summary-value">27</div>
+        <div class="summary-delta">av 36 totalt</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Aktiva barn</div>
+        <div class="summary-value">3</div>
+        <div class="summary-delta">alla inloggade</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Inlösningar ikväll</div>
+        <div class="summary-value">2</div>
+        <div class="summary-delta" style="color: var(--purple);">väntar i Skattkammaren</div>
+      </div>
+    </div>
+
+    <!-- Children heading -->
+    <div class="section-header">
+      <h2>Dina barn idag</h2>
+      <a href="#">Se alla →</a>
+    </div>
+
+    <!-- Children grid -->
+    <div class="children-grid">
+      <!-- Anna -->
+      <div class="child-card">
+        <div class="child-card-header">
+          <div class="child-emoji-wrap" style="background: #FFF0F0;">🌸</div>
+          <div>
+            <div class="child-name">Anna</div>
+            <div class="child-age">8 år</div>
+          </div>
+          <div class="child-stars-badge">
+            <div class="star-shape sm"></div>
+            8 stjärnor
+          </div>
+        </div>
+        <div class="child-progress-wrap">
+          <div class="progress-meta">
+            <span class="progress-text">11 av 17 aktiviteter</span>
+            <span class="progress-pct">65%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 65%;"></div>
+          </div>
+        </div>
+        <div class="child-activities">
+          <div class="activity-row">
+            <div class="act-check done"></div>
+            <span class="act-label done">Borsta tänderna</span>
+            <span class="act-stars">⭐ 1</span>
+          </div>
+          <div class="activity-row">
+            <div class="act-check done"></div>
+            <span class="act-label done">Klä på sig</span>
+            <span class="act-stars">⭐ 2</span>
+          </div>
+          <div class="activity-row">
+            <div class="act-check pending"></div>
+            <span class="act-label">Packa väskan</span>
+            <span class="act-stars">⭐ 1</span>
+          </div>
+        </div>
+        <div class="child-card-footer">
+          <button class="btn-sm btn-sm-outline">📅 Schema</button>
+          <button class="btn-sm btn-sm-amber">📋 Logg</button>
+        </div>
+      </div>
+
+      <!-- Per -->
+      <div class="child-card">
+        <div class="child-card-header">
+          <div class="child-emoji-wrap" style="background: #FFF8E1;">👑</div>
+          <div>
+            <div class="child-name">Per</div>
+            <div class="child-age">6 år</div>
+          </div>
+          <div class="child-stars-badge">
+            <div class="star-shape sm"></div>
+            24 stjärnor
+          </div>
+        </div>
+        <div class="child-progress-wrap">
+          <div class="progress-meta">
+            <span class="progress-text">17 av 17 aktiviteter</span>
+            <span class="progress-pct">100%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill full" style="width: 100%;"></div>
+          </div>
+        </div>
+        <div class="child-activities">
+          <div class="activity-row">
+            <div class="act-check done"></div>
+            <span class="act-label done">Frukost</span>
+            <span class="act-stars">⭐ 2</span>
+          </div>
+          <div class="activity-row">
+            <div class="act-check done"></div>
+            <span class="act-label done">Borsta tänderna</span>
+            <span class="act-stars">⭐ 1</span>
+          </div>
+          <div class="activity-row">
+            <div class="act-check done"></div>
+            <span class="act-label done">Sätta på skor</span>
+            <span class="act-stars">⭐ 1</span>
+          </div>
+        </div>
+        <div class="child-card-footer">
+          <button class="btn-sm btn-sm-outline">📅 Schema</button>
+          <button class="btn-sm btn-sm-amber">📋 Logg</button>
+        </div>
+      </div>
+
+      <!-- Erik -->
+      <div class="child-card">
+        <div class="child-card-header">
+          <div class="child-emoji-wrap" style="background: #F3EAFF;">🦄</div>
+          <div>
+            <div class="child-name">Erik</div>
+            <div class="child-age">10 år</div>
+          </div>
+          <div class="child-stars-badge">
+            <div class="star-shape sm"></div>
+            12 stjärnor
+          </div>
+        </div>
+        <div class="child-progress-wrap">
+          <div class="progress-meta">
+            <span class="progress-text">9 av 17 aktiviteter</span>
+            <span class="progress-pct">53%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 53%;"></div>
+          </div>
+        </div>
+        <div class="child-activities">
+          <div class="activity-row">
+            <div class="act-check done"></div>
+            <span class="act-label done">Frukost</span>
+            <span class="act-stars">⭐ 2</span>
+          </div>
+          <div class="activity-row">
+            <div class="act-check done"></div>
+            <span class="act-label done">Läsa 15 min</span>
+            <span class="act-stars">⭐ 3</span>
+          </div>
+          <div class="activity-row">
+            <div class="act-check pending"></div>
+            <span class="act-label">Städa rummet</span>
+            <span class="act-stars">⭐ 2</span>
+          </div>
+        </div>
+        <div class="child-card-footer">
+          <button class="btn-sm btn-sm-outline">📅 Schema</button>
+          <button class="btn-sm btn-sm-amber">📋 Logg</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom two-column -->
+    <div class="two-col">
+
+      <!-- Left: week chart -->
+      <div>
+        <div class="section-header">
+          <h2>Veckans stjärnor</h2>
+          <a href="#">Fullständig statistik →</a>
+        </div>
+        <div class="week-chart-wrap">
+          <div style="font-size: 0.75rem; color: var(--text-3);">Familjen totalt · Maj 2026</div>
+          <div class="week-chart">
+            <div class="week-bar-group">
+              <div class="week-bar" style="height: 55px;"></div>
+              <div class="week-day-label">Mån</div>
+            </div>
+            <div class="week-bar-group">
+              <div class="week-bar" style="height: 72px;"></div>
+              <div class="week-day-label">Tis</div>
+            </div>
+            <div class="week-bar-group">
+              <div class="week-bar" style="height: 38px;"></div>
+              <div class="week-day-label">Ons</div>
+            </div>
+            <div class="week-bar-group">
+              <div class="week-bar" style="height: 85px;"></div>
+              <div class="week-day-label">Tor</div>
+            </div>
+            <div class="week-bar-group">
+              <div class="week-bar" style="height: 62px;"></div>
+              <div class="week-day-label">Fre</div>
+            </div>
+            <div class="week-bar-group">
+              <div class="week-bar empty" style="height: 12px;"></div>
+              <div class="week-day-label">Lör</div>
+            </div>
+            <div class="week-bar-group">
+              <div class="week-bar today" style="height: 44px;"></div>
+              <div class="week-day-label today">Sön</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: activity feed -->
+      <div>
+        <div class="section-header">
+          <h2>Senaste aktivitet</h2>
+        </div>
+        <div class="activity-feed">
+          <div class="feed-item">
+            <div class="feed-avatar" style="background: #FFF0F0;">🌸</div>
+            <div class="feed-text">
+              <div class="feed-name">Anna</div>
+              <div class="feed-action">Klärde av "Borsta tänderna"</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem;">
+              <div class="feed-time">08:03</div>
+              <div class="feed-badge star">⭐ +1</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-avatar" style="background: #FFF8E1;">👑</div>
+            <div class="feed-text">
+              <div class="feed-name">Per</div>
+              <div class="feed-action">Klärde alla 17 aktiviteter!</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem;">
+              <div class="feed-time">07:55</div>
+              <div class="feed-badge star">⭐ +24</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-avatar" style="background: #F3EAFF;">🦄</div>
+            <div class="feed-text">
+              <div class="feed-name">Erik</div>
+              <div class="feed-action">Löste in "Extra TV-tid"</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem;">
+              <div class="feed-time">07:30</div>
+              <div class="feed-badge reward">🏆 Belöning</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-avatar" style="background: #FFF0F0;">🌸</div>
+            <div class="feed-text">
+              <div class="feed-name">Anna</div>
+              <div class="feed-action">Klarade "Klä på sig"</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem;">
+              <div class="feed-time">07:22</div>
+              <div class="feed-badge star">⭐ +2</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-avatar" style="background: #F3EAFF;">🦄</div>
+            <div class="feed-text">
+              <div class="feed-name">Erik</div>
+              <div class="feed-action">Klarade "Frukost"</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem;">
+              <div class="feed-time">07:10</div>
+              <div class="feed-badge star">⭐ +2</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+</body>
+</html>

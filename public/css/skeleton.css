@@ -1,0 +1,249 @@
+/* skeleton.css — Shimmer loading states, CSS-only, no libs
+   Designed for both child view (rounded, playful) and parent view (clean, professional).
+   Colors: gold #F5A623, navy #1B2340 from app palette.
+   Usage: add .skeleton class to element. For view-specific shapes, use skeleton-row / skeleton-card / etc.
+*/
+
+/* ── Shimmer animation ─────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e8e8e8 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Child view skeletons (playful, rounded) ─────────── */
+
+/* Activity row — matches .activity-card height (56px) */
+.skeleton-row {
+  height: 56px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+}
+
+/* Child dashboard card */
+.skeleton-card {
+  height: 72px;
+  border-radius: 16px;
+}
+
+/* Progress bar placeholder */
+.skeleton-progress {
+  height: 14px;
+  border-radius: 999px;
+}
+
+/* Star balance placeholder */
+.skeleton-star-balance {
+  height: 52px;
+  border-radius: 14px;
+}
+
+/* Reward card */
+.skeleton-reward {
+  height: 100px;
+  border-radius: 16px;
+}
+
+/* Goal card */
+.skeleton-goal {
+  height: 80px;
+  border-radius: 18px;
+}
+
+/* NOW card skeleton (child dashboard) */
+.skeleton-now-card {
+  height: 120px;
+  border-radius: 20px;
+  border: 2.5px solid #F5A623;
+}
+
+/* Section header skeleton */
+.skeleton-section-header {
+  height: 44px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+/* ── Parent view skeletons (clean, professional) ─────── */
+
+/* Child card on parent dashboard */
+.skeleton-child-card {
+  height: 88px;
+  border-radius: 16px;
+  border: 2px solid #EDE7F6;
+}
+
+/* Dashboard section skeleton */
+.skeleton-section {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+/* Activity list item (parent) */
+.skeleton-activity-item {
+  height: 48px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+
+/* Avatar + info row */
+.skeleton-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skeleton-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-avatar-info {
+  flex: 1;
+  height: 52px;
+  border-radius: 12px;
+}
+
+/* Mini week bar skeleton */
+.skeleton-week-bar {
+  height: 48px;
+  border-radius: 8px;
+}
+
+/* ── Transition: skeleton → real content ───────────────── */
+
+/* Wrap real content in .skeleton-fade-in and apply this class
+   to fade-in when real content is ready */
+.skeleton-fade-in {
+  animation: skeletonFadeIn 0.4s ease forwards;
+}
+
+@keyframes skeletonFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Hidden when skeleton is shown */
+.skeleton-ready {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.skeleton-ready.loaded {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Error state styling ───────────────────────────────── */
+
+.skeleton-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  gap: 12px;
+}
+
+.skeleton-error-icon {
+  font-size: 3rem;
+}
+
+.skeleton-error-text {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #5A6178;
+}
+
+.skeleton-error-hint {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.875rem;
+  color: #9CA3AF;
+}
+
+.skeleton-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: #F5A623;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  min-height: 44px;
+}
+
+.skeleton-retry-btn:hover { background: #e8971a; }
+.skeleton-retry-btn:active { transform: scale(0.96); }
+
+/* ── Skeleton container helpers ────────────────────────── */
+
+.skeleton-container {
+  position: relative;
+}
+
+/* Stack multiple skeletons */
+.skeleton-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Grid of skeleton cards */
+.skeleton-grid {
+  display: grid;
+  gap: 10px;
+}
+
+/* ── Mobile touch targets preserved ──────────────────────
+   Skeleton placeholders have no interactive elements,
+   but parent container maintains min-height so layout doesn't jump.
+   The shimmer animation is GPU-accelerated and won't jank on iOS.
+*/
+
+/* Web-only: keep skeletons hidden on web (this is a Capacitor feature)
+   skeleton.js will handle web vs native detection via window.Platform */
+
+/* Child view dark mode */
+@media (prefers-color-scheme: dark) {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #2d3a5c 25%,
+      #3a4a6e 50%,
+      #2d3a5c 75%
+    );
+  }
+  .skeleton-child-card {
+    border-color: #2d3a5c;
+  }
+}
+
+/* Prevent skeleton from affecting layout shift (CLS)
+   Skeleton containers maintain min-height equal to expected content */
+.skeleton-min-h {
+  min-height: 200px;
+}

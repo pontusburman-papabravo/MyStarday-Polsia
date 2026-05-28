@@ -1,0 +1,52 @@
+---
+description: Follow docs/prompt-roadmap-förbättringar.md (rev 5) for feature implementation.
+globs:
+  - docs/prompt-roadmap*.md
+  - src/routes/auth.js
+  - src/routes/onboarding.js
+  - src/lib/win-back*.js
+  - public/js/dashboard*.js
+  - public/js/onboarding.js
+---
+
+# Stjarndag — Roadmap Task Structure
+
+Follow `docs/prompt-roadmap-förbättringar.md` (rev 5) exactly.
+
+## Task 1 — Auth + Onboarding
+- Chunk-read `src/routes/auth.js` (register/Apple sections)
+- Chunk-read `src/routes/onboarding.js`
+- **Do NOT touch the rest of auth.js**
+
+## Tasks 2–3 — New feature files
+- New code goes in `public/js/dashboard-cta.js` and/or `public/js/dashboard-share.js`
+- Minimal diff in `dashboard.js` (add `<script>` tag + init call only)
+- No large-file rewrites
+
+## Task 4 — Win-back scheduler
+- New file: `src/lib/win-back-scheduler.js`
+- Migration file for DB changes
+- Email template in `src/lib/email.js` via grep — do not read entire email.js
+
+## Task 5 — Child settings
+- `public/js/child-settings.js` — chunk-read only
+- `public/js/child-dashboard.js` — chunk-read only
+
+## Required in every PR
+
+1. **Feature slugs** — add to `scripts/seed-features.js` in the same PR
+2. **SW cache bump** — bump `CACHE_NAME` in `public/sw.js` on any frontend change
+3. **Commit** — only on explicit user request
+
+## ❌/✅ Examples
+
+❌ Wrong:
+```
+read src/routes/auth.js  (full auth.js is ~16k tokens)
+```
+
+✅ Correct:
+```
+grep "register|appleSignup" src/routes/auth.js
+read src/routes/auth.js offset=200 limit=100
+```

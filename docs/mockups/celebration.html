@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firande — Min Stjärndag Mockup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --gold: #F5A623; --gold-light: #FFF3D6; --gold-dark: #D4880A;
+            --navy: #1B2340; --navy-soft: #2A3458;
+            --sky: #E8F0FE; --lavender: #EDE7F6; --mint: #E0F5EC; --coral: #FDEAE7;
+            --text: #1B2340; --text-soft: #5A6178; --text-light: #9AA0B8;
+            --white: #FFFFFF; --green: #22C55E;
+        }
+        html { font-size: 16px; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg, #F0F4FF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            background: #F0F4FF;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(245,166,35,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(74,100,255,0.05) 0%, transparent 50%);
+        }
+
+        .phone-frame {
+            width: 320px;
+            background: var(--navy);
+            border-radius: 44px;
+            padding: 12px;
+            box-shadow: 0 8px 40px rgba(27,35,64,0.16);
+        }
+        .phone-screen {
+            background: #F8F0FF;
+            border-radius: 34px;
+            overflow: hidden;
+            position: relative;
+        }
+        .notch {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px; height: 24px;
+            background: var(--navy);
+            border-radius: 0 0 16px 16px;
+            z-index: 10;
+        }
+
+        /* ── Celebration background ── */
+        .celebration-bg {
+            background: linear-gradient(160deg, #FEF9EE 0%, #F0E8FF 50%, #FFF0F5 100%);
+            min-height: 560px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px 24px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Confetti canvas */
+        .confetti-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Confetti pieces (CSS animated) */
+        .confetti {
+            position: absolute;
+            border-radius: 2px;
+            animation: confettiFall linear forwards;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(580px) rotate(720deg); opacity: 0; }
+        }
+
+        /* Star burst */
+        .star-burst {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .burst-star {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            font-size: 2.5rem;
+            animation: burst 1.5s ease-out forwards;
+            transform-origin: center center;
+        }
+        @keyframes burst {
+            0% { transform: translate(-50%,-50%) scale(0) rotate(0deg); opacity: 0; }
+            30% { opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(1) rotate(var(--tr)) translate(-50%,-50%); opacity: 0; }
+        }
+
+        /* Main content */
+        .celebration-content {
+            position: relative;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .trophy-icon {
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, var(--gold), #FFD700);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            box-shadow: 0 8px 30px rgba(245,166,35,0.5);
+            margin-bottom: 20px;
+            animation: trophyBounce 0.6s ease-out;
+        }
+        @keyframes trophyBounce {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        .celebration-headline {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--navy);
+            line-height: 1.2;
+            margin-bottom: 10px;
+            animation: slideUp 0.6s ease-out 0.3s both;
+        }
+        .celebration-emoji {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            animation: slideUp 0.6s ease-out 0.4s both;
+        }
+        @keyframes slideUp {
+            0% { opacity: 0; transform: translateY(16px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .celebration-sub {
+            font-size: 0.95rem;
+            color: var(--text-soft);
+            line-height: 1.6;
+            max-width: 220px;
+            margin-bottom: 24px;
+            animation: slideUp 0.6s ease-out 0.5s both;
+        }
+
+        /* Stars earned bubble */
+        .stars-earned {
+            background: linear-gradient(135deg, var(--gold-light), #FFF8E0);
+            border: 2px solid rgba(245,166,35,0.4);
+            border-radius: 20px;
+            padding: 16px 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(245,166,35,0.2);
+            animation: slideUp 0.6s ease-out 0.6s both;
+        }
+        .stars-earned .star-circle {
+            width: 44px; height: 44px;
+            background: var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 3px 12px rgba(245,166,35,0.5);
+        }
+        .stars-earned .earn-info { text-align: left; }
+        .stars-earned .earn-count {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--gold-dark);
+            line-height: 1;
+        }
+        .stars-earned .earn-label {
+            font-size: 0.78rem;
+            color: var(--text-soft);
+        }
+
+        /* Next activity preview */
+        .next-activity {
+            background: rgba(255,255,255,0.8);
+            border-radius: 16px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.6);
+            animation: slideUp 0.6s ease-out 0.8s both;
+            width: 100%;
+            max-width: 240px;
+        }
+        .next-activity .next-emoji {
+            width: 36px; height: 36px;
+            background: var(--lavender);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        .next-activity .next-info { text-align: left; }
+        .next-activity .next-label {
+            font-size: 0.68rem;
+            color: var(--text-light);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .next-activity .next-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--navy);
+        }
+
+        .mockup-label {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .mockup-label h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+        .mockup-label p {
+            font-size: 0.88rem;
+            color: var(--text-soft);
+            margin-top: 4px;
+        }
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="mockup-label">
+        <h2>Firande</h2>
+        <p>Alla aktiviteter klara! Konfetti och glädje.</p>
+    </div>
+
+    <div class="phone-frame">
+        <div class="phone-screen">
+            <div class="notch"></div>
+
+            <div class="celebration-bg">
+
+                <!-- Confetti pieces (CSS animated) -->
+                <div class="confetti" style="left:8%; top:-10px; width:8px; height:10px; background:#FFD700; animation-duration:2.4s; animation-delay:0s;"></div>
+                <div class="confetti" style="left:18%; top:-10px; width:7px; height:9px; background:#F5A623; animation-duration:2.8s; animation-delay:0.2s;"></div>
+                <div class="confetti" style="left:28%; top:-10px; width:10px; height:7px; background:#8B5CF6; animation-duration:2.2s; animation-delay:0.1s;"></div>
+                <div class="confetti" style="left:38%; top:-10px; width:8px; height:8px; background:#22C55E; animation-duration:3s; animation-delay:0.4s;"></div>
+                <div class="confetti" style="left:48%; top:-10px; width:6px; height:10px; background:#F87171; animation-duration:2.6s; animation-delay:0.3s;"></div>
+                <div class="confetti" style="left:58%; top:-10px; width:9px; height:8px; background:#FFD700; animation-duration:2.3s; animation-delay:0.5s;"></div>
+                <div class="confetti" style="left:68%; top:-10px; width:7px; height:11px; background:#3B82F6; animation-duration:2.9s; animation-delay:0.2s;"></div>
+                <div class="confetti" style="left:78%; top:-10px; width:10px; height:7px; background:#F5A623; animation-duration:2.5s; animation-delay:0.6s;"></div>
+                <div class="confetti" style="left:88%; top:-10px; width:8px; height:9px; background:#A78BFA; animation-duration:2.7s; animation-delay:0.1s;"></div>
+                <div class="confetti" style="left:13%; top:-10px; width:9px; height:8px; background:#FDE68A; animation-duration:3.2s; animation-delay:0.8s;"></div>
+                <div class="confetti" style="left:33%; top:-10px; width:7px; height:10px; background:#F472B6; animation-duration:2.4s; animation-delay:0.7s;"></div>
+                <div class="confetti" style="left:53%; top:-10px; width:8px; height:8px; background:#34D399; animation-duration:2.8s; animation-delay:0.9s;"></div>
+                <div class="confetti" style="left:73%; top:-10px; width:10px; height:7px; background:#FBBF24; animation-duration:2.1s; animation-delay:0.5s;"></div>
+                <div class="confetti" style="left:93%; top:-10px; width:6px; height:9px; background:#C084FC; animation-duration:3s; animation-delay:0.3s;"></div>
+
+                <!-- Main content -->
+                <div class="celebration-content">
+                    <div class="celebration-emoji">&#127881;</div>
+                    <div class="celebration-headline">Alla aktiviteter<br>klara!</div>
+                    <div class="celebration-sub">Vad du är duktig, Lova! Alla dagens aktiviteter är avklarade. Nu väntar nästa äventyr!</div>
+
+                    <div class="stars-earned">
+                        <div class="star-circle">&#9733;</div>
+                        <div class="earn-info">
+                            <div class="earn-count">+5 stjärnor</div>
+                            <div class="earn-label">Du har nu 17 stjärnor</div>
+                        </div>
+                    </div>
+
+                    <div class="next-activity">
+                        <div class="next-emoji">&#127828;</div>
+                        <div class="next-info">
+                            <div class="next-label">Nästa aktivitet</div>
+                            <div class="next-title">Läxor &bull; 16:00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

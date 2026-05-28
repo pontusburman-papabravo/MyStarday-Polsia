@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redigera funktion — Min Stjärndag Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623',
+            'gold-light': '#FFF3D6',
+            navy: '#1B2340',
+            'navy-soft': '#2A3458',
+            sky: '#E8F0FE',
+            lavender: '#EDE7F6',
+            mint: '#E0F5EC',
+            coral: '#FDEAE7',
+            'text-soft': '#5A6178',
+          },
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            body: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <script src="/js/auth.js"></script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F5F7FA; }
+    h1, h2, h3 { font-family: 'Outfit', sans-serif; }
+    .status-dev { background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
+    .status-live { background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; }
+    .status-off { background: #F3F4F6; color: #6B7280; border: 1px solid #D1D5DB; }
+    textarea, input[type="text"] { font-family: 'Plus Jakarta Sans', sans-serif; resize: none; }
+    .section-card { background: white; border-radius: 1rem; border: 2px solid #EDE7F6; }
+    .save-indicator { font-size: 0.75rem; }
+    .readonly-field { background: #F5F7FA; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white border-b-2 border-lavender px-6 py-4 sticky top-0 z-20">
+    <div class="max-w-5xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a href="/admin/development" class="text-text-soft hover:text-navy transition-colors text-sm font-medium">← Utveckling</a>
+        <h1 id="pageTitle" class="text-xl font-heading font-bold text-navy">Laddar…</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="saveIndicator" class="save-indicator text-text-soft"></span>
+        <span id="statusBadge" class="px-3 py-1 rounded-full text-xs font-bold status-off">OFF</span>
+        <button onclick="cycleStatus()" id="statusBtn" class="text-sm font-semibold text-navy hover:text-gold transition-colors">
+          Ändra status
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-5xl mx-auto p-6">
+
+    <!-- Access denied -->
+    <div id="accessDenied" class="hidden bg-coral border-l-4 border-red-500 p-6 rounded-lg text-center mb-8">
+      <h3 class="text-lg font-heading font-bold text-navy mb-2">Åtkomst nekad</h3>
+      <a href="/dashboard" class="text-gold font-semibold hover:underline">Gå till min panel</a>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingState" class="text-center py-16">
+      <div class="text-4xl mb-4 animate-pulse">⚙️</div>
+      <p class="text-text-soft">Laddar funktion…</p>
+    </div>
+
+    <!-- Content -->
+    <div id="content" class="hidden space-y-4">
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- SECTION 1: Slug (readonly)                                -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div class="section-card p-6">
+        <h3 class="text-sm font-heading font-bold text-navy uppercase tracking-wider mb-2">1. Slug</h3>
+        <p class="text-xs text-text-soft mb-3">Unik identifierare — ändras ej efter skapande.</p>
+        <input type="text" id="fSlug" readonly
+          class="w-full px-3 py-2 border-2 border-lavender rounded-lg bg-gray-100 text-gray-500 text-sm cursor-not-allowed">
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- SECTION 2: Title (name)                                    -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div class="section-card p-6">
+        <h3 class="text-sm font-heading font-bold text-navy uppercase tracking-wider mb-2">2. Titel</h3>
+        <p class="text-xs text-text-soft mb-3">Visningsnamn för funktionen.</p>
+        <input type="text" id="fName" oninput="saveDebounced()"
+          class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm" placeholder="Funktionsnamn…">
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- SECTION 3: Description                                     -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div class="section-card p-6">
+        <h3 class="text-sm font-heading font-bold text-navy uppercase tracking-wider mb-2">3. Beskrivning</h3>
+        <p class="text-xs text-text-soft mb-3">Kort sammanfattning av funktionen.</p>
+        <textarea id="fDescription" rows="2" oninput="saveDebounced()"
+          class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm" placeholder="Kort beskrivning…"></textarea>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- SECTION 4: Status                                          -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div class="section-card p-6">
+        <h3 class="text-sm font-heading font-bold text-navy uppercase tracking-wider mb-2">4. Status</h3>
+        <p class="text-xs text-text-soft mb-3">OFF = avstängd · DEV = under utveckling · LIVE = i produktion</p>
+        <div class="flex gap-3">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="fStatus" value="off" onchange="saveDebounced()" class="accent-gold">
+            <span class="px-3 py-1 rounded text-xs font-bold bg-gray-100 text-gray-600">OFF</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="fStatus" value="dev" onchange="saveDebounced()" class="accent-gold">
+            <span class="px-3 py-1 rounded text-xs font-bold bg-amber-100 text-amber-700">DEV</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="fStatus" value="live" onchange="saveDebounced()" class="accent-gold">
+            <span class="px-3 py-1 rounded text-xs font-bold bg-green-100 text-green-800">LIVE</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- SECTION 5: Priority & Complexity & Estimated Hours          -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div class="section-card p-6">
+        <h3 class="text-sm font-heading font-bold text-navy uppercase tracking-wider mb-4">5. Prioritet, Komplexitet &amp; Timmar</h3>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs text-text-soft mb-1">Prioritet</label>
+            <select id="fPriority" onchange="saveDebounced()" class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-text-soft mb-1">Komplexitet (1–10)</label>
+            <input type="number" id="fComplexity" min="1" max="10" onchange="saveDebounced()"
+              class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm">
+          </div>
+          <div>
+            <label class="block text-xs text-text-soft mb-1">Estimerade timmar</label>
+            <input type="number" id="fEstimatedHours" step="0.5" min="0" onchange="saveDebounced()"
+              class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm">
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- SECTION 8: Category (readonly)                             -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div class="section-card p-6">
+        <h3 class="text-sm font-heading font-bold text-navy uppercase tracking-wider mb-2">8. Kategori</h3>
+        <p class="text-xs text-text-soft mb-3">Kategoriseras automatiskt baserat på funktionens taggar. Ändras i databasen.</p>
+        <input type="text" id="fCategory" readonly
+          class="w-full px-3 py-2 border-2 border-lavender rounded-lg bg-gray-100 text-gray-500 text-sm cursor-not-allowed">
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- SECTION 9: Purpose                                        -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div class="section-card p-6">
+        <h3 class="text-sm font-heading font-bold text-navy uppercase tracking-wider mb-2">9. Syfte &amp; Problem</h3>
+        <p class="text-xs text-text-soft mb-3">Beskriv problemet som löses och varför detta är viktigt.</p>
+        <textarea id="dPurpose" rows="4" oninput="saveDebounced()" placeholder="Vilket problem löser denna funktion? Vilket värde ger det till användaren?"
+          class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm"></textarea>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- SECTION 10: User Story                                     -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div class="section-card p-6">
+        <h3 class="text-sm font-heading font-bold text-navy uppercase tracking-wider mb-2">10. Användarberättelse</h3>
+        <p class="text-xs text-text-soft mb-3">En berättelse per rad. Format: Som [roll] vill jag [mål] så att [nytta].</p>
+        <textarea id="dUserStories" rows="4" oninput="saveDebounced()" placeholder="Som förälder vill jag kunna…&#10;Som pedagog vill jag kunna…"
+          class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm"></textarea>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- SECTION 11: Acceptance Criteria                            -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div class="section-card p-6">
+        <h3 class="text-sm font-heading font-bold text-navy uppercase tracking-wider mb-2">11. Acceptance Criteria</h3>
+        <p class="text-xs text-text-soft mb-3">Kriterier som MÅSTE uppfyllas för att funktionen ska anses färdig. En per rad.</p>
+        <textarea id="dAcceptanceCriteria" rows="4" oninput="saveDebounced()" placeholder="Användare kan logga in med e-post&#10;Dashboard visar statistik för de senaste 7 dagarna"
+          class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm"></textarea>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- SECTION 12: Technical Notes                                -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div class="section-card p-6">
+        <h3 class="text-sm font-heading font-bold text-navy uppercase tracking-wider mb-2">12. Tekniska anteckningar</h3>
+        <p class="text-xs text-text-soft mb-3">Tekniska begränsningar, API-krav, databastabeller, integreringar.</p>
+        <textarea id="dTechnical" rows="4" oninput="saveDebounced()" placeholder="Svarstid < 200ms för API-anrop&#10;PostgreSQL-databas med tabell X&#10;Integration med tjänst Y"
+          class="w-full px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm"></textarea>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- SECTION 13: Dev Notes                                      -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div class="section-card p-6">
+        <h3 class="text-sm font-heading font-bold text-navy uppercase tracking-wider mb-2">13. Utvecklingsanteckningar</h3>
+        <p class="text-xs text-text-soft mb-3">Interna anteckningar från utvecklingsarbetet. Läggs till med datum.</p>
+        <div id="devNotesList" class="space-y-2 mb-4 max-h-64 overflow-y-auto"></div>
+        <div class="border-t pt-3 flex gap-2">
+          <textarea id="newDevNote" rows="2" placeholder="Lägg till en anteckning…"
+            class="flex-1 px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm resize-none"></textarea>
+          <button onclick="addDevNote()" class="self-end bg-gold hover:bg-yellow-500 text-navy font-bold px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap">
+            Lägg till
+          </button>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- SECTION 14: Changelog                                      -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div class="section-card p-6">
+        <h3 class="text-sm font-heading font-bold text-navy uppercase tracking-wider mb-2">14. Changelog</h3>
+        <p class="text-xs text-text-soft mb-3">Versionshistorik. Lägg till ny version längst upp.</p>
+        <div id="changelogList" class="space-y-2 mb-4 max-h-64 overflow-y-auto"></div>
+        <div class="border-t pt-3 space-y-2">
+          <div class="flex gap-2">
+            <input type="text" id="newChangelogVersion" placeholder="Version (t.ex. 1.0.0)"
+              class="w-32 px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm">
+            <textarea id="newChangelogChange" rows="2" placeholder="Vad ändrades?"
+              class="flex-1 px-3 py-2 border-2 border-lavender rounded-lg focus:outline-none focus:border-gold text-sm resize-none"></textarea>
+          </div>
+          <button onclick="addChangelog()" class="bg-gold hover:bg-yellow-500 text-navy font-bold px-4 py-2 rounded-lg transition-colors text-sm">
+            Lägg till changelog
+          </button>
+        </div>
+      </div>
+
+      <!-- Save indicator -->
+      <div class="text-center py-4 text-xs text-text-soft">
+        Ändringar sparas automatiskt (2s fördröjning).
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="errorState" class="hidden bg-coral border-l-4 border-red-500 p-6 rounded-lg mt-6">
+      <p class="text-red-700 font-semibold">Funktionen kunde inte laddas.</p>
+      <a href="/admin/development" class="mt-2 text-gold font-semibold hover:underline">← Tillbaka till Utveckling</a>
+    </div>
+  </main>
+
+  <script>
+    const slug = window.location.pathname.split('/').pop();
+    let feature = null;
+    let saveTimeout = null;
+    let pendingSave = false;
+
+    // ─── Auth check ────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const user = await checkAuth();
+        if (!user || (!user.isAdmin && !user.is_admin)) {
+          document.getElementById('accessDenied').classList.remove('hidden');
+          document.getElementById('loadingState').classList.add('hidden');
+          return;
+        }
+        await loadFeature();
+      } catch (err) {
+        console.error('[ADMIN-DEV-DETAIL] Init error:', err);
+        document.getElementById('errorState').classList.remove('hidden');
+      } finally {
+        document.getElementById('loadingState').classList.add('hidden');
+      }
+    });
+
+    // ─── Load feature ──────────────────────────────────────────
+    async function loadFeature() {
+      try {
+        feature = await Auth.api(`/api/admin/features/${slug}`);
+        renderFeature();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('errorState').classList.remove('hidden');
+      }
+    }
+
+    // ─── Render ─────────────────────────────────────────────────
+    function renderFeature() {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('content').classList.remove('hidden');
+
+      const doc = feature.documentation || {};
+      const docs = doc.dev_notes || [];
+      const changelog = doc.changelog || [];
+
+      document.getElementById('pageTitle').textContent = feature.name;
+
+      // ── Section 1: Slug (readonly)
+      document.getElementById('fSlug').value = feature.slug || '';
+
+      // ── Section 2: Title (name)
+      document.getElementById('fName').value = feature.name || '';
+
+      // ── Section 3: Description
+      document.getElementById('fDescription').value = feature.description || '';
+
+      // ── Section 4: Status
+      const statusRadios = document.querySelectorAll('input[name="fStatus"]');
+      statusRadios.forEach(r => { r.checked = r.value === feature.status; });
+      updateStatusBadge(feature.status);
+
+      // ── Section 5: Priority, Complexity, Estimated Hours
+      document.getElementById('fPriority').value = feature.priority || 'medium';
+      document.getElementById('fComplexity').value = feature.complexity || 5;
+      document.getElementById('fEstimatedHours').value = feature.estimated_hours || '';
+
+      // ── Section 8: Category (readonly)
+      const cat = feature.category || deriveCategory(feature.tags) || '';
+      document.getElementById('fCategory').value = catLabels[cat] || cat || '—';
+
+      // ── Section 9: Purpose
+      document.getElementById('dPurpose').value = doc.purpose || '';
+
+      // ── Section 10: User Story
+      // Accept both user_story (singular) and user_stories (plural)
+      const userStory = doc.user_story || (Array.isArray(doc.user_stories) ? doc.user_stories.join('\n') : '');
+      document.getElementById('dUserStories').value = Array.isArray(userStory) ? userStory.join('\n') : userStory;
+
+      // ── Section 11: Acceptance Criteria
+      document.getElementById('dAcceptanceCriteria').value = (doc.acceptance_criteria || []).join('\n');
+
+      // ── Section 12: Technical Notes
+      document.getElementById('dTechnical').value = doc.technical_notes || '';
+
+      // ── Section 13: Dev Notes
+      renderDevNotes(docs);
+
+      // ── Section 14: Changelog
+      renderChangelog(changelog);
+    }
+
+    function updateStatusBadge(status) {
+      const badge = document.getElementById('statusBadge');
+      badge.textContent = status.toUpperCase();
+      badge.className = `px-3 py-1 rounded-full text-xs font-bold status-${status}`;
+    }
+
+    function renderDevNotes(notes) {
+      const el = document.getElementById('devNotesList');
+      if (notes.length === 0) {
+        el.innerHTML = '<p class="text-text-soft text-sm italic">Inga anteckningar ännu.</p>';
+        return;
+      }
+      el.innerHTML = notes.slice().reverse().map(n => `
+        <div class="bg-sky rounded-lg px-4 py-2">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-semibold text-gold">${new Date(n.date).toLocaleDateString('sv-SE')}</span>
+          </div>
+          <p class="text-sm text-navy whitespace-pre-wrap">${escHtml(n.note)}</p>
+        </div>
+      `).join('');
+    }
+
+    function renderChangelog(entries) {
+      const el = document.getElementById('changelogList');
+      if (entries.length === 0) {
+        el.innerHTML = '<p class="text-text-soft text-sm italic">Ingen changelog ännu.</p>';
+        return;
+      }
+      el.innerHTML = entries.slice().reverse().map(e => `
+        <div class="bg-mint rounded-lg px-4 py-2">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs font-bold text-green-800 bg-green-100 px-2 py-0.5 rounded">v${escHtml(e.version)}</span>
+            <span class="text-xs text-text-soft">${new Date(e.date).toLocaleDateString('sv-SE')}</span>
+          </div>
+          <p class="text-sm text-navy whitespace-pre-wrap">${escHtml(e.change)}</p>
+        </div>
+      `).join('');
+    }
+
+    // ─── Status toggle ─────────────────────────────────────────
+    async function cycleStatus() {
+      const next = { off: 'dev', dev: 'live', live: 'off' };
+      const newStatus = next[feature.status];
+      try {
+        await Auth.api(`/api/admin/features/${slug}`, {
+          method: 'PUT',
+          body: JSON.stringify({ status: newStatus }),
+        });
+        feature.status = newStatus;
+        updateStatusBadge(newStatus);
+        // Also update radio buttons
+        document.querySelectorAll('input[name="fStatus"]').forEach(r => { r.checked = r.value === newStatus; });
+      } catch (err) {
+        alert('Kunde inte uppdatera status: ' + err.message);
+      }
+    }
+
+    // ─── Auto-save (debounced 2s) ──────────────────────────────
+    function saveDebounced() {
+      pendingSave = true;
+      clearTimeout(saveTimeout);
+      document.getElementById('saveIndicator').textContent = '💾 Sparar…';
+      saveTimeout = setTimeout(() => doSave(), 2000);
+    }
+
+    async function doSave() {
+      if (!pendingSave) return;
+      pendingSave = false;
+      document.getElementById('saveIndicator').textContent = '💾 Sparar…';
+
+      const docUpdates = {
+        purpose: document.getElementById('dPurpose').value || null,
+        user_story: splitLines('dUserStories') || null,
+        acceptance_criteria: splitLines('dAcceptanceCriteria'),
+        technical_notes: document.getElementById('dTechnical').value || null,
+      };
+
+      // Remove null/empty values
+      for (const key of Object.keys(docUpdates)) {
+        if (docUpdates[key] === null || docUpdates[key] === '') {
+          delete docUpdates[key];
+        }
+      }
+
+      const name = document.getElementById('fName').value.trim();
+      const description = document.getElementById('fDescription').value.trim() || null;
+      const status = document.querySelector('input[name="fStatus"]:checked')?.value || feature.status;
+      const priority = document.getElementById('fPriority').value;
+      const complexity = parseInt(document.getElementById('fComplexity').value, 10);
+      const estimatedHours = document.getElementById('fEstimatedHours').value
+        ? parseFloat(document.getElementById('fEstimatedHours').value)
+        : null;
+
+      try {
+        await Promise.all([
+          Auth.api(`/api/admin/features/${slug}/docs`, {
+            method: 'PATCH',
+            body: JSON.stringify({ doc_updates: docUpdates }),
+          }),
+          Auth.api(`/api/admin/features/${slug}`, {
+            method: 'PUT',
+            body: JSON.stringify({ name, description, status, priority, complexity, estimated_hours: estimatedHours }),
+          }),
+        ]);
+
+        feature.name = name;
+        feature.description = description;
+        feature.status = status;
+        feature.priority = priority;
+        feature.complexity = complexity;
+        feature.estimated_hours = estimatedHours;
+
+        document.getElementById('saveIndicator').textContent = '✅ Sparad ' + new Date().toLocaleTimeString('sv-SE');
+        setTimeout(() => { document.getElementById('saveIndicator').textContent = ''; }, 3000);
+      } catch (err) {
+        console.error('Auto-save error:', err);
+        document.getElementById('saveIndicator').textContent = '❌ Sparingsfel';
+      }
+    }
+
+    function splitLines(id) {
+      const val = document.getElementById(id).value.trim();
+      return val ? val.split('\n').map(s => s.trim()).filter(s => s) : [];
+    }
+
+    // ─── Add Dev Note ─────────────────────────────────────────
+    async function addDevNote() {
+      const note = document.getElementById('newDevNote').value.trim();
+      if (!note) return alert('Skriv en anteckning först.');
+      document.getElementById('newDevNote').value = '';
+
+      try {
+        const data = await Auth.api(`/api/admin/features/${slug}/docs`, {
+          method: 'PATCH',
+          body: JSON.stringify({ dev_note: { note, date: new Date().toISOString() } }),
+        });
+        renderDevNotes(data.documentation.dev_notes || []);
+        document.getElementById('saveIndicator').textContent = '✅ Sparad';
+        setTimeout(() => { document.getElementById('saveIndicator').textContent = ''; }, 2000);
+      } catch (err) {
+        alert('Kunde inte spara: ' + err.message);
+      }
+    }
+
+    // ─── Add Changelog ─────────────────────────────────────────
+    async function addChangelog() {
+      const version = document.getElementById('newChangelogVersion').value.trim();
+      const change = document.getElementById('newChangelogChange').value.trim();
+      if (!version || !change) return alert('Fyll i version och ändring.');
+      document.getElementById('newChangelogVersion').value = '';
+      document.getElementById('newChangelogChange').value = '';
+
+      try {
+        const data = await Auth.api(`/api/admin/features/${slug}/docs`, {
+          method: 'PATCH',
+          body: JSON.stringify({ changelog_entry: { version, change, date: new Date().toISOString() } }),
+        });
+        renderChangelog(data.documentation.changelog || []);
+        document.getElementById('saveIndicator').textContent = '✅ Sparad';
+        setTimeout(() => { document.getElementById('saveIndicator').textContent = ''; }, 2000);
+      } catch (err) {
+        alert('Kunde inte spara: ' + err.message);
+      }
+    }
+
+    // ─── Helpers ───────────────────────────────────────────────
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function deriveCategory(tags) {
+      if (!tags || !Array.isArray(tags) || tags.length === 0) return null;
+      const map = {
+        'kärna': 'kärnprodukt', core: 'core',
+        admin: 'admin', rapporter: 'rapporter',
+        ui: 'ui', features: 'features',
+        marketing: 'marketing', notifications: 'notifications',
+        monetization: 'monetization',
+      };
+      return map[tags[0]] || tags[0];
+    }
+
+    const catLabels = {
+      'kärnprodukt': 'Kärnprodukt', core: 'Kärna',
+      admin: 'Admin', rapporter: 'Rapporter',
+      ui: 'UI', features: 'Features',
+      marketing: 'Marketing', notifications: 'Notifikationer',
+      monetization: 'Monetization', '': '—',
+    };
+  </script>
+</body>
+</html>

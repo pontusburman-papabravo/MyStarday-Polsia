@@ -1,0 +1,28 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+
+# Scratch / repair / agent-work files
+debug/
+shell-snapshots/
+todos/
+fix-*
+repair-*
+agent-*
+
+# Capacitor native projects (managed locally via npx cap sync / cap open)
+ios/
+android/
+
+# Polsia safety (auto-injected)
+.claude/
+.claude.json*
+.tmp/
+projects/
+*.jsonl

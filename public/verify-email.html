@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:title" content="Min Stjärndag — Förenkla vardagen för hela familjen">
+    <meta property="og:description" content="Skapa och följ dagliga scheman, aktiviteter och belöningar">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://mystarday.se/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://mystarday.se/og-image.png">
+  <title>Verifiera e-post — Min Stjärndag</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623',
+            'gold-light': '#FFF3D6',
+            navy: '#1B2340',
+            'navy-soft': '#2A3458',
+            sky: '#E8F0FE',
+            lavender: '#EDE7F6',
+            mint: '#E0F5EC',
+            coral: '#FDEAE7',
+            'text-soft': '#5A6178',
+          },
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            body: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #FAFBFF;
+    }
+
+    .star-animation {
+      animation: twinkle 2s ease-in-out infinite;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+  <!-- PWA / Favicon -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Min Stjärndag">
+  <!-- Cookie-banner med GCM v2 + Meta Pixel + granulära val -->
+  <script src="/js/cookie-banner.js?v=2.12.0"></script>
+</head>
+<body class="font-body">
+  <!-- Star Logo Home Link -->
+  <a href="/" class="fixed top-6 left-6 z-10 hover:scale-110 transition-transform duration-200">
+    <span class="text-4xl star-animation">⭐</span>
+  </a>
+
+  <!-- Background decorative stars -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden">
+    <div class="absolute top-20 right-10 text-3xl star-animation" style="animation-delay: 0.3s">✨</div>
+    <div class="absolute top-1/3 left-12 text-2xl star-animation" style="animation-delay: 0.6s">⭐</div>
+    <div class="absolute bottom-24 right-16 text-3xl star-animation" style="animation-delay: 0.9s">✨</div>
+  </div>
+
+  <div class="min-h-screen flex items-center justify-center px-4 py-8">
+    <div class="w-full max-w-md">
+      <!-- Loading State -->
+      <div id="loadingState" class="text-center">
+        <div class="mb-8 flex justify-center">
+          <div class="w-16 h-16 border-4 border-gold-light border-t-gold rounded-full animate-spin"></div>
+        </div>
+        <h1 class="font-heading text-3xl md:text-4xl font-bold text-navy mb-3">
+          Verifierar e-post
+        </h1>
+        <p class="text-lg text-text-soft">
+          Vänta medan vi bekräftar din e-postadress...
+        </p>
+      </div>
+
+      <!-- Success State -->
+      <div id="successState" class="hidden text-center">
+        <div class="mb-8 flex justify-center">
+          <span class="text-8xl animate-bounce" style="animation-delay: 0s">✅</span>
+        </div>
+        <h1 class="font-heading text-3xl md:text-4xl font-bold text-navy mb-3">
+          E-post verifierad!
+        </h1>
+        <p class="text-lg text-text-soft mb-4">
+          Din e-postadress har verifierats. Välkommen till Min Stjärndag! 🎉
+        </p>
+        <p class="text-sm text-text-soft mb-6">Du skickas vidare om <span id="countdown">3</span> sekunder...</p>
+        <a
+          href="/login"
+          class="inline-block px-8 py-3 bg-gradient-to-r from-gold to-yellow-400 hover:from-gold/90 hover:to-yellow-400/90 text-navy font-heading font-bold text-lg rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+        >
+          Gå till inloggning
+        </a>
+      </div>
+
+      <!-- Error State -->
+      <div id="errorState" class="hidden text-center">
+        <div class="mb-8 flex justify-center">
+          <span class="text-8xl">⚠️</span>
+        </div>
+        <h1 class="font-heading text-3xl md:text-4xl font-bold text-navy mb-3">
+          Verifieringen misslyckades
+        </h1>
+        <p id="errorMessage" class="text-lg text-text-soft mb-4">
+          Verifieringslänken är ogiltig eller har gått ut.
+        </p>
+
+        <!-- Resend form -->
+        <div id="resendSection" class="bg-sky rounded-xl p-6 mb-6">
+          <p class="text-sm text-text-soft mb-3">Ange din e-postadress för att få en ny verifieringslänk:</p>
+          <div class="flex gap-2">
+            <input
+              type="email"
+              id="resendEmail"
+              placeholder="din@epost.se"
+              class="flex-1 px-4 py-3 rounded-lg border-2 border-lavender focus:border-gold focus:outline-none bg-white text-navy placeholder-text-soft text-sm"
+            />
+            <button
+              id="resendBtn"
+              onclick="resendVerification()"
+              class="px-4 py-3 bg-gold hover:bg-yellow-500 text-white font-semibold rounded-lg transition-colors text-sm whitespace-nowrap"
+            >
+              Skicka ny länk
+            </button>
+          </div>
+          <p id="resendMessage" class="hidden text-sm mt-3 text-navy font-medium"></p>
+        </div>
+
+        <!-- Error Actions -->
+        <div class="space-y-3">
+          <a
+            href="/login"
+            class="block px-8 py-3 bg-gradient-to-r from-gold to-yellow-400 hover:from-gold/90 hover:to-yellow-400/90 text-navy font-heading font-bold text-lg rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+          >
+            Gå till inloggning
+          </a>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="mt-12 text-center">
+        <p class="text-sm text-text-soft">
+          Behöver du hjälp? Kolla din skräppost eller <a href="mailto:info@mystarday.se" class="text-gold font-semibold hover:underline">kontakta oss</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/i18n.js?v=2.12.0"></script>
+  <script src="/js/auth.js?v=2.13.0"></script>
+
+  <script>
+    async function verifyEmail() {
+      // Get token from URL query params
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+
+      if (!token) {
+        showErrorState('Ingen verifieringstoken hittades i länken.');
+        return;
+      }
+
+      try {
+        // Use window.apiFetch (raw Response) with the correct /api/ prefix
+        const res = await window.apiFetch('/api/auth/verify-email', {
+          method: 'POST',
+          body: JSON.stringify({ token }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          showErrorState(err.error || 'Verifieringen misslyckades. Länken kan ha gått ut.');
+          return;
+        }
+
+        showSuccessState();
+      } catch (error) {
+        showErrorState('Något gick fel. Försök igen.');
+        console.error('Verification error:', error);
+      }
+    }
+
+    function showSuccessState() {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('errorState').classList.add('hidden');
+      document.getElementById('successState').classList.remove('hidden');
+
+      // Auto-redirect to login after 3s countdown
+      let sec = 3;
+      const cdEl = document.getElementById('countdown');
+      const iv = setInterval(() => {
+        sec--;
+        if (cdEl) cdEl.textContent = sec;
+        if (sec <= 0) { clearInterval(iv); window.location.href = '/login'; }
+      }, 1000);
+    }
+
+    function showErrorState(message = 'Verifieringen misslyckades. Länken kan ha gått ut.') {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('successState').classList.add('hidden');
+      document.getElementById('errorState').classList.remove('hidden');
+      document.getElementById('errorMessage').textContent = message;
+    }
+
+    async function resendVerification() {
+      const emailInput = document.getElementById('resendEmail');
+      const msgEl = document.getElementById('resendMessage');
+      const btn = document.getElementById('resendBtn');
+      const email = emailInput.value.trim();
+
+      if (!email || !email.includes('@')) {
+        msgEl.textContent = 'Ange en giltig e-postadress.';
+        msgEl.className = 'text-sm mt-3 text-red-600 font-medium';
+        msgEl.classList.remove('hidden');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Skickar...';
+      msgEl.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/auth/resend-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (res.status === 429) {
+          msgEl.textContent = data.error || 'Du har redan begärt flera länkrar. Försök igen om en timme.';
+          msgEl.className = 'text-sm mt-3 text-red-600 font-medium';
+        } else {
+          msgEl.textContent = '✅ Om kontot finns har vi skickat en ny verifieringslänk. Kolla din inkorg och skräppost!';
+          msgEl.className = 'text-sm mt-3 text-green-700 font-medium';
+        }
+        msgEl.classList.remove('hidden');
+      } catch {
+        msgEl.textContent = 'Något gick fel. Försök igen.';
+        msgEl.className = 'text-sm mt-3 text-red-600 font-medium';
+        msgEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Skicka ny länk';
+      }
+    }
+
+    // Verify email on page load
+    window.addEventListener('DOMContentLoaded', verifyEmail);
+  </script>
+  <!-- Support bubble for logged-out users -->
+  <script src="/js/support-bubble.js?v=2.12.0"></script>
+  <!-- Service Worker Registration (update detection in /js/sw-register.js) -->
+  <script src="/js/sw-register.js?v=2.12.0"></script>
+</body>
+</html>

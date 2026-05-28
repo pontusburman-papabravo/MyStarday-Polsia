@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:title" content="Min Stjärndag — Förenkla vardagen för hela familjen">
+    <meta property="og:description" content="Skapa och följ dagliga scheman, aktiviteter och belöningar">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://mystarday.se/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://mystarday.se/og-image.png">
+  <title>Inloggning - Min Stjärndag</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/platform.js?v=2026-05-28-ios"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: '#F5A623',
+            'gold-light': '#FFF3D6',
+            navy: '#1B2340',
+            'navy-soft': '#2A3458',
+            sky: '#E8F0FE',
+            lavender: '#EDE7F6',
+            mint: '#E0F5EC',
+            coral: '#FDEAE7',
+            'text-soft': '#5A6178',
+          },
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            body: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="/css/theme.css?v=2.12.0">
+  <script src="/js/theme.js?v=2.12.0"></script>
+  <script src="/js/auth.js?v=2.14.0"></script>
+  <script src="/js/i18n.js?v=2.12.0"></script>
+  <style>
+    /* WCAG 2.5.8: min 44×44px touch target for text links */
+    .touch-link { display: block; min-height: 44px; padding: 10px 4px; }
+    .touch-link a { display: block; }
+  </style>
+  <!-- PWA / Favicon -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#F5A623">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Min Stjärndag">
+  <!-- Cookie-banner med GCM v2 + Meta Pixel + granulära val -->
+  <script src="/js/cookie-banner.js?v=2.12.0"></script>
+</head>
+<body class="bg-white font-body text-navy dark:bg-navy dark:text-white">
+  <div class="min-h-screen flex items-center justify-center px-4 py-8">
+    <div class="w-full max-w-md">
+      <!-- Header with Logo -->
+      <div class="text-center mb-8">
+        <a href="/" class="inline-flex items-center justify-center gap-2 hover:opacity-80 transition-opacity">
+          <div class="w-12 h-12 bg-gold rounded-full flex items-center justify-center shadow-md">
+            <span class="text-2xl">⭐</span>
+          </div>
+          <h1 class="text-3xl font-heading font-bold text-navy">Min Stjärndag</h1>
+        </a>
+        <p class="text-text-soft mt-2" data-i18n="auth.login.subtitle">Föräldrarnas inloggning</p>
+      </div>
+
+      <!-- Registration link — always visible above form -->
+      <div id="registerBanner" class="mb-5 rounded-xl bg-gold-light border border-gold/30 px-5 py-4 text-center" style="display:none;">
+        <span class="text-navy text-sm font-medium">Inget konto? </span>
+        <a href="/register" class="text-gold font-bold text-sm hover:underline">Registrera dig här →</a>
+      </div>
+
+      <!-- Form Card -->
+      <div class="bg-sky rounded-2xl p-8 shadow-sm">
+        <!-- Apple Sign In button — iOS/native only -->
+        <div id="appleLoginSection" class="hidden mb-5">
+          <button
+            type="button"
+            id="appleLoginBtn"
+            onclick="handleAppleLogin()"
+            class="w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 rounded-lg transition-colors duration-200 flex items-center justify-center gap-3"
+            style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 44px;"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-white">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+            </svg>
+            Logga in med Apple
+          </button>
+          <div class="relative my-4">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-lavender"></div></div>
+            <div class="relative flex justify-center text-xs"><span class="bg-sky px-2 text-text-soft">eller</span></div>
+          </div>
+          <div id="appleLoginError" class="hidden bg-coral border-l-4 border-red-500 p-4 rounded mb-3">
+            <p id="appleLoginErrorText" class="text-sm text-navy font-medium"></p>
+          </div>
+          <div id="appleLinkingPrompt" class="hidden bg-gold-light border-l-4 border-gold p-4 rounded mb-3">
+            <p class="text-sm text-navy font-medium mb-2">Ett konto med denna e-postadress finns redan.</p>
+            <p class="text-sm text-text-soft mb-3">Vill du länka ditt Apple-konto till det befintliga kontot?</p>
+            <div class="flex gap-2">
+              <button type="button" onclick="handleAppleLink()" class="flex-1 bg-gold hover:bg-yellow-500 text-white font-semibold py-2 rounded-lg text-sm">Ja, länka</button>
+              <button type="button" onclick="dismissAppleLinking()" class="flex-1 bg-lavender hover:bg-purple-100 text-navy font-semibold py-2 rounded-lg text-sm">Avbryt</button>
+            </div>
+          </div>
+        </div>
+
+        <form id="loginForm" class="space-y-6">
+          <!-- Email Field -->
+          <div>
+            <label for="email" class="block text-sm font-semibold text-navy mb-2" data-i18n="auth.login.email_label">
+              E-postadress
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="din@epost.se"
+              required
+              data-i18n-placeholder="auth.login.email_placeholder"
+              class="w-full px-4 py-3 rounded-lg border-2 border-lavender focus:border-gold focus:outline-none bg-white text-navy placeholder-text-soft transition-colors"
+            />
+          </div>
+
+          <!-- Password Field -->
+          <div>
+            <label for="password" class="block text-sm font-semibold text-navy mb-2" data-i18n="auth.login.password_label">
+              Lösenord
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              required
+              data-i18n-placeholder="auth.login.password_placeholder"
+              class="w-full px-4 py-3 rounded-lg border-2 border-lavender focus:border-gold focus:outline-none bg-white text-navy placeholder-text-soft transition-colors"
+            />
+          </div>
+
+          <!-- Error Message -->
+          <div id="loginError" class="hidden bg-coral border-l-4 border-red-500 p-4 rounded">
+            <p id="loginErrorText" class="text-sm text-navy font-medium"></p>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            id="submitBtn"
+            class="w-full bg-gold hover:bg-yellow-500 text-white font-semibold py-3 rounded-lg transition-colors duration-200"
+            data-i18n="auth.login.submit"
+          >
+            Logga in
+          </button>
+        </form>
+
+        <!-- PWA Install Callout — Parent version -->
+        <div class="mt-5 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-4" role="complementary" aria-label="Installera appen">
+          <div class="flex items-start gap-3 mb-3">
+            <span class="text-2xl leading-none flex-shrink-0">📱</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-heading font-bold text-navy text-sm leading-tight">Så här gör du appen till en riktig app</span>
+                <span class="text-xs font-bold uppercase tracking-wide bg-gold text-white px-2 py-0.5 rounded-full flex-shrink-0">Pro tip</span>
+              </div>
+              <p class="text-xs text-text-soft mt-1 leading-relaxed">För att appen ska kännas som en riktig app och vara lätt att hitta för barnet:</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mb-3">
+            <div class="bg-white/70 rounded-xl p-3 border border-amber-100">
+              <div class="text-xs font-bold uppercase tracking-wide text-amber-700 mb-2">🍎 iOS (Safari)</div>
+              <ul class="text-xs text-text-soft space-y-1">
+                <li class="flex gap-1"><span class="text-amber-600 font-semibold">→</span> Öppna i Safari</li>
+                <li class="flex gap-1"><span class="text-amber-600 font-semibold">→</span> Tryck på Dela ⎵</li>
+                <li class="flex gap-1"><span class="text-amber-600 font-semibold">→</span> Lägg till på hemskärmen</li>
+              </ul>
+            </div>
+            <div class="bg-white/70 rounded-xl p-3 border border-amber-100">
+              <div class="text-xs font-bold uppercase tracking-wide text-amber-700 mb-2">🤖 Android (Chrome)</div>
+              <ul class="text-xs text-text-soft space-y-1">
+                <li class="flex gap-1"><span class="text-amber-600 font-semibold">→</span> Öppna i Chrome</li>
+                <li class="flex gap-1"><span class="text-amber-600 font-semibold">→</span> Tryck på ⋮ (tre punkter)</li>
+                <li class="flex gap-1"><span class="text-amber-600 font-semibold">→</span> Lägg till på hemskärmen</li>
+              </ul>
+            </div>
+          </div>
+          <p class="text-xs text-text-soft border-t border-amber-200 pt-3 leading-relaxed">
+            Nu ligger den som en ikon på skärmen och kan <strong class="text-navy font-semibold">hanteras med egna rättigheter</strong> i skärmtidsinställningarna.
+          </p>
+        </div>
+
+        <!-- Links Section -->
+        <div class="mt-6 space-y-3 text-center text-sm">
+          <!-- Forgot Password Link -->
+          <div class="touch-link">
+            <a href="/forgot-password" class="text-gold font-semibold hover:underline" data-i18n="auth.login.forgot_password">
+              Glömt lösenordet?
+            </a>
+          </div>
+
+          <!-- Registration link — shown dynamically when registration is open -->
+          <div id="registerLinkSection" style="display:none;">
+            <div class="touch-link text-text-soft">
+              Inget konto?
+              <a href="/register" class="text-gold font-semibold hover:underline">
+                Registrera dig
+              </a>
+            </div>
+          </div>
+
+          <!-- Child Login Link -->
+          <div class="touch-link pt-2">
+            <span class="text-text-soft text-xs" data-i18n="auth.login.child_prompt">
+              Är du ett barn?
+            </span>
+            <a href="/child-login" class="text-gold font-semibold hover:underline block min-h-[44px] py-2" data-i18n="auth.login.child_link">
+              Barninloggning
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tagline -->
+      <div class="text-center mt-8">
+        <p class="text-text-soft text-sm" data-i18n="auth.login.tagline">
+          En lugn dag, en stjärna i taget
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Redirect already-logged-in users — but VALIDATE the token first
+      // to avoid redirect loops when the token is stale/expired.
+      if (Auth.isLoggedIn()) {
+        try {
+          const res = await window.apiFetch('/api/auth/me');
+          if (res.ok) {
+            const user = Auth.getUser();
+            if (user && (user.isAdmin || user.is_admin)) {
+              window.location.href = '/admin';
+            } else {
+              window.location.href = '/dashboard';
+            }
+            return;
+          } else {
+            // Token is invalid — clear it and show login form
+            Auth.clearAuth();
+          }
+        } catch {
+          // Network error or token invalid — clear and show login
+          Auth.clearAuth();
+        }
+      }
+
+      // Show registration links if registration is open
+      fetch('/api/registration-status')
+        .then(r => r.json())
+        .then(data => {
+          if (data.registration_enabled) {
+            const el = document.getElementById('registerLinkSection');
+            if (el) el.style.display = '';
+            const banner = document.getElementById('registerBanner');
+            if (banner) banner.style.display = '';
+          }
+        })
+        .catch(() => {});
+
+      // Show Apple Sign In button on iOS and native only (not on web Android or desktop)
+      if (window.Platform && (window.Platform.isIOS() || window.Platform.isNative())) {
+        const appleSection = document.getElementById('appleLoginSection');
+        if (appleSection) appleSection.classList.remove('hidden');
+      }
+
+      const form = document.getElementById('loginForm');
+      const submitBtn = document.getElementById('submitBtn');
+      const email = document.getElementById('email');
+      const password = document.getElementById('password');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Basic validation
+        if (!email.value || !password.value) {
+          showError('loginError', 'Vänligen fyll i både e-post och lösenord');
+          return;
+        }
+
+        hideError('loginError');
+        setLoading(submitBtn, true);
+
+        try {
+          // Use apiFetch to inspect the raw response (Auth.api throws on non-2xx)
+          const res = await window.apiFetch('/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({
+              email: email.value,
+              password: password.value,
+            }),
+          });
+
+          const data = await res.json().catch(() => ({}));
+
+          if (res.ok && data.user) {
+            Auth.setAuth(null, data.user, data.csrfToken, data.expiresAt);
+            setTimeout(() => {
+              Auth.redirectToDashboard();
+            }, 300);
+          } else if (res.status === 403 && data.code === 'EMAIL_VERIFICATION_REQUIRED') {
+            // Show verification-required blocking state
+            showVerificationRequired(data.email || email.value);
+          } else {
+            showError('loginError', data.error || 'Något gick fel. Vänligen försök igen.');
+          }
+        } catch (error) {
+          showError('loginError', error.message || 'Något gick fel. Vänligen försök igen.');
+        } finally {
+          setLoading(submitBtn, false);
+        }
+      });
+    });
+
+    /**
+     * Show the verification-required blocking state.
+     * Replaces the login form with a message + resend button.
+     */
+    function showVerificationRequired(userEmail) {
+      const formCard = document.querySelector('.bg-sky.rounded-2xl');
+      formCard.innerHTML = `
+        <div class="text-center">
+          <div class="mb-6">
+            <span class="text-6xl">📧</span>
+          </div>
+          <h2 class="font-heading text-2xl font-bold text-navy mb-3">
+            Verifiera din e-postadress
+          </h2>
+          <p class="text-text-soft mb-6">
+            Du måste verifiera din e-postadress för att fortsätta använda Min Stjärndag.
+            Kolla din inkorg (och skräppostmappen) efter ett mejl från oss.
+          </p>
+
+          <div class="bg-white rounded-xl p-4 mb-4 border border-lavender">
+            <p class="text-sm text-text-soft mb-1">E-postadress:</p>
+            <p class="font-semibold text-navy">${userEmail}</p>
+          </div>
+
+          <button
+            id="resendVerifyBtn"
+            onclick="resendFromLogin('${userEmail}')"
+            class="w-full bg-gold hover:bg-yellow-500 text-white font-semibold py-3 rounded-lg transition-colors mb-3"
+          >
+            Skicka ny verifieringslänk
+          </button>
+
+          <p id="resendLoginMessage" class="hidden text-sm font-medium mb-3"></p>
+
+          <p class="text-xs text-text-soft">
+            Kolla även skräppostmappen. Länken är giltig i 24 timmar.
+          </p>
+        </div>
+      `;
+    }
+
+    async function resendFromLogin(email) {
+      const btn = document.getElementById('resendVerifyBtn');
+      const msgEl = document.getElementById('resendLoginMessage');
+      btn.disabled = true;
+      btn.textContent = 'Skickar...';
+      msgEl.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/auth/resend-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.status === 429) {
+          msgEl.textContent = data.error || 'Du har redan begärt flera länkrar. Försök igen om en timme.';
+          msgEl.className = 'text-sm font-medium mb-3 text-red-600';
+        } else {
+          msgEl.textContent = '✅ Ny verifieringslänk skickad! Kolla din inkorg och skräppost.';
+          msgEl.className = 'text-sm font-medium mb-3 text-green-700';
+        }
+        msgEl.classList.remove('hidden');
+      } catch {
+        msgEl.textContent = 'Något gick fel. Försök igen.';
+        msgEl.className = 'text-sm font-medium mb-3 text-red-600';
+        msgEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Skicka ny verifieringslänk';
+      }
+    }
+
+    // ─── Apple Sign In handlers ───────────────────────────────
+    let _applePendingEmail = null;
+    let _applePendingIdToken = null;
+
+    async function handleAppleLogin() {
+      if (!window.Platform) return;
+      hideError('appleLoginError');
+      document.getElementById('appleLinkingPrompt').classList.add('hidden');
+
+      const btn = document.getElementById('appleLoginBtn');
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Apple...';
+
+      try {
+        const result = await window.Platform.appleSignIn.signIn();
+        if (!result || !result.idToken) return; // cancelled
+
+        const res = await fetch('/api/auth/apple', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ idToken: result.idToken, name: result.name }),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok && data.user) {
+          Auth.setAuth(null, data.user, data.csrfToken, data.expiresAt);
+          setTimeout(() => Auth.redirectToDashboard(), 300);
+        } else if (res.status === 201 && data.user) {
+          // New account created
+          Auth.setAuth(null, data.user, data.csrfToken, data.expiresAt);
+          if (window.Pixel) window.Pixel.lead();
+          setTimeout(() => window.location.href = '/onboarding', 300);
+        } else if (res.status === 409 && data.code === 'email_conflict') {
+          _applePendingEmail = data.email;
+          _applePendingIdToken = result.idToken;
+          document.getElementById('appleLinkingPrompt').classList.remove('hidden');
+        } else {
+          showError('appleLoginError', data.error || 'Något gick fel med Apple-inloggningen.');
+        }
+      } catch (err) {
+        showError('appleLoginError', err.message || 'Apple Sign In misslyckades.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
+    }
+
+    async function handleAppleLink() {
+      if (!_applePendingEmail || !_applePendingIdToken) return;
+
+      const btn = event.target;
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Länkar...';
+
+      try {
+        const res = await fetch('/api/auth/apple/link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ identityToken: _applePendingIdToken, email: _applePendingEmail }),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok && data.user) {
+          Auth.setAuth(null, data.user, data.csrfToken, data.expiresAt);
+          setTimeout(() => Auth.redirectToDashboard(), 300);
+        } else {
+          showError('appleLoginError', data.error || 'Länkning misslyckades. Försök logga in med lösenord istället.');
+        }
+      } catch {
+        showError('appleLoginError', 'Länkning misslyckades.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
+    }
+
+    function dismissAppleLinking() {
+      document.getElementById('appleLinkingPrompt').classList.add('hidden');
+      _applePendingEmail = null;
+      _applePendingIdToken = null;
+    }
+  </script>
+  <!-- Support bubble for logged-out users -->
+  <script src="/js/support-bubble.js?v=2.12.0"></script>
+  <!-- Service Worker Registration (update detection in /js/sw-register.js) -->
+  <script src="/js/sw-register.js?v=2.12.0"></script>
+</body>
+</html>
