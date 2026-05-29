@@ -4,7 +4,9 @@
 **Sida:** `/child-login` → `public/child-login.html`  
 **API:** `POST /api/auth/child-login` (oförändrat — `{ username, pin }`)
 
-Designreferens: **bifogad mockup (3 skärmar)** — bifoga bilden i Polsia-uppgiften.
+Designreferens: [`docs/mockups/barnlogin-3-skarmar.png`](mockups/barnlogin-3-skarmar.png)
+
+![Barnlogin — tre skärmar](mockups/barnlogin-3-skarmar.png)
 
 | Skärm | Innehåll |
 |-------|----------|
