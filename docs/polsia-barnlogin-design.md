@@ -112,8 +112,66 @@ Om **login-magic** redan har liknande kort — **matcha mockupen exakt**:
 
 - Avatar per rad: `avatar_url` → emoji → standardillustration
 - Tap rad → gå till **steg 3** (PIN) för det barnet
-- **"Lägg till ett barn"** → `/login` med vuxen-flöde (kräver förälder — **inte** skapa barn utan inloggning)
+- **"Lägg till ett barn"** → **barn-onboarding** (se §3.2.1) — **inte** bara dashboard
 - Footer: *"Behöver du hjälp?"* → support/help
+
+#### 3.2.1 "Lägg till ett barn" — routing till barn-onboarding
+
+Familjer med **befintligt konto** ska guidas genom **onboarding-wizarden** (samma steg som nytt konto: namn, födelsedag, schema, PIN, belöningar) — inte bara ett enkelt formulär i inställningar.
+
+**Flöde:**
+
+```
+Tap "+ Lägg till ett barn"
+  │
+  ├─ Förälder INTE inloggad
+  │     → /login?next=/onboarding&flow=add-child
+  │     → efter login → /onboarding?flow=add-child
+  │
+  └─ Förälder redan inloggad (session / stjarndag_parent_session)
+        → /onboarding?flow=add-child direkt
+```
+
+**Efter slutförd barn-onboarding:**
+
+```
+/onboarding/complete (add-child mode)
+  → redirect /child-login   (barnet syns i listan — välj + PIN)
+  ELLER valfri toast: "Nu kan [namn] logga in!"
+```
+
+**Teknisk ändring i `public/js/onboarding.js` (Polsia måste implementera):**
+
+Idag redirectar onboarding bort om `onboarding_completed === true`:
+
+```javascript
+if (me.onboarding_completed) { window.location.href = '/dashboard'; return; }
+```
+
+**Ändra till:**
+
+```javascript
+const isAddChildFlow = new URLSearchParams(location.search).get('flow') === 'add-child';
+if (me.onboarding_completed && !isAddChildFlow) {
+  window.location.href = '/dashboard';
+  return;
+}
+```
+
+**I add-child-läge:**
+
+| Beteende | Nytt konto | add-child |
+|----------|------------|-----------|
+| Startsteg | 1 (skapa barn) | 1 (skapa **ytterligare** barn) |
+| `onboarding_completed` vid complete | sätt `true` | **ändra inte** (redan true) |
+| Redirect efter complete | dashboard | **`/child-login`** (rekommenderat) |
+| Steg 6 (bjud in medförälder) | visa | valfritt — hoppa över om `children.length > 0` |
+
+**login.html:** Om URL har `?next=/onboarding&flow=add-child`, spara i sessionStorage och redirect efter lyckad login.
+
+**child-login.js:** `openAddChild()` → kolla `Auth.isLoggedIn()` + parent type → antingen onboarding direkt eller login med next-param.
+
+**Rör inte** befintlig first-time onboarding för nya föräldrar — `flow=add-child` är ett **tilläggsläge**.
 
 **Datakällor för barnlistan** (samma som tidigare):
 
@@ -331,12 +389,12 @@ Dölj **support-bubble** på barnlogin om den stör (valfritt — matcha login-m
 
 ## 9. Testplan
 
-1. **En familj, två barn:** barnväljare visar båda; byt → avatar + namn uppdateras; rätt PIN per barn
-2. **Förälder inloggad → child-login:** alla barn från `/api/auth/me` syns i väljaren
-3. **Selfie:** efter upload i inställningar → foto syns i ring på barnlogin
-4. **Mobil (iPhone):** tavla → barn-dashboard
-5. **Fel PIN:** shake, lockout
-6. **localStorage:** tredje besöket — senaste barn förvalt
+1. **Lägg till barn:** child-login → "+ Lägg till barn" → login (om behövs) → `/onboarding?flow=add-child` → nytt barn i listan
+2. **En familj, två barn:** väljare visar båda; rätt PIN per barn
+3. **Förälder inloggad → child-login:** alla barn från `/api/auth/me`
+4. **Selfie:** foto syns i lista + PIN-ring
+5. **Mobil:** tavla → barn-dashboard
+6. **Fel PIN / lockout**
 7. **App Review:** Anna PIN **4455**
 
 ---
@@ -392,7 +450,8 @@ Inloggat barn kan byta emoji — foto ändras av förälder tills vidare.
 - [ ] Vertikal barnlista med avatar (skärm 2)
 - [ ] PIN-skärm med tavla (skärm 3)
 - [ ] localStorage + parent `/me` för barnlistan
-- [ ] "+ Lägg till barn" → vuxen-login
+- [ ] "+ Lägg till barn" → `/onboarding?flow=add-child` (via login om ej inloggad)
+- [ ] `onboarding.js` add-child-läge (tillåt när onboarding_completed)
 - [ ] SW bump
 
 **Phase 2 — Selfie**
