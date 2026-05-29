@@ -39,6 +39,9 @@ const CSRF_EXEMPT_PATHS = new Set([
   '/auth/refresh',
   '/auth/logout',
   '/auth/csrf-token',
+  // Apple Sign In: idToken is the auth credential — same principle as /auth/login
+  '/auth/apple',
+  '/auth/apple/link',
   // Invite accept-new: public endpoint — creates account from invite token, no prior session
   '/family/invite/accept-new',
   // Public data endpoints that don't mutate user state
