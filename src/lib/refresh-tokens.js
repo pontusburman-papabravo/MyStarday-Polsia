@@ -132,7 +132,7 @@ function clearRefreshCookie(res) {
  * @param {string} token - Raw JWT access token string
  * @param {number} expiresInSecs - Token TTL in seconds (ignored — cookie is 30d)
  */
-function setAccessCookie(res, token, expiresInSecs) {
+function setAccessCookie(res, token, _expiresInSecs) {
   const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
   res.cookie('access_token', token, {
     httpOnly: true,

@@ -1,5 +1,4 @@
 const express = require('express');
-const crypto = require('crypto');
 const db = require('../lib/db');
 const { hashPassword, pinFingerprint } = require('../lib/hash');
 const { requireParent } = require('../middleware/auth');
@@ -229,7 +228,7 @@ router.post('/', validate(CreateChildSchema), async (req, res) => {
     const pinFp = pinFingerprint(rawPin);
 
     // Run PIN hash (expensive scrypt) + DB uniqueness checks in parallel to save ~200ms
-    let candidateUsername = generateUsername(name.trim());
+    const candidateUsername = generateUsername(name.trim());
     const [pinHash, resolvedUsername, pinExistsResult] = await Promise.all([
       hashPassword(rawPin),
       (async () => {

@@ -12,7 +12,7 @@
  */
 
 const { publishScheduledNyheter, unpublishExpiredNyheter, markPushSent, markFacebookPosted } = require('../../db/dagens-nyhet');
-const { sendPushNotification, sendPushBroadcast } = require('./push-notifications');
+const { sendPushBroadcast } = require('./push-notifications');
 const { isFacebookConfigured, postNyhetToFacebook } = require('./facebook');
 const db = require('./db');
 const { NYHET_SCHEDULER_LOCK_ID } = require('./scheduler-constants');

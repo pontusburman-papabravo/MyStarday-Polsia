@@ -11,7 +11,7 @@ const express = require('express');
 const db = require('../lib/db');
 const { requireParent } = require('../middleware/auth');
 const { getLocalDateStr, getDayOfWeek } = require('../lib/daily-log-generator');
-const { addDaysIso, getWeekMondayIso } = require('../lib/date-utils');
+const { addDaysIso } = require('../lib/date-utils');
 
 const router = express.Router({ mergeParams: true });
 

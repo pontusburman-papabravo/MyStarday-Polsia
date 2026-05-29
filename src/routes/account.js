@@ -2,11 +2,11 @@ const express = require('express');
 const archiver = require('archiver');
 const db = require('../lib/db');
 const { hashPassword, comparePassword } = require('../lib/hash');
-const { requireParent, requireAdmin } = require('../middleware/auth');
+const { requireParent } = require('../middleware/auth');
 const { revokeAllRefreshTokens } = require('../lib/refresh-tokens');
 const { sendAccountDeletionRequestedEmail } = require('../lib/email');
 const { validate } = require('../middleware/validate');
-const { UpdateNotificationPrefsSchema, ReorderSchema } = require('../lib/schemas');
+const { UpdateNotificationPrefsSchema } = require('../lib/schemas');
 // Inline schemas for account-specific mutations (not shared across routes)
 const { z } = require('zod');
 const ChangePasswordSchema = z.object({
@@ -555,7 +555,7 @@ router.post('/delete-immediate', requireParent, async (req, res) => {
       return res.status(404).json({ error: 'Konto hittades inte' });
     }
 
-    const { email, family_id, password_hash } = parentRow.rows[0];
+    const { family_id, password_hash } = parentRow.rows[0];
     const valid = await comparePassword(password, password_hash);
     if (!valid) {
       client.release();

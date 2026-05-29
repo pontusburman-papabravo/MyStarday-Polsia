@@ -22,7 +22,6 @@ const {
   setRefreshCookie,
   clearRefreshCookie,
   setAccessCookie,
-  clearAccessCookie,
 } = require('../lib/refresh-tokens');
 const {
   sendVerificationEmail,
@@ -33,7 +32,6 @@ const {
 const { sendWelcomeEmail } = require('../lib/welcome-mailer');
 const pinLockout = require('../../db/pin-lockout');
 const { createSystemMessage } = require('../../db/system-messages');
-const familySubscriptions = require('../../db/family-subscriptions');
 const parentDb = require('../../db/parent');
 const { broadcast } = require('../lib/sse-broadcast');
 const { validate } = require('../middleware/validate');
@@ -732,7 +730,7 @@ router.post('/child-login', childLoginLimiter, validate(ChildLoginSchema), async
     const clientIp = req.ip || 'unknown';
 
     // Find child — username match first, then display name
-    let childResult = await db.query(
+    const childResult = await db.query(
       'SELECT id, family_id, name, emoji, username, pin FROM child WHERE LOWER(username) = $1',
       [normalizedInput]
     );
@@ -1293,7 +1291,6 @@ function _jwkToPem(jwk) {
   const nLen = nBytes.length;
   const eLen = eBytes.length;
 
-  const totalSize = 4 + nLen + 4 + eLen + 6;
   const buf = Buffer.alloc(2048);
   let pos = 0;
 

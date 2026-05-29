@@ -9,7 +9,6 @@
  */
 
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
 const db = require('../../db/surveys');
 const { requireAdmin } = require('../middleware/auth');
 const { requireFeature } = require('../middleware/feature-gate');
@@ -150,7 +149,6 @@ adminRouter.post('/:id/questions/reorder', async (req, res) => {
       'SELECT id FROM survey_questions WHERE survey_id = $1',
       [req.params.id]
     )).rows.map(r => r.id);
-    const orderSet = new Set(order);
     const invalidIds = order.filter(id => !validQIds.includes(id));
     if (invalidIds.length > 0) {
       return res.status(400).json({ error: 'Frågor från annan undersökning i order' });
@@ -268,7 +266,6 @@ adminRouter.get('/:id/export', async (req, res) => {
     }
 
     // Build CSV header
-    const qHeaders = questions.map(q => `"${q.question_text.replace(/"/g, '""')}"`);
     const header = ['Svar-ID', 'Status', 'Tidpunkt', 'GDPR', ...questions.map(q => `"${q.question_text.replace(/"/g, '""')}"`)].join(',');
 
     const csvRows = [header];
@@ -374,9 +371,7 @@ publicRouter.get('/popup/logged-in', requireAuth, requireFeature('enkater'), asy
       }
     }
 
-    // Check if already submitted
-    const dupCheck = await db.getSurveyStats(survey.id);
-    // We can't check per-parent without more joins — skip; dedup is handled client-side by cookie too
+    // Dedup is handled client-side by cookie; per-parent check needs more joins
 
     res.json({ survey });
   } catch (err) {
@@ -528,7 +523,7 @@ publicRouter.post('/responses/:rid/submit', async (req, res) => {
     const response = await db.getResponse(req.params.rid);
     if (!response) return res.status(404).json({ error: 'Session hittades inte' });
     if (response.status === 'submitted') return res.status(409).json({ error: 'Enkäten är redan inskickad' });
-    const submitted = await db.submitResponse(req.params.rid, { gdpr_consent, respondent_email });
+    await db.submitResponse(req.params.rid, { gdpr_consent, respondent_email });
 
     // Get survey for thank-you config + contest
     const survey = await db.getSurveyById(response.survey_id);

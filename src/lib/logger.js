@@ -32,7 +32,7 @@ if (!isProduction) {
         singleLine: false,
       },
     };
-  } catch (err) {
+  } catch {
     // pino-pretty not available in production build
   }
 }

@@ -540,7 +540,9 @@ childRouter.get('/rewards', async (req, res) => {
       [childId, familyId]
     );
     // Filter out rewards already redeemed by another child
-    const visibleRewards = rewards.rows.filter(r => !r.already_redeemed_by_other).map(({ already_redeemed_by_other, ...r }) => r);
+    const visibleRewards = rewards.rows
+      .filter(r => !r.already_redeemed_by_other)
+      .map(({ already_redeemed_by_other: _unused, ...r }) => r);
     const balance = await getStarBalance(childId);
     const redemptions = await db.query(
       `SELECT rr.id, rr.reward_id, rr.status, rr.created_at,

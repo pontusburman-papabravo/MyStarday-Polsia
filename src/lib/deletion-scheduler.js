@@ -84,7 +84,7 @@ async function runDeletionJob() {
  * Deletes the family row — CASCADE constraints handle all child rows.
  * Then deletes the parent.
  */
-async function executeCascadeDelete({ id: parentId, email, family_id, deletion_requested_at }) {
+async function executeCascadeDelete({ id: parentId, email, family_id, deletion_requested_at: _deletionRequestedAt }) {
   const client = await db.getClient();
 
   try {

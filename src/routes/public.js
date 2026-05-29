@@ -1,5 +1,4 @@
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
 const rateLimit = require('express-rate-limit');
 const db = require('../lib/db');
 const { sendEmail } = require('../lib/email');
@@ -100,8 +99,6 @@ router.get('/registration-status', (req, res) => {
 
 // ─── POST /api/public/professional-interest ──────────────
 // Public form submission from /pedagoger-och-terapeuter — no auth required.
-const VALID_ROLES = ['Arbetsterapeut', 'Logoped', 'Specialpedagog', 'Psykolog', 'Annan'];
-
 router.post('/public/professional-interest', professionalInterestLimiter, async (req, res) => {
   try {
     const { name, email, role, organization, message, gdprConsent } = req.body;
@@ -126,7 +123,7 @@ router.post('/public/professional-interest', professionalInterestLimiter, async 
     const normalizedMsg = message ? String(message).trim().substring(0, 2000) : null;
     const ipAddress = req.ip || null;
 
-    const row = await createProfessionalInterest({
+    await createProfessionalInterest({
       name: normalizedName,
       email: normalizedEmail,
       role: normalizedRole,
@@ -199,7 +196,7 @@ router.post('/waitlist', waitlistLimiter, async (req, res) => {
     const normalizedEmail = email.toLowerCase().trim();
     const ipAddress = req.ip || null;
 
-    const entry = await addWaitlistEntry(normalizedName, normalizedEmail, null, ipAddress);
+    await addWaitlistEntry(normalizedName, normalizedEmail, null, ipAddress);
 
     // Send confirmation email (non-blocking)
     sendEmail({
@@ -309,10 +306,6 @@ router.post('/waitlist/skip', waitlistLimiter, async (req, res) => {
 
 const jwt = require('jsonwebtoken');
 const config = require('../lib/config');
-
-// WHY module-scope: fmtWeek() is module-level and needs this; previously was
-// inside route handler only, causing ReferenceError when fmtWeek was called.
-const MONTHS_SV = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 
 const reportPinLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -530,24 +523,6 @@ router.get('/public/report/:publicId/playful', async (req, res) => {
     res.status(500).json({ error: 'Något gick fel.' });
   }
 });
-
-// ISO week number helper
-function getISOWeek(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-  return { year: d.getUTCFullYear(), week: weekNo };
-}
-
-// Format week date range as "28 apr–4 maj"
-function fmtWeek(dates) {
-  if (!dates || dates.length === 0) return 'v.?';
-  const sorted = [...dates].sort();
-  const startD = new Date(sorted[0] + 'T00:00:00');
-  const endD   = new Date(sorted[sorted.length - 1] + 'T00:00:00');
-  return startD.getDate() + ' ' + MONTHS_SV[startD.getMonth()] + '–' + endD.getDate() + ' ' + MONTHS_SV[endD.getMonth()];
-}
 
 // POST /api/public/report/:publicId/session
 // Verify PIN. Returns short JWT (15 min) for the publicId.

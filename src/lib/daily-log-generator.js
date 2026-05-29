@@ -588,7 +588,7 @@ async function syncDailyLogWithSchedule(childId, dayOfWeek, client, targetDate) 
       [childId, syncDate]
     );
     excludedTemplateIds = new Set(exclRes.rows.map(r => r.activity_template_id));
-  } catch (_) { /* table may not exist yet during migration window */ }
+  } catch { /* table may not exist yet during migration window */ }
 
   let added = 0, removed = 0, updated = 0;
 

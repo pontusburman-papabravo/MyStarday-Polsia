@@ -104,7 +104,7 @@ router.patch('/addons/:id', async (req, res, next) => {
 // POST /api/admin/subscription-settings/stripe/create
 // Creates Stripe product + price and stores IDs in app_settings.
 // Idempotent — returns existing IDs if already configured.
-router.post('/stripe/create', async (req, res, next) => {
+router.post('/stripe/create', async (req, res, _next) => {
   try {
     // Check if already configured
     const [existingPriceId, existingProductId] = await Promise.all([

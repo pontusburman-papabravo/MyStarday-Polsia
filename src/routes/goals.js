@@ -24,13 +24,12 @@ const { requireParent, requireChild } = require('../middleware/auth');
 const { requireNotPedagogOnly } = require('../middleware/authz');
 const { broadcast } = require('../lib/sse-broadcast');
 const { notifyChildStarGranted } = require('../lib/push');
-const { validate, validateParams } = require('../middleware/validate');
+const { validate } = require('../middleware/validate');
 const {
   SetGoalSchema,
   ManualStarsSchema,
   GoalChangeRequestSchema,
   ChildSetGoalSchema,
-  UUIDParam,
 } = require('../lib/schemas');
 
 // ─── SSE helper: look up family_id for a child ───────────

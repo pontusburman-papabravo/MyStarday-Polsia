@@ -9,14 +9,11 @@
  */
 const express = require('express');
 const { requireParent } = require('../middleware/auth');
-const { upsertObservation, getObservationsForRange, getObservationById, deleteObservation } = require('../../db/child-observations');
+const { upsertObservation, getObservationsForRange, deleteObservation } = require('../../db/child-observations');
 const db = require('../lib/db');
 
 const router = express.Router();
 router.use(requireParent);
-
-const DATE_RE = /^\/\b-\/\b$/;
-const DATE_RE_STR = 'YYYY-MM-DD';
 
 function isValidDate(s) {
   return s && s.length === 10 && s[4] === '-' && s[7] === '-' && !isNaN(Date.parse(s + 'T12:00:00'));

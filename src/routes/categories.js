@@ -137,8 +137,6 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Kategorin hittades inte' });
     }
 
-    const cat = existing.rows[0];
-
     // Count templates in category
     const templates = await db.query(
       'SELECT COUNT(*) FROM activity_template WHERE category_id = $1',

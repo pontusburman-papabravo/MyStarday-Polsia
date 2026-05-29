@@ -24,11 +24,7 @@ if (vapidPublicKey && vapidPrivateKey) {
   console.warn('[PUSH] VAPID keys not configured — web push notifications will not work');
 }
 
-// APNs/FCM: configured via env vars. Install node-apn for iOS, firebase-admin for Android.
-// Placeholder — integrate when Apple Developer Account is available (see task blockers).
-const APNs_KEY_ID = process.env.APNS_KEY_ID;
-const APNs_TEAM_ID = process.env.APNS_TEAM_ID;
-const APNs_KEY_PATH = process.env.APNs_KEY_PATH; // path to .p8 file
+// APNs/FCM: configured via env vars (see sendAPNs / sendFCM).
 const FCM_SERVER_KEY = process.env.FCM_SERVER_KEY;
 
 /**
@@ -215,7 +211,7 @@ async function sendAPNs(deviceToken, { title, body, url }) {
     rejectUnauthorized: host !== 'api.sandbox.push.apple.com',
   });
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const req = client.request({
       ':method': 'POST',
       ':path': `/3/device/${deviceToken}`,
@@ -243,7 +239,7 @@ async function sendAPNs(deviceToken, { title, body, url }) {
           try {
             const parsed = JSON.parse(responseData);
             reason = parsed.reason || reason;
-          } catch (_) { /* raw text */ }
+          } catch { /* raw text */ }
 
           if (reason === 'BadDeviceToken' || reason === 'Unregistered') {
             badToken = true;
@@ -328,14 +324,14 @@ function stripLeadingZeros(buf) {
 }
 
 function cleanupAndClose(client) {
-  try { client.close(); } catch (_) {}
+  try { client.close(); } catch { /* already closed */ }
 }
 
 /**
  * Send via FCM (Android). Requires firebase-admin or FCM server key.
  * Stubbed out — enable once FCM credentials are configured.
  */
-async function sendFCM(deviceToken, { title, body, url }) {
+async function sendFCM(deviceToken, { title, body: _body, url: _url }) {
   if (!FCM_SERVER_KEY) {
     console.warn('[PUSH-FCM] Not configured — set FCM_SERVER_KEY env var');
     return;
