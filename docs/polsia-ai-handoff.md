@@ -69,6 +69,7 @@ Familjeapp (svenska): scheman, stjärnor, belöningar (Skattkammaren), föräldr
 | README | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/README.md |
 | Release-checklista | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/docs/RELEASE.md |
 | **Kontohantering A–F (Polsia-spec)** | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/docs/polsia-kontohantering-a-f.md |
+| **Barnlogin redesign (Polsia-spec)** | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/docs/polsia-barnlogin-design.md |
 | Denna handoff | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/docs/polsia-ai-handoff.md |
 
 ### Mappar (tree-länkar)

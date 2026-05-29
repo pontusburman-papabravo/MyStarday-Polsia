@@ -486,6 +486,7 @@ Länk: https://mystarday.se/verify-email-change?token=...
 - Google Sign In på Android (separat uppdrag)
 - Google Play-lansering
 - Platform-theme fas 2 (tab bar)
+- **Barnlogin redesign** — se `docs/polsia-barnlogin-design.md` (separat Polsia-uppdrag)
 
 ---
 
