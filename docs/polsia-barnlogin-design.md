@@ -4,7 +4,12 @@
 **Sida:** `/child-login` → `public/child-login.html`  
 **API:** `POST /api/auth/child-login` (oförändrat — `{ username, pin }`)
 
-Designreferens: **bifogad mockup (3 skärmar)** — bifoga bilden i Polsia-uppgiften.
+Designreferens (i repot — Polsia läser från git):
+
+![Barnlogin — tre skärmar (rollval, välj barn, PIN)](mockups/barnlogin-3-skarmar.png)
+
+- **Käll-HTML (redigerbar):** [`docs/mockups/barnlogin-mockup.html`](mockups/barnlogin-mockup.html)
+- **GitHub:** `docs/mockups/barnlogin-3-skarmar.png`
 
 | Skärm | Innehåll |
 |-------|----------|
@@ -52,6 +57,8 @@ Gemensamt visuellt språk:
 ---
 
 ## 3. Tre-skärms-flöde (mockup)
+
+![Tre-skärms-flöde — designreferens](mockups/barnlogin-3-skarmar.png)
 
 ```
 Skärm 1 (login.html)          Skärm 2 (child-login)         Skärm 3 (child-login)

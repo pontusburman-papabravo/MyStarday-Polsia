@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barnlogin — Min Stjärndag Mockup (3 skärmar)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --purple: #7B61FF;
+            --purple-dark: #2D1B69;
+            --coral: #FF7E5F;
+            --white: #FFFFFF;
+            --text-soft: rgba(255,255,255,0.85);
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            background: #0f0a1f;
+            background-image:
+                radial-gradient(circle at 30% 20%, rgba(123,97,255,0.15) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(255,126,95,0.1) 0%, transparent 50%);
+        }
+        .mockup-label {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: rgba(255,255,255,0.7);
+        }
+        .mockup-label h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+        .mockup-label p { font-size: 0.9rem; }
+        .screens-row {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .screen-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .screen-label {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--purple);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .phone-frame {
+            width: 280px;
+            background: #1a1230;
+            border-radius: 40px;
+            padding: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);
+        }
+        .phone-screen {
+            border-radius: 32px;
+            overflow: hidden;
+            height: 580px;
+            position: relative;
+            background: linear-gradient(180deg, #2D1B69 0%, #5B3A8C 35%, #C45C8A 70%, #FF7E5F 100%);
+        }
+        .stars {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                radial-gradient(1px 1px at 20% 15%, rgba(255,255,255,0.9) 0%, transparent 100%),
+                radial-gradient(1.5px 1.5px at 45% 8%, rgba(255,255,255,0.7) 0%, transparent 100%),
+                radial-gradient(1px 1px at 70% 20%, rgba(255,255,255,0.8) 0%, transparent 100%),
+                radial-gradient(1px 1px at 85% 12%, rgba(255,255,255,0.6) 0%, transparent 100%),
+                radial-gradient(1.5px 1.5px at 15% 35%, rgba(255,255,255,0.5) 0%, transparent 100%),
+                radial-gradient(1px 1px at 55% 28%, rgba(255,255,255,0.7) 0%, transparent 100%),
+                radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,0.5) 0%, transparent 100%);
+        }
+        .cloud {
+            position: absolute;
+            background: rgba(255,200,180,0.35);
+            border-radius: 50px;
+            filter: blur(1px);
+        }
+        .cloud-1 { width: 80px; height: 30px; bottom: 120px; left: -20px; }
+        .cloud-2 { width: 100px; height: 35px; bottom: 80px; right: -30px; }
+        .screen-content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 48px 20px 24px;
+        }
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 16px;
+        }
+        .back-btn {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        .logo-block { text-align: center; }
+        .logo-star {
+            font-size: 28px;
+            line-height: 1;
+            filter: drop-shadow(0 0 8px rgba(245,166,35,0.6));
+        }
+        .logo-name {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: white;
+            letter-spacing: 0.02em;
+        }
+        .logo-tag {
+            font-size: 0.55rem;
+            color: var(--text-soft);
+            letter-spacing: 0.15em;
+            margin-top: 2px;
+        }
+        .role-cards {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .role-card {
+            flex: 1;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 16px 10px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+        .role-illus {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 10px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        .role-illus.child { background: linear-gradient(135deg, #EDE7F6, #D1C4E9); }
+        .role-illus.adult { background: linear-gradient(135deg, #FFF3D6, #FFE0B2); }
+        .role-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--purple-dark);
+        }
+        .role-sub {
+            font-size: 0.65rem;
+            color: #666;
+            margin-top: 4px;
+        }
+        .divider {
+            text-align: center;
+            margin: 20px 0 16px;
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 0.1em;
+        }
+        .auth-btns { display: flex; flex-direction: column; gap: 10px; }
+        .auth-btn {
+            background: rgba(255,255,255,0.95);
+            border-radius: 14px;
+            padding: 12px;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #333;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .page-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.35rem;
+            color: white;
+            text-align: center;
+            margin: 8px 0 4px;
+        }
+        .page-sub {
+            font-size: 0.75rem;
+            color: var(--text-soft);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .child-list { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+        .child-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            border-radius: 16px;
+            padding: 12px 14px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        .child-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: linear-gradient(135deg, #FFB6C1, #FF69B4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+        .child-avatar.photo {
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23FFB6C1" width="100" height="100"/><circle cx="50" cy="38" r="18" fill="%23FF69B4"/><ellipse cx="50" cy="85" rx="30" ry="22" fill="%23FF69B4"/></svg>') center/cover;
+        }
+        .child-name {
+            flex: 1;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #1B2340;
+        }
+        .child-chevron { color: #ccc; font-size: 1.2rem; }
+        .add-child {
+            border: 2px dashed rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.12);
+            box-shadow: none;
+        }
+        .add-child .child-avatar {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-size: 20px;
+            font-weight: 300;
+        }
+        .add-child .child-name { color: white; font-weight: 500; }
+        .pin-screen { align-items: center; text-align: center; }
+        .big-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid rgba(255,255,255,0.9);
+            box-shadow: 0 0 30px rgba(255,255,255,0.4);
+            margin: 16px auto 12px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23FFB6C1" width="100" height="100"/><circle cx="50" cy="38" r="18" fill="%23FF69B4"/><ellipse cx="50" cy="85" rx="30" ry="22" fill="%23FF69B4"/></svg>') center/cover;
+        }
+        .greeting {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white;
+        }
+        .pin-hint {
+            font-size: 0.75rem;
+            color: var(--text-soft);
+            margin: 4px 0 16px;
+        }
+        .pin-dots {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .pin-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.5);
+            background: transparent;
+        }
+        .pin-dot.filled {
+            background: var(--purple);
+            border-color: var(--purple);
+            box-shadow: 0 0 8px rgba(123,97,255,0.6);
+        }
+        .keypad {
+            margin-top: auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 0 8px;
+        }
+        .key {
+            aspect-ratio: 1;
+            max-height: 64px;
+            border-radius: 50%;
+            background: white;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--purple);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .key-row-bottom {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        .key-star {
+            background: linear-gradient(135deg, #F5A623, #FFD54F);
+            font-size: 1.5rem;
+        }
+        .key-back {
+            background: var(--purple);
+            color: white;
+            font-size: 1.2rem;
+        }
+        .footer-help {
+            text-align: center;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.5);
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mockup-label">
+        <h1>Barnlogin — tre skärmar</h1>
+        <p>Designreferens för Polsia · Min Stjärndag · 2026-05-29</p>
+    </div>
+
+    <div class="screens-row">
+        <!-- Skärm 1: Rollval -->
+        <div class="screen-wrap">
+            <span class="screen-label">Skärm 1 — Rollval</span>
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="stars"></div>
+                    <div class="cloud cloud-1"></div>
+                    <div class="cloud cloud-2"></div>
+                    <div class="screen-content">
+                        <div class="header-row">
+                            <div class="logo-block">
+                                <div class="logo-star">⭐</div>
+                                <div class="logo-name">Stjärndag</div>
+                                <div class="logo-tag">TILLSAMMANS LYSER VI</div>
+                            </div>
+                        </div>
+                        <div class="role-cards">
+                            <div class="role-card">
+                                <div class="role-illus child">🧒</div>
+                                <div class="role-title">Jag är barn</div>
+                                <div class="role-sub">Logga in som barn</div>
+                            </div>
+                            <div class="role-card">
+                                <div class="role-illus adult">👨‍👩‍👧</div>
+                                <div class="role-title">Jag är vuxen</div>
+                                <div class="role-sub">Logga in som vuxen</div>
+                            </div>
+                        </div>
+                        <div class="divider">ELLER LOGGA IN</div>
+                        <div class="auth-btns">
+                            <div class="auth-btn"> Apple</div>
+                            <div class="auth-btn"> E-post</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skärm 2: Välj barn -->
+        <div class="screen-wrap">
+            <span class="screen-label">Skärm 2 — Välj barn</span>
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="stars"></div>
+                    <div class="cloud cloud-1"></div>
+                    <div class="cloud cloud-2"></div>
+                    <div class="screen-content">
+                        <div class="header-row">
+                            <div class="back-btn">←</div>
+                            <div class="logo-block">
+                                <div class="logo-star">⭐</div>
+                                <div class="logo-name">Stjärndag</div>
+                            </div>
+                        </div>
+                        <h2 class="page-title">Välj vem du är</h2>
+                        <p class="page-sub">Välj vilket barn du vill logga in som</p>
+                        <div class="child-list">
+                            <div class="child-row">
+                                <div class="child-avatar photo"></div>
+                                <span class="child-name">Astrid</span>
+                                <span class="child-chevron">›</span>
+                            </div>
+                            <div class="child-row">
+                                <div class="child-avatar">👦</div>
+                                <span class="child-name">Liam</span>
+                                <span class="child-chevron">›</span>
+                            </div>
+                            <div class="child-row">
+                                <div class="child-avatar">👧</div>
+                                <span class="child-name">Sofia</span>
+                                <span class="child-chevron">›</span>
+                            </div>
+                            <div class="child-row add-child">
+                                <div class="child-avatar">+</div>
+                                <span class="child-name">Lägg till ett barn</span>
+                            </div>
+                        </div>
+                        <p class="footer-help">Behöver du hjälp?</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skärm 3: PIN -->
+        <div class="screen-wrap">
+            <span class="screen-label">Skärm 3 — PIN</span>
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="stars"></div>
+                    <div class="cloud cloud-1"></div>
+                    <div class="cloud cloud-2"></div>
+                    <div class="screen-content pin-screen">
+                        <div class="header-row" style="width:100%">
+                            <div class="back-btn">←</div>
+                            <div class="logo-block">
+                                <div class="logo-star">⭐</div>
+                                <div class="logo-name">Stjärndag</div>
+                            </div>
+                        </div>
+                        <div class="big-avatar"></div>
+                        <div class="greeting">Hej Astrid!</div>
+                        <p class="pin-hint">Ange din pinkod</p>
+                        <div class="pin-dots">
+                            <span class="pin-dot filled"></span>
+                            <span class="pin-dot filled"></span>
+                            <span class="pin-dot"></span>
+                            <span class="pin-dot"></span>
+                        </div>
+                        <div class="keypad">
+                            <button class="key" type="button">1</button>
+                            <button class="key" type="button">2</button>
+                            <button class="key" type="button">3</button>
+                            <button class="key" type="button">4</button>
+                            <button class="key" type="button">5</button>
+                            <button class="key" type="button">6</button>
+                            <button class="key" type="button">7</button>
+                            <button class="key" type="button">8</button>
+                            <button class="key" type="button">9</button>
+                            <div class="key-row-bottom">
+                                <button class="key key-star" type="button">⭐</button>
+                                <button class="key" type="button">0</button>
+                                <button class="key key-back" type="button">⌫</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
