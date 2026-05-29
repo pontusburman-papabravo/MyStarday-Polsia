@@ -4,23 +4,34 @@
 **Sida:** `/child-login` → `public/child-login.html`  
 **API:** `POST /api/auth/child-login` (oförändrat — `{ username, pin }`)
 
-Designreferens: **bifogad mockup** (mobil barnvy — lila/rosa solnedgång, avatar, namn + PIN, rund siffertavla). Bifoga samma bild i Polsia-uppgiften.
+Designreferens: **bifogad mockup (3 skärmar)** — bifoga bilden i Polsia-uppgiften.
+
+| Skärm | Innehåll |
+|-------|----------|
+| **1 — Rollval** | "Jag är barn" / "Jag är vuxen" + Apple/e-post/Android |
+| **2 — Välj barn** | Lista Astrid, Liam, Sofia + "Lägg till ett barn" |
+| **3 — PIN** | "Hej Astrid!", avatar, prickar, siffertavla |
 
 ---
 
 ## 1. Mål
 
-Ge barn en **lekfull, mobil-först** inloggning som matchar mockupen:
+Ge barn och vuxna en **enhetlig "magisk natt"**-inloggning i **tre steg** (mockup):
 
-- Stjärnig natthimmel (lila → orange/rosa)
-- Stor rund **avatar** (selfie/foto, emoji eller illustration)
-- **Byt barn** — familjer med flera barn ska kunna välja vem som loggar in
-- **"Hej kompis!"** + personlig hälsning (t.ex. "Hej Astrid!")
-- Vit kort-yta: **Ditt namn** + **Din pinkod** (prickar, inte klartext)
-- **Egen siffertavla** — stora runda knappar, lila siffror, stjärn-knapp + radera
-- Ingen systemtangentbord för PIN på mobil (native + touch)
+**Skärm 1 — Rollval** (`login.html` eller `/` landing, se §3.1)  
+**Skärm 2 — Välj barn** (`/child-login` steg 1)  
+**Skärm 3 — PIN** (`/child-login` steg 2)
 
-**Behåll all befintlig auth-logik:** lockout, försöksräknare, `POST /api/auth/child-login`, redirect till barn-dashboard, safe-area på iOS.
+Gemensamt visuellt språk:
+
+- Stjärnig natthimmel (lila → orange/rosa moln)
+- Stjärndag-logo + *"TILLSAMMANS LYSER VI"*
+- Stor rund **avatar** (selfie / foto / emoji)
+- **Flera barn** — egen väljarskärm, inte fritext-gissning
+- **Egen siffertavla** — runda knappar, lila siffror, stjärna + backspace
+- Personlig hälsning: **"Hej Astrid!"**
+
+**Behåll all befintlig auth-logik:** lockout, `POST /api/auth/child-login`, redirect till barn-dashboard, safe-area iOS.
 
 ---
 
@@ -32,24 +43,111 @@ Ge barn en **lekfull, mobil-först** inloggning som matchar mockupen:
 | Namn | Vanlig `<input type="text">` |
 | PIN | `<input type="tel">` — systemtangentbord |
 | Siffertavla | ❌ Finns inte |
-| Flera barn | ❌ Bara fritext namn — ingen väljare |
+| Flöde | ❌ En skärm, fritext namn |
+| Barnväljare | ❌ |
 | Selfie/foto | ❌ Bara emoji |
 | JS | Inline i `child-login.html` (~200 rader) |
 | CSS | Tailwind + inline `<style>` |
 
 ---
 
-## 3. Mål-design (enligt mockup)
+## 3. Tre-skärms-flöde (mockup)
 
-### 3.1 Bakgrund & header
+```
+Skärm 1 (login.html)          Skärm 2 (child-login)         Skärm 3 (child-login)
+┌─────────────────────┐       ┌─────────────────────┐       ┌─────────────────────┐
+│  ⭐ Stjärndag        │       │  ←  ⭐ Stjärndag     │       │  ←  ⭐ Stjärndag     │
+│  TILLSAMMANS LYSER VI│       │                     │       │                     │
+│ ┌────────┐┌────────┐ │       │  Välj vem du är     │       │    [Astrid foto]    │
+│ │Jag är  ││Jag är  │ │  →    │  Välj barn...       │  →    │   Hej Astrid!       │
+│ │ barn   ││ vuxen  │ │       │ ┌─────────────────┐ │       │   Ange din pinkod   │
+│ └────────┘└────────┘ │       │ │ Astrid    [→]  │ │       │   ○ ○ ○ ○           │
+│  ELLER LOGGA IN      │       │ │ Liam      [→]  │ │       │   [ 1 2 3 ]         │
+│  [Apple][E-post]...  │       │ │ Sofia     [→]  │ │       │   [ 4 5 6 ] ...     │
+└─────────────────────┘       │ │ + Lägg till barn│ │       └─────────────────────┘
+                                │ └─────────────────┘ │
+                                └─────────────────────┘
+```
 
-- Gradient: mörklila (#3D2B7A) → varm orange/rosa (#FF8C69 / #FFB347)
-- Små stjärnor + mjuka moln (CSS eller lätt SVG)
-- **Tillbaka** (vänster): rund mörk knapp, pil ← — länk till `/` eller `/login`
-- **Logo** (top center): gul leende stjärna + text **"Stjärndag"** (vit, rund sans-serif)
-- Tagline diskret om plats: *"TILLSAMMANS LYSER VI"* (valfritt)
+Navigering:
 
-### 3.2 Avatar (selfie / foto / emoji)
+- **Skärm 1 → 2:** Tap **"Jag är barn"** → `window.location = '/child-login'`
+- **Skärm 1 → vuxen:** Tap **"Jag är vuxen"** → visa e-post/Apple-form (befintlig login-magic)
+- **Skärm 2 → 3:** Tap barnrad → spara `selectedChild` i sessionStorage → visa PIN-steg (samma HTML, toggla vyer)
+- **Skärm 3 → 2:** Tillbaka-pil → rensa PIN, visa väljare igen
+- **Skärm 2 → 1:** Tillbaka från väljare → `/login`
+
+Implementation: **en route** `/child-login` med två vyer (`#step-profiles`, `#step-pin`) — undvik extra sidladdning mellan steg 2 och 3.
+
+---
+
+### 3.1 Skärm 1 — Rollval (samordning med login.html)
+
+Om **login-magic** redan har liknande kort — **matcha mockupen exakt**:
+
+| Element | Innehåll |
+|---------|----------|
+| Vänster kort | Illustration barn + **"Jag är barn"** / *Logga in som barn* → `/child-login` |
+| Höger kort | Illustration familj + **"Jag är vuxen"** / *Logga in som vuxen* → expandera e-post/Apple |
+| Avdelare | **"ELLER LOGGA IN"** |
+| Knappar | Apple (iOS only), E-post, Android (Google — framtida) |
+| Footer | *Har du inget konto? Registrera dig här* |
+
+**Obs:** Skärm 1 är **inte** child-login.html — håll rollvalet i `login.html` (eller `index.html` om det är appens ingång). Barnflödet börjar på skärm 2.
+
+---
+
+### 3.2 Skärm 2 — Välj barn (`child-login` steg 1)
+
+- Rubrik: **"Välj vem du är"**
+- Undertext: **"Välj vilket barn du vill logga in som"**
+- **Vertikal lista** — vita rundade rader (mockup), en rad per barn:
+
+```
+[ avatar ]  Astrid                    ›
+[ avatar ]  Liam                      ›
+[ avatar ]  Sofia                     ›
+[    +    ]  Lägg till ett barn
+```
+
+- Avatar per rad: `avatar_url` → emoji → standardillustration
+- Tap rad → gå till **steg 3** (PIN) för det barnet
+- **"Lägg till ett barn"** → `/login` med vuxen-flöde (kräver förälder — **inte** skapa barn utan inloggning)
+- Footer: *"Behöver du hjälp?"* → support/help
+
+**Datakällor för barnlistan** (samma som tidigare):
+
+| Källa | När |
+|-------|-----|
+| `GET /api/auth/me` → `children[]` | Förälder har session på enheten |
+| `localStorage` → `stjarndag_known_children` | Barn loggat in tidigare på enheten |
+| Tom lista | Visa endast "+ Lägg till ett barn" + kort hjälptext |
+
+**Visa INTE** barn från andra familjer — filtrera known_children per `familyId` om sparat.
+
+---
+
+### 3.3 Skärm 3 — PIN (`child-login` steg 2)
+
+- Stor **avatar-ring** (valt barn) med lila glöd
+- **"Hej [namn]!"** (t.ex. Hej Astrid!)
+- **"Ange din pinkod"**
+- **Fyra prickar** (tomma → fyllda)
+- **Siffertavla** (nedre halvan) — se §3.5
+- Footer: *"Glömt din pinkod?"* → hjälptext: *"Fråga mamma eller pappa"* (ingen reset utan förälder)
+- **Inget namnfält** på denna skärm — barn redan valt på skärm 2
+
+---
+
+### 3.4 Delad bakgrund & header (alla barnskärmar)
+
+- Gradient: mörklila → varm orange/rosa + stjärnor + moln
+- **Tillbaka** (←) övre vänster
+- **Logo** Stjärndag centrerat
+
+---
+
+### 3.5 Avatar (selfie / foto / emoji)
 
 Stor cirkel (~120–140px) med **vit glödande ring** — uppdateras när barn byts.
 
@@ -65,67 +163,15 @@ Foto ska visas **object-fit: cover** i cirkeln (som mockup med Astrid).
 
 - **Inte** vid själva login-skärmen (barnet är inte inloggat än)
 - Förälder laddar upp under **Inställningar → Barn → [barn] → Profilbild** (iOS: kamera, webb: filväljare)
-- Efter uppladdning syns fotot på barnlogin nästa gång barnet väljs
+- Efter uppladdning syns fotot i listan (skärm 2) och i ringen (skärm 3)
 
-### 3.3 Byt barn (flera barn i familjen)
-
-En familj kan ha **flera barn** som delar samma iPad/telefon. Barnlogin ska göra det enkelt att byta.
-
-**UI — horisontell barnväljare** (ovanför eller under avatar):
-
-```
-[ Astrid 🖼️ ]  [ Erik 🦁 ]  [ + Annat ]
-     ● aktiv      inaktiv
-```
-
-- Rund mini-avatar per barn (foto eller emoji)
-- Namn under eller i tooltip
-- Tap → byter **valt barn**, uppdaterar stor avatar, namnfält och nollställer PIN-prickar
-- Aktivt barn markeras med lila ring / prick under
-
-**Var kommer barnlistan ifrån? (tre källor, i prioritet)**
-
-| Källa | När | Data |
-|-------|-----|------|
-| **1. Förälder inloggad** | `GET /api/auth/me` returnerar `children[]` | name, username, emoji, avatar_url |
-| **2. localStorage** | Tidigare lyckade inloggningar på enheten | `stjarndag_known_children` — array max 8 |
-| **3. Fritext** | "+ Annat" / redigera namnfält | Som idag — skriv namn manuellt |
-
-**localStorage-format** (`stjarndag_known_children`):
+**localStorage** (`stjarndag_known_children`) — uppdateras efter lyckad login:
 
 ```json
 [
-  { "username": "astrid", "name": "Astrid", "emoji": "👧", "avatar_url": "https://r2.../x.jpg", "lastLoginAt": 1730000000 }
+  { "username": "astrid", "name": "Astrid", "emoji": "👧", "avatar_url": "https://...", "familyId": "uuid", "lastLoginAt": 1730000000 }
 ]
 ```
-
-Uppdatera listan efter **varje lyckad** child-login (merge på `username`, uppdatera avatar_url/emoji).
-
-**Hälsning:** När barn valt → **"Hej Astrid!"** istället för generiskt "Hej kompis!" (fallback: "Hej kompis!" om inget barn valt).
-
-### 3.4 Hälsning & undertitel
-
-- Rubrik: **"Hej [namn]!"** eller **"Hej kompis!"**
-- Undertext: **"Logga in för att fortsätta"** (vit/mjuk, 90% opacity)
-
-### 3.5 Inloggningskort (vit, rundade hörn ~20px)
-
-Två rader i samma kort:
-
-**Rad 1 — Ditt namn**
-
-- Label: *Ditt namn*
-- Vänster: liten person-ikon (lila)
-- Värde: barnets namn (t.ex. "Astrid") — redigerbart vid tap
-- Höger: **lila bock** ✓ när namn ≥ 2 tecken
-- Tap på rad → fokus/redigera namn (textfält eller modal — diskret)
-
-**Rad 2 — Din pinkod**
-
-- Label: *Din pinkod*
-- **Fyra prickar** (grå tomma → lila fyllda när siffra anges)
-- Höger: **öga-ikon** — toggla visning av PIN (endast föräldramode/debug OFF som default; barn ser normalt bara prickar)
-- **Ingen** synlig siffror i standardläge
 
 ### 3.6 Siffertavla (custom keypad)
 
@@ -236,26 +282,30 @@ submitLogin(): anropa befintlig fetch mot /api/auth/child-login
 
 ```html
 <div class="child-login-scene">
-  <header><!-- back, logo Stjärndag --></header>
-  <main>
-    <div class="child-picker" id="childPicker"><!-- horisontella barn-chips --></div>
-    <div class="child-avatar-ring" id="childAvatarRing"><!-- foto / emoji --></div>
-    <h1 id="childGreeting">Hej kompis!</h1>
-    <p class="subtitle">Logga in för att fortsätta</p>
-    <div class="child-login-card">
-      <div class="field-name">...</div>
-      <div class="field-pin"><!-- 4 dots + eye --></div>
-    </div>
-    <!-- error, lockout, loading — befintliga id behålls -->
-  </main>
-  <div class="child-keypad" id="childKeypad">
-    <!-- 1-9, star, 0, backspace -->
-  </div>
+  <header><!-- back, logo --></header>
+
+  <!-- STEG 1: Välj barn (skärm 2) -->
+  <section id="step-profiles" class="child-step">
+    <h1>Välj vem du är</h1>
+    <p class="subtitle">Välj vilket barn du vill logga in som</p>
+    <ul id="childProfileList"><!-- li per barn + lägg till --></ul>
+  </section>
+
+  <!-- STEG 2: PIN (skärm 3) -->
+  <section id="step-pin" class="child-step hidden">
+    <div class="child-avatar-ring" id="childAvatarRing"></div>
+    <h1 id="childGreeting">Hej Astrid!</h1>
+    <p class="subtitle">Ange din pinkod</p>
+    <div class="pin-dots" id="pinDots"></div>
+    <div class="child-keypad" id="childKeypad"></div>
+    <a href="#" id="forgotPinLink">Glömt din pinkod?</a>
+  </section>
+
+  <!-- lockout, error, loading — befintliga id -->
 </div>
 ```
 
-**Element-id att behålla** (för minimal regressionsrisk):  
-`username`, `pin` (dold input eller data-attribut), `childLoginForm`, `errorAlert`, `lockoutPanel`, `loadingSpinner`, `successAlert`, `attemptCounter`.
+**Dolda fält:** `username` (sätts från valt barn), ev. dold `#pin` för tillgänglighet.
 
 ---
 
@@ -338,11 +388,11 @@ Inloggat barn kan byta emoji — foto ändras av förälder tills vidare.
 
 **Phase 1 — UI**
 
-- [ ] `child-login-magic.css` + `child-login.js`
-- [ ] Mockup-layout + custom keypad
-- [ ] **Barnväljare** (localStorage + parent `/me`)
-- [ ] Personlig hälsning "Hej [namn]!"
-- [ ] Avatar-ring med emoji-fallback
+- [ ] Tre-skärms-flöde: login rollval + child-login (välj barn → PIN)
+- [ ] Vertikal barnlista med avatar (skärm 2)
+- [ ] PIN-skärm med tavla (skärm 3)
+- [ ] localStorage + parent `/me` för barnlistan
+- [ ] "+ Lägg till barn" → vuxen-login
 - [ ] SW bump
 
 **Phase 2 — Selfie**
