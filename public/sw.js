@@ -1,5 +1,15 @@
 /**
- * Min Stjärndag — Service Worker v131
+ * Min Stjärndag — Service Worker v136
+ * v136: Login "magisk natt" redesign — new login-magic.css/js, login.html visual overhaul,
+ *       gradient navy→lila→rosa starfield, role cards (kid/parent), parent form reveal,
+ *       safe-area insets, all existing auth logic preserved. SW bump for cache invalidation.
+ * v134: Native vs Webb — platform-theme.js (synkront IIFE, Capacitor.isNativePlatform()),
+ *       platform-native.css (CSS gates för safe-area, hamburger, web payment),
+ *       platform-html.js middleware injecterar scripts i alla HTML responses.
+ *       Klasser .web-payment-only på upgrade.html-prissektion.
+ * v132: Hotfix — registrering kraschade med CHECK constraint violation. auth.js INSERT
+ *       använde 'trial'/'beta' men family_subscription_status_check tillåter bara
+ *       'none'|'active'|'expired'|'grace_period'|'cancelled'. Ändrat till 'none'.
  * v131: Hotfix — batch-ratings query referenced non-existent daily_log_item_rating table,
  *       crashing child daily-log endpoint. Fixed to use actual `rating` table.
  * v130: Barnvy-bugfix — humörbetyg nu styrs av show_mood_rating (per-child parent setting),
@@ -118,7 +128,7 @@
  */
 
 /* Wave 2: Offline reading — schema + belöningar vises offline i barnvy */
-const CACHE_NAME = 'stjarndag-v131';
+const CACHE_NAME = 'stjarndag-v137';
 // v129: Release prep — lifetime free för topp 200 familjer.
 // v127: DB-migration för IAP-beredskap — is_lifetime_free, rc_customer_id, subscription_status DEFAULT 'none'
 // v126: App Store-förberedelse — /terms route, privacy.html Apple ID + APNs sections
