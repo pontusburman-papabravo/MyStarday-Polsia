@@ -1,7 +1,7 @@
 # Föräldaraktivering — 7-dagarsprogram
 
 **Skapad:** 2026-05-30  
-**Senast reviderad:** 2026-05-30 (v3.2 — experimentdesign, control_holdout, analytics)  
+**Senast reviderad:** 2026-05-30 (v3.3 — tre grupper, program_type, enrollment-policy)  
 **Status:** Implementation-ready (experimentdesign för retention)  
 **Feature slug:** `foraldaraktivering_7d`  
 **Relaterat:** onboarding, push-reminder-scheduler, win-back, retention-dashboard
@@ -62,6 +62,67 @@ Nuvarande onboarding sätter upp barnets schema på ~6 steg och markerar `onboar
 ### Designprincip: stödjande, inte dömande
 
 Programmet **fortsätter vid miss** — en missad dag markeras internt men påverkar aldrig copy, progress eller tillgång till nästa dag. I en vardag med NPF-utmaningar är flexibilitet inte en feature, det är en **förutsättning**.
+
+### 1.1 Tre användargrupper — strategisk avgränsning (v3.3)
+
+Majoriteten av churn-risk-familjerna (~93 i retention-vyn) är **inte** nya registreringar. De har redan:
+
+```
+Onboardade → barn → schema → använder inte appen
+```
+
+Det är en **annan psykologi** än nya familjer:
+
+| | Grupp A (nya) | Grupp C (befintliga risk) |
+|--|---------------|----------------------------|
+| Kontext | Hopp — "här är en karta" | Besvikelse — "jag misslyckades redan" |
+| Problem | Ingen vana ännu | Vanan dog ut |
+| Program | Vanebildning (7 dagar) | Återaktivering (nystart) |
+
+**Att blanda ihop dem förorenar experimentet** — Day 14 North Star blir omöjlig att tolka.
+
+#### Grupp A — Nya familjer *(v1.0 — huvudexperimentet)*
+
+```
+Onboarding complete → auto-enroll → onboarding_7d (7 dagar)
+```
+
+Endast familjer som **just slutfört onboarding** i denna session. Ingen retroaktiv enroll.
+
+#### Grupp B — Befintliga aktiva familjer *(gör ingenting)*
+
+Har redan byggt vanan. Behöver inte aktiveringsprogram. Celebratory card kan fortfarande visas (aha-moment är universellt) — men **inget dagsprogram**.
+
+#### Grupp C — Befintliga riskfamiljer *(v1.2 — separat program)*
+
+**Inte** auto-enrolla. **Inte** trycka in i 7-dagarsprogrammet ("Dag 1 — kika tillsammans" 4 månader efter registrering blir märkligt).
+
+Senare: **`reactivation_3d`** — eget program, egen copy, samma motor (banner, aha, analytics):
+
+| Dag | Fokus |
+|-----|--------|
+| 1 | "Stämmer tiderna fortfarande? Justera en sak." |
+| 2 | "Visa barnet att appen är vaken igen." |
+| 3 | "Har appen hjälpt?" (värde-reflektion) |
+
+**Trigger (v1.2):** `last_login > 14 dagar` AND `has_schema = true` → banner vid nästa login: *"Vill ni prova en 3-dagars nystart?"*
+
+#### v1.0-beslut (låst)
+
+| | Beslut |
+|--|--------|
+| Nya familjer | ✅ Auto-enroll `onboarding_7d` vid onboarding complete |
+| Befintliga aktiva | ✅ Ingen enroll |
+| Befintliga risk (~93) | ❌ **Ingen** retroaktiv enroll — win-back/export för manuell outreach tills v1.2 |
+| Experimentdata | ✅ Endast post-launch nyregistreringar i kohort-analys |
+
+#### Roadmap efter launch
+
+1. **Vecka 1–4:** Samla data på Grupp A (treatment vs control)
+2. **Vecka 4:** Kör analys — risk-familjer med barn + schema + 0 aktivitet 14d — hur många?
+3. **v1.2 (om datan motiverar):** Bygg `reactivation_3d` med samma infrastruktur, annan copy
+
+> Fixa läckan i hinken (onboarding) innan du hämtar tillbaka vattnet som redan runnit ut (churn).
 
 ---
 
@@ -242,9 +303,11 @@ CREATE TABLE parent_activation_program (
                      )),
   cohort_arm       TEXT NOT NULL DEFAULT 'treatment'
                      CHECK (cohort_arm IN ('treatment', 'control')),
+  program_type     TEXT NOT NULL DEFAULT 'onboarding_7d'
+                     CHECK (program_type IN ('onboarding_7d', 'reactivation_3d')),
   started_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   first_banner_seen_at TIMESTAMPTZ,  -- NULL tills treatment-förälder ser banner första gången
-  last_seen_day    SMALLINT NOT NULL DEFAULT 0 CHECK (last_seen_day BETWEEN 0 AND 7),
+  last_seen_day    SMALLINT NOT NULL DEFAULT 0 CHECK (last_seen_day >= 0),
   completed_at     TIMESTAMPTZ,
   opted_out_at     TIMESTAMPTZ,
   day_status       JSONB NOT NULL DEFAULT '{}',
@@ -257,7 +320,20 @@ CREATE TABLE parent_activation_program (
 CREATE UNIQUE INDEX parent_activation_program_active_family
   ON parent_activation_program (family_id)
   WHERE status IN ('active', 'control_holdout');
+-- En familj kan ha flera avslutade körningar (t.ex. onboarding_7d → senare reactivation_3d)
+CREATE INDEX parent_activation_program_type_status
+  ON parent_activation_program (program_type, status);
 ```
+
+**`program_type`** — samma tabell och motor, olika innehåll:
+
+| program_type | Längd | Enroll-trigger (v1) | Målgrupp |
+|--------------|-------|---------------------|----------|
+| `onboarding_7d` | 7 dagar | `POST /api/onboarding/complete` | Grupp A — nya familjer |
+| `reactivation_3d` | 3 dagar | Login efter 14d inaktivitet *(v1.2)* | Grupp C — riskfamiljer |
+
+`getEffectiveProgramDay()` tar `program_type` och cap:ar vid programlängd (7 resp. 3).  
+Content hämtas från `activation-program-content.js` per typ.
 
 **Status-semantik (v3.2):**
 
@@ -303,12 +379,13 @@ Använd etablerat bibliotek (**luxon** eller **date-fns-tz**) — undvik manuell
 const { DateTime } = require('luxon');
 
 function getEffectiveProgramDay(program, timezone = 'Europe/Stockholm') {
+  const duration = program.program_type === 'reactivation_3d' ? 3 : 7;
   const startLocal = DateTime.fromJSDate(program.started_at, { zone: 'utc' })
     .setZone(timezone)
     .startOf('day');
   const nowLocal = DateTime.now().setZone(timezone).startOf('day');
   const diffDays = Math.floor(nowLocal.diff(startLocal, 'days').days);
-  return Math.min(Math.max(diffDays + 1, 1), 7); // dag 1 = enroll-dagen; cap at 7
+  return Math.min(Math.max(diffDays + 1, 1), duration);
 }
 // >7 hanteras av caller → status 'expired' eller dag-7-reflektion kvar
 ```
@@ -406,22 +483,52 @@ Vid dashboard-load (`GET /api/me/daily-log` eller `/new-completions`):
 
 Control-arm: `active: false`, `status: "control_holdout"` — ingen banner, rad finns för kohort-analys.
 
-### Enrollment (Fas 4)
+### Enrollment (Fas 4) — endast Grupp A i v1.0
+
+**Eligibility (allt måste vara sant):**
+
+```js
+function canEnrollOnboardingProgram(parent, family) {
+  return (
+    ACTIVATION_PROGRAM_ENABLED === true &&
+    parent.onboarding_completed === true &&  // just satt i samma request
+    !familyHasActiveOrHoldoutProgram(family.id) &&
+    isNewEnrollmentSession()  // endast vid POST /api/onboarding/complete — aldrig retroaktivt
+  );
+}
+```
 
 Vid `POST /api/onboarding/complete`:
-1. A/B-assign `cohort_arm` (§13)
-2. Skapa rad i `parent_activation_program`
-3. Om **treatment:** `status = 'active'` → track `activation_program_started`
-4. Om **control:** `status = 'control_holdout'` → track `activation_program_started` (samma event, metadata `{ cohort_arm: 'control' }`)
+1. Om **inte** eligible → inget program (befintliga familjer som redan onboardat: skip tyst)
+2. A/B-assign `cohort_arm` (§13)
+3. Skapa rad: `program_type = 'onboarding_7d'`
+4. Om **treatment:** `status = 'active'` → track `activation_program_started`
+5. Om **control:** `status = 'control_holdout'` → track `activation_program_started`
 
-**`activation_program_started`** = enroll i experimentet (dag 0).  
+**Explicit exkludering v1.0:**
+- Familjer som onboardade före `ACTIVATION_PROGRAM_ENABLED` launch-datum
+- Familjer som redan har `onboarding_completed = true` vid annan login (ingen re-enroll)
+- Admin bulk-enroll av retention-listan — **inte i v1.0** (ev. manuell research-cohort i v1.1)
+
+**`activation_program_started`** = enroll i experimentet (dag 0). Metadata: `{ cohort_arm, program_type }`.
 **`activation_program_first_banner_seen`** = första gång treatment-förälder exponeras för banner (sätts `first_banner_seen_at`, separat event).
 
 Gapet *started → first_banner_seen* isolerar om problemet är:
 - att de aldrig hittar tillbaka till dashboarden efter onboarding, eller
 - att de kommer tillbaka men ignorerar bannern.
 
-Många av de 93 "Väntar"-familjerna har troligen `started` men aldrig `first_banner_seen`.
+Många av de 93 "Väntar"-familjerna är **Grupp C** — de får **inte** onboarding_7d. De adresseras via retention-export / win-back nu, och `reactivation_3d` efter att Grupp A-data bevisat mekaniken.
+
+### Reactivation (v1.2 — spec-skiss, ej v1.0)
+
+```
+Trigger: last_parent_login > 14d AND has_weekly_schedule AND NOT active program
+Action:  Val-banner "Vill ni prova en 3-dagars nystart?"
+Enroll:  program_type = 'reactivation_3d', opt-in (inte auto)
+```
+
+Copy-fokus: *"Vi såg att ni redan har ett schema"* — nystart, inte skuld.  
+Återanvänder: banner, celebratory card, aha-tracking, cohort_arm, scheduler — ny content-fil.
 
 ---
 
@@ -472,11 +579,14 @@ Segmentera allt på `cohort_arm`.
 ### Day 14 cohort (North Star)
 
 ```
-Kohort: familjer registrerade vecka W
-Treatment: cohort_arm = 'treatment' (status active/completed/opted_out/expired)
+Kohort: familjer registrerade vecka W (post-launch only)
+Filter: program_type = 'onboarding_7d'  -- exkludera framtida reactivation_3d
+Treatment: cohort_arm = 'treatment'
 Control:   cohort_arm = 'control' (status control_holdout)
 Metric:    aktiv dag 14 ±1 (login_event OR daily_log_item.completed)
 ```
+
+Befintliga pre-launch familjer ingår **inte** i kohort — annars förorenas experimentet.
 
 Om 6 månader: *Fungerade programmet? Hur mycket? Påverkades olika familjetyper olika?* — utan att bygga om analysmodellen.
 
@@ -538,7 +648,7 @@ function assignCohortArm(familyId) {
 ### Checklistor
 
 **Fas 1 (~3h)**
-- [ ] Migration (`last_seen_day`, `cohort_arm`, `first_banner_seen_at`, `control_holdout`)
+- [ ] Migration (`program_type`, `last_seen_day`, `cohort_arm`, `first_banner_seen_at`, `control_holdout`)
 - [ ] `getEffectiveProgramDay()` + tester (DST)
 - [ ] `assignCohortArm()`
 
@@ -573,6 +683,8 @@ function assignCohortArm(familyId) {
 6. Dag 1 → barnvy; dag 2 login anytime; dag 6 solo; dag 7 värde-fråga
 7. Miss → program fortsätter, ingen negativ copy
 8. `ACTIVATION_PROGRAM_TREATMENT_PCT` fungerar (100 och 50 testade)
+9. Befintliga pre-launch familjer enrollas **inte** retroaktivt
+10. Endast `program_type = onboarding_7d` skapas i v1.0
 
 ---
 
@@ -624,11 +736,11 @@ Bygg modulärt så innehåll kan bytas utan att röra infrastruktur:
 ```
 src/lib/activation-program.js          ← dag-logik, rollover, status
 src/lib/activation-program-enroll.js   ← A/B, cohort_arm
-src/lib/activation-program-content.js  ← 7-dagars copy (utbytbar)
+src/lib/activation-program-content.js  ← per program_type (onboarding_7d | reactivation_3d)
 src/lib/activation-program-scheduler.js← push (Fas 5)
 ```
 
-Framtida program (30 dagar, pedagog-onboarding) återanvänder samma motor — ny `content`-fil, samma experiment-ramverk.
+Framtida program återanvänder samma motor — ny content-fil + `program_type`, samma experiment-ramverk.
 
 ---
 
@@ -654,9 +766,13 @@ Framtida program (30 dagar, pedagog-onboarding) återanvänder samma motor — n
 ## 21. Öppna frågor (implementation, ej arkitektur)
 
 1. **Inline barnvy-preview på dag 1** — eller endast länk till `/child-login`?
-2. **Retroaktiv enroll för churn-risk** — admin-trigger v1.1
-3. **Celebratory card: modal vs inline card** — A/B-testa i Fas 2?
-4. **När aktivera 50/50 A/B** — efter 2 veckor med 100% treatment baseline?
+2. **Celebratory card: modal vs inline card** — A/B-testa i Fas 2?
+3. **När aktivera 50/50 A/B** — efter 2 veckor med 100% treatment baseline?
+4. **Launch-datum cutoff** — exakt env var (`ACTIVATION_PROGRAM_LAUNCH_AT`?) för att exkludera pre-launch familjer från kohort
+
+**Besvarade (v3.3 — ej öppna):**
+- ~~Retroaktiv enroll för churn-risk~~ → **Nej i v1.0**; `reactivation_3d` i v1.2
+- ~~Befintliga familjer i samma program~~ → **Nej**; tre grupper, separata program
 
 ---
 
@@ -668,8 +784,9 @@ Framtida program (30 dagar, pedagog-onboarding) återanvänder samma motor — n
 | v2 | 2026-05-30 | Värdepress; solo dag 6; aha-event; build order; day 14 |
 | v3 | 2026-05-30 | Vanebildning; `last_seen_day`; dag 1 barnvy; celebratory card; A/B |
 | v3.1 | 2026-05-30 | Luxon `getEffectiveProgramDay()` + DST-tester |
-| v3.2 | 2026-05-30 | Experimentdesign-framing; `control_holdout`; `first_banner_seen_at`; `hours_since_completion`; enrollment gap-funnel; retention engine blueprint |
+| v3.2 | 2026-05-30 | Experimentdesign; `control_holdout`; analytics enrichment |
+| v3.3 | 2026-05-30 | Tre grupper A/B/C; `program_type`; enrollment endast nya; `reactivation_3d` v1.2 |
 
 ---
 
-*Implementation-ready experimentdesign. Hypotes: föräldrar som stannar upplever tidigt bevis på att de slipper tjata. Systemet skapar, förstärker och mäter det ögonblicket.*
+*Implementation-ready. v1.0 = Grupp A (nya familjer). Grupp C = `reactivation_3d` efter bevisad mekanik. Hypotes: föräldrar som stannar upplever tidigt bevis på att de slipper tjata.*
