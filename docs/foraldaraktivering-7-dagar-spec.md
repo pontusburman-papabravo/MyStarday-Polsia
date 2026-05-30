@@ -947,7 +947,7 @@ function assignCohortArm(familyId) {
 |--------|-------|
 | **Format** | ISO 8601 UTC, t.ex. `2026-06-02T06:00:00Z` |
 | **Sätts** | En gång vid deploy av Fas 4 — **ändras aldrig** efter första enroll |
-| **Enrollment** | `canEnrollOnboardingProgram()` kräver `onboarding_completed_at >= LAUNCH_AT` |
+| **Enrollment** | `isPostLaunchEnrollment()` — `NOW() >= LAUNCH_AT` vid enroll |
 | **Kohort-analys** | Admin Day 14-filter: `parent_activation_program.created_at >= LAUNCH_AT` |
 | **Retroaktiv enroll** | Förbjuden — även om feature flag slås på senare |
 
