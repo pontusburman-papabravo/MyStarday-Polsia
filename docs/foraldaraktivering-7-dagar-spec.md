@@ -758,14 +758,13 @@ function canEnrollOnboardingProgram(parent, family) {
     parent.onboarding_completed === true &&  // just satt i samma request
     !familyHasActiveProgram(family.id) &&
     isNewEnrollmentSession() &&  // endast vid POST /api/onboarding/complete — aldrig retroaktivt
-    isPostLaunchEnrollment(family)  // §13.1 — kohort ren
+    isPostLaunchEnrollment()  // §13.1 — kohort ren (NOW >= LAUNCH_AT vid enroll)
   );
 }
 
-function isPostLaunchEnrollment(family) {
+function isPostLaunchEnrollment() {
   const launchAt = DateTime.fromISO(process.env.ACTIVATION_PROGRAM_LAUNCH_AT, { zone: 'utc' });
-  const onboardedAt = DateTime.fromJSDate(family.onboarding_completed_at ?? family.created_at, { zone: 'utc' });
-  return onboardedAt >= launchAt;
+  return DateTime.utc() >= launchAt;
 }
 ```
 
@@ -777,7 +776,7 @@ Vid `POST /api/onboarding/complete`:
 5. Om **control:** `status = 'active'`, `cohort_arm = 'control'` → track `activation_program_started`
 
 **Explicit exkludering v1.0:**
-- Familjer vars `onboarding_completed_at` (eller `family.created_at` om saknas) är **före** `ACTIVATION_PROGRAM_LAUNCH_AT` (§13.1)
+- Enroll före `ACTIVATION_PROGRAM_LAUNCH_AT` (server-tid vid `POST /api/onboarding/complete`)
 - Familjer som redan har `onboarding_completed = true` vid annan login (ingen re-enroll)
 - Admin bulk-enroll av retention-listan — **inte i v1.0** (ev. manuell research-cohort i v1.1)
 
