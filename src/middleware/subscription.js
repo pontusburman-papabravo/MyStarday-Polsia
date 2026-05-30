@@ -15,11 +15,12 @@ const BETA_FREEZE_DATE = new Date('2027-06-30T23:59:59Z');
  * Blocks: expired trial, expired, unknown.
  */
 function requireActiveSubscription(req, res, next) {
-  if (!req.user?.family_id) return next();
+  const familyId = req.user?.family_id || req.user?.familyId;
+  if (!familyId) return next();
   db.query(
     `SELECT subscription_status, trial_ends_at, is_lifetime_free
      FROM family WHERE id = $1`,
-    [req.user.family_id]
+    [familyId]
   ).then(({ rows }) => {
     if (rows.length === 0) return res.status(401).json({ error: 'Familj hittades inte' });
     const { subscription_status, trial_ends_at, is_lifetime_free } = rows[0];

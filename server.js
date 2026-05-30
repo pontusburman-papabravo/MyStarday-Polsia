@@ -99,6 +99,26 @@ app.use('/api', blockImpersonationWrites);
 // Restore parent session before auth check — fixes child-login overwriting parent cookies.
 app.use('/api', restoreParentSession, optionalAuth, apiLimiter);
 
+// ─── Subscription paywall guard ─────────────────────────────────────
+// Must run BEFORE API routes so protected endpoints are actually gated.
+// Exempts: auth, webhook, health, upgrade page routes, onboarding (first-run setup).
+const { requireActiveSubscription } = require('./src/middleware/subscription');
+app.use('/api', (req, res, next) => {
+  const p = req.path;
+  if (
+    p.startsWith('/auth') ||
+    p.startsWith('/stripe') ||
+    p.startsWith('/onboarding') ||
+    p === '/health' ||
+    p.startsWith('/landing') ||
+    p === '/i18n' ||
+    p === '/i18n/' ||
+    p === '/registration-status' ||
+    p === '/features'
+  ) return next();
+  requireActiveSubscription(req, res, next);
+});
+
 // ─── API Routes ───────────────────────────────────────────
 registerRoutes(app);
 
@@ -110,23 +130,6 @@ app.use('/V2.0', express.static(path.join(__dirname, 'public', 'v2'), { index: '
 
 // ─── Maintenance mode ─────────────────────────────────────
 app.use(checkMaintenanceMode);
-
-// ─── Subscription paywall guard ─────────────────────────────────────
-// Blocks expired/future-require families from accessing protected routes.
-// Exempts: auth, webhook, health, upgrade page routes.
-const { requireActiveSubscription } = require('./src/middleware/subscription');
-app.use('/api', (req, res, next) => {
-  const p = req.path;
-  if (
-    p.startsWith('/auth') ||
-    p.startsWith('/stripe') ||
-    p === '/health' ||
-    p.startsWith('/landing') ||
-    p === '/i18n' ||
-    p === '/i18n/'
-  ) return next();
-  requireActiveSubscription(req, res, next);
-});
 
 // Public static pages (privacy policy, professional landing page)
 app.use(require('./src/routes/public-pages'));

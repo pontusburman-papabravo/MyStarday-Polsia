@@ -31,6 +31,17 @@ function verifyToken(token) {
 }
 
 /**
+ * Normalize JWT payload so middleware expecting family_id (snake_case) works
+ * alongside routes that use familyId (camelCase from token issuance).
+ */
+function normalizeUser(user) {
+  if (!user) return user;
+  if (user.familyId && !user.family_id) user.family_id = user.familyId;
+  if (user.family_id && !user.familyId) user.familyId = user.family_id;
+  return user;
+}
+
+/**
  * Verify JWT token from Authorization header, httpOnly cookie, or query param.
  * Sets req.user = { id, type, familyId, email/username }
  */
@@ -41,7 +52,7 @@ function requireAuth(req, res, next) {
   }
 
   try {
-    req.user = verifyToken(token);
+    req.user = normalizeUser(verifyToken(token));
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Ogiltig eller utgången token' });
@@ -97,7 +108,7 @@ function optionalAuth(req, res, next) {
   if (!token) return next();
 
   try {
-    req.user = verifyToken(token);
+    req.user = normalizeUser(verifyToken(token));
   } catch {
     // Invalid token — just continue without user
   }

@@ -19,6 +19,9 @@
     let undoCompleteTimer = null;
     let undoCompleteState = null; // { itemId, itemName }
 
+    // Use global apiFetch from auth.js (CSRF + cookie auth). Must be defined before init.
+    const apiFetch = window.apiFetch;
+
     // ── Rating state ──────────────────────────────────────
     let ratingItemId = null;
     let ratingScore = 0;
@@ -83,7 +86,18 @@
     async function loadChildren() {
       try {
         const res = await apiFetch('/api/children');
-        if (!res.ok) throw new Error();
+        if (!res.ok) {
+          let msg = 'Kunde inte ladda barn';
+          try {
+            const data = await res.json();
+            if (data.error === 'subscription_required') {
+              msg = 'Din provperiod har gått ut. Uppgradera för att fortsätta.';
+            } else if (data.error) {
+              msg = data.error;
+            }
+          } catch { /* ignore parse errors */ }
+          throw Object.assign(new Error(msg), { status: res.status });
+        }
         children = await res.json();
 
         const tabs = document.getElementById('childTabs');
@@ -114,8 +128,13 @@
         const paramChildId = urlParams.get('childId');
         const targetChild = paramChildId && children.find(c => c.id === paramChildId) ? paramChildId : children[0].id;
         selectChild(targetChild);
-      } catch {
-        showToast('Kunde inte ladda barn', 'error');
+      } catch (err) {
+        const tabs = document.getElementById('childTabs');
+        if (tabs) {
+          tabs.innerHTML = '<p class="text-text-soft text-sm">Kunde inte ladda barn.</p>';
+        }
+        showToast(err.message || 'Kunde inte ladda barn', 'error');
+        console.error('[daily-log] loadChildren failed:', err.status || '', err.message);
       }
     }
 
@@ -862,12 +881,6 @@
     }
 
     // showToast is now in /js/toast.js
-
-    // Use the global window.apiFetch (defined in auth.js) which handles
-    // CSRF tokens, auth headers, and token refresh automatically.
-    // A previous local apiFetch was missing CSRF headers, causing 403 errors
-    // on all PUT/POST requests from this page.
-    const apiFetch = window.apiFetch;
 
     // ── Print functions ──────────────────────────────────
 
