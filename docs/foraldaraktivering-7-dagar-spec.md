@@ -1,7 +1,7 @@
 # Föräldaraktivering — 7-dagarsprogram
 
 **Skapad:** 2026-05-30  
-**Senast reviderad:** 2026-05-30 (v3.3 — tre grupper, program_type, enrollment-policy)  
+**Senast reviderad:** 2026-05-30 (v3.4 — forskningsfas, Program Engine, kausal kedja)  
 **Status:** Implementation-ready (experimentdesign för retention)  
 **Feature slug:** `foraldaraktivering_7d`  
 **Relaterat:** onboarding, push-reminder-scheduler, win-back, retention-dashboard
@@ -63,6 +63,18 @@ Nuvarande onboarding sätter upp barnets schema på ~6 steg och markerar `onboar
 
 Programmet **fortsätter vid miss** — en missad dag markeras internt men påverkar aldrig copy, progress eller tillgång till nästa dag. I en vardag med NPF-utmaningar är flexibilitet inte en feature, det är en **förutsättning**.
 
+### Produktprincip: samma beteende ≠ samma problem
+
+Två familjer kan båda vara inaktiva idag — men orsaken kan vara helt olika:
+
+| Typ | Verkligt problem | v1-program |
+|-----|------------------|------------|
+| **Ny familj** (Grupp A) | Vanan hann aldrig bildas | `onboarding_7d` |
+| **Churnad familj** (Grupp C) | Vanan bildades aldrig eller dog ut | `reactivation_3d` (v1.2) |
+| **Aktiv familj** (Grupp B) | Behöver kanske inget stöd | Inget program |
+
+Behandlar man alla tre likadant blir resultatet ofta mediokert för alla.
+
 ### 1.1 Tre användargrupper — strategisk avgränsning (v3.3)
 
 Majoriteten av churn-risk-familjerna (~93 i retention-vyn) är **inte** nya registreringar. De har redan:
@@ -95,9 +107,20 @@ Har redan byggt vanan. Behöver inte aktiveringsprogram. Celebratory card kan fo
 
 #### Grupp C — Befintliga riskfamiljer *(v1.2 — separat program)*
 
-**Inte** auto-enrolla. **Inte** trycka in i 7-dagarsprogrammet ("Dag 1 — kika tillsammans" 4 månader efter registrering blir märkligt).
+**Inte** auto-enrolla i experimentet. **Inte** trycka in i 7-dagarsprogrammet.
 
-Senare: **`reactivation_3d`** — eget program, egen copy, samma motor (banner, aha, analytics):
+**Men inte "slå dövörat till":** Grupp C är fortfarande värdefull — bara **utanför effektmätningen**:
+
+| Gör | Gör inte |
+|-----|----------|
+| Visa i retention-dashboard | Inkludera i onboarding_7d-kohort |
+| Följ utveckling över tid | Retroaktiv auto-enroll |
+| Manuell outreach (export, win-back) | Blanda in i Day 14 A/B-analys |
+| Supportintervjuer, kvalitativ analys | Påverka utvärdering av nya familjer |
+
+Analogi: medicinskt test — Grupp A = nya patienter, B = kontroll, C = redan lämnat behandling. Man lär sig av C, men blanda inte in dem i första effektmätningen.
+
+Senare: **`reactivation_3d`** — eget program, egen copy, samma motor. **Mål (v1.2):** inte bara *"få tillbaka föräldern"* utan *"få föräldern att uppleva ett nytt aha-moment"* — om data visar att `parent_first_completion_seen` är starkaste retention-prediktorn.
 
 | Dag | Fokus |
 |-----|--------|
@@ -113,16 +136,44 @@ Senare: **`reactivation_3d`** — eget program, egen copy, samma motor (banner, 
 |--|--------|
 | Nya familjer | ✅ Auto-enroll `onboarding_7d` vid onboarding complete |
 | Befintliga aktiva | ✅ Ingen enroll |
-| Befintliga risk (~93) | ❌ **Ingen** retroaktiv enroll — win-back/export för manuell outreach tills v1.2 |
+| Befintliga risk (~93) | ❌ **Ej i experimentet** — retention-vy, export, intervjuer; `reactivation_3d` v1.2 |
 | Experimentdata | ✅ Endast post-launch nyregistreringar i kohort-analys |
 
-#### Roadmap efter launch
+#### Roadmap (prioriterad)
 
-1. **Vecka 1–4:** Samla data på Grupp A (treatment vs control)
-2. **Vecka 4:** Kör analys — risk-familjer med barn + schema + 0 aktivitet 14d — hur många?
-3. **v1.2 (om datan motiverar):** Bygg `reactivation_3d` med samma infrastruktur, annan copy
+```
+Nu (v1.0)
+  ├── Fas 1–4: onboarding_7d, endast Grupp A
+  ├── A/B-test (cohort_arm)
+  └── Mät Day 14 retention vs control
 
-> Fixa läckan i hinken (onboarding) innan du hämtar tillbaka vattnet som redan runnit ut (churn).
+Efter 4–6 veckor — forskningsfas (v1.1)
+  ├── Korrelerar parent_first_completion_seen med Day 14?
+  ├── Analysera "Retention Wall" (se nedan)
+  └── Räkna Grupp C-segment (barn + schema + 0 aktivitet 14d)
+
+Därefter (v1.2)
+  └── Designa reactivation_3d — optimerat för nytt aha-moment om datan stödjer
+```
+
+#### Forskningsfas: "Retention Wall" (v1.1, vecka 4–6)
+
+Jämför två grupper bland **Grupp A** som fullföljt programmet:
+
+| Segment | Definition |
+|---------|------------|
+| **Completed + retained** | `activation_program_completed` + aktiv dag 14 |
+| **Completed + churned** | `activation_program_completed` + inaktiv dag 14 |
+
+Den andra gruppen är guld för produktinsikt — de såg programmet, fullföljde, förstod produkten — **men lämnade ändå**.
+
+Möjliga strukturella orsaker (hypoteser att testa via intervjuer + data):
+- Belöningssystemet känns enformigt efter vecka 1
+- Schemat för statiskt när vardagen förändras
+- Barnet engageras inte långsiktigt
+- Förälder får otillräckligt värde efter dag 7
+
+> Fixa läckan i hinken (onboarding) innan du hämtar tillbaka vattnet som runnit ut (churn).
 
 ---
 
@@ -149,6 +200,20 @@ Leading indicators
 ```
 
 Många team optimerar **completion rate** som North Star och får folk att klicka igenom utan retention-effekt. Den fällan är undvikbar via hierarkin ovan.
+
+### Kausal kedja (hypotes)
+
+Förväntad mekanism för framgång i Grupp A:
+
+```
+1. Exponering     → first_banner_seen (dag 1)
+2. Observation    → child_view_opened / barn använder appen (dag 1–2)
+3. Bekräftelse    → parent_first_completion_seen / aha (dag 2–3+)
+4. Värde-kvitto   → dag 7-reflektion (score ≥4)
+5. Retention      → aktiv dag 14 (North Star)
+```
+
+Experimentet testar om treatment accelererar denna kedja jämfört med control. Leading indicators diagnostiserar var kedjan bryts.
 
 ### Icke-mål (v1)
 - Trappa upp barnets schema gradvis
@@ -729,7 +794,29 @@ function assignCohortArm(familyId) {
 
 ---
 
-## 19. Retention Engine (modulär blueprint)
+## 19. Parent Program Engine (plattform, inte feature)
+
+`program_type` avslöjar framtida produktarkitektur — datamodellen behöver inte målas om:
+
+```
+Parent Program Engine
+├── onboarding_7d      ← v1.0 (vanebildning)
+├── reactivation_3d    ← v1.2 (nystart, nytt aha)
+├── summer_break_5d    ← framtida (sommaromställning)
+├── school_restart_7d  ← framtida (skolstartsångest)
+└── custom_admin_program ← framtida (admin-initierade kampanjer)
+```
+
+Samma motor per program:
+- `getEffectiveProgramDay()` + luxon
+- Banner + celebratory card
+- `cohort_arm` / experiment-ramverk
+- `day_status`, analytics, scheduler
+- Content per typ i `activation-program-content.js`
+
+**Bygg inte allt nu.** Bygg motorn + första programmet. Nya livscykel-moment = ny content-fil + ny `program_type`, inte ny infrastruktur.
+
+### Modulär blueprint (implementation)
 
 Bygg modulärt så innehåll kan bytas utan att röra infrastruktur:
 
@@ -785,8 +872,9 @@ Framtida program återanvänder samma motor — ny content-fil + `program_type`,
 | v3 | 2026-05-30 | Vanebildning; `last_seen_day`; dag 1 barnvy; celebratory card; A/B |
 | v3.1 | 2026-05-30 | Luxon `getEffectiveProgramDay()` + DST-tester |
 | v3.2 | 2026-05-30 | Experimentdesign; `control_holdout`; analytics enrichment |
-| v3.3 | 2026-05-30 | Tre grupper A/B/C; `program_type`; enrollment endast nya; `reactivation_3d` v1.2 |
+| v3.3 | 2026-05-30 | Tre grupper; `program_type`; enrollment endast nya |
+| v3.4 | 2026-05-30 | Produktprincip (beteende ≠ problem); Grupp C utanför experiment ej ignoreras; Retention Wall-forskning; kausal kedja; Parent Program Engine |
 
 ---
 
-*Implementation-ready. v1.0 = Grupp A (nya familjer). Grupp C = `reactivation_3d` efter bevisad mekanik. Hypotes: föräldrar som stannar upplever tidigt bevis på att de slipper tjata.*
+*Implementation-ready. v1.0 = Grupp A. Grupp C = kvalitativ guld + `reactivation_3d` efter bevisad mekanik.*
