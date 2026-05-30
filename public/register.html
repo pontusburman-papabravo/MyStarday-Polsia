@@ -472,7 +472,7 @@
           Auth.setAuth(null, data.user, data.csrfToken, data.expiresAt);
           if (window.Pixel) window.Pixel.lead();
           setTimeout(() => window.location.href = '/onboarding', 300);
-        } else if (res.status === 409 && (data.code === 'APPLE_EMAIL_EXISTS' || data.code === 'email_conflict')) {
+        } else if (res.status === 409 && (data.error === 'APPLE_EMAIL_EXISTS' || data.error === 'email_conflict')) {
           showError('appleRegisterError', 'Ett konto med denna e-postadress finns redan. ' +
             'Logga in med Apple istället, eller använd lösenordsinloggning.');
         } else {
