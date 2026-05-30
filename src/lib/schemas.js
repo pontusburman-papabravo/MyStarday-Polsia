@@ -103,6 +103,8 @@ const CreateChildSchema = z.object({
   birthday: dateString,
   // PIN is optional — auto-generated if not provided
   pin: z.string().regex(/^\d{4}$/).optional(),
+  // avatar_url is optional — set after avatar upload; emoji is fallback when NULL
+  avatar_url: z.string().url({ message: "Ogiltig URL" }).max(500).optional(),
 });
 
 const UpdateChildSchema = z.object({
@@ -123,6 +125,8 @@ const UpdateChildSchema = z.object({
   time_adjustment: z.boolean().optional(),
   color_coding: z.boolean().optional(),
   sort_order: z.coerce.number().int().optional(),
+  // avatar_url: nullable — set to null to clear avatar and show emoji instead
+  avatar_url: z.string().url({ message: "Ogiltig URL" }).max(500).nullable().optional(),
 });
 
 const ChildPinLoginSchema = z.object({
@@ -350,6 +354,7 @@ const OnboardingChildSchema = z.object({
   name: z.string().min(1, 'Barnets namn krävs').max(100),
   emoji: z.string().min(1).max(10),
   birthday: dateString,
+  avatar_url: z.string().url().optional(),
 });
 
 const OnboardingScheduleSchema = z.object({

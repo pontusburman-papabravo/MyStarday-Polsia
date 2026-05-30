@@ -125,11 +125,11 @@ router.post('/register', registrationLimiter, validate(RegisterSchema), async (r
       const familyCount = countResult.rows[0].count;
       const isLifetimeFree = familyCount < 200;
 
-      // Create family — new accounts get a 14-day trial
-      // trial_ends_at is used by requireActiveSubscription to gate access after trial expires
+      // Create family — subscription_status defaults to 'none' (CHECK constraint).
+      // Trial access is tracked via trial_ends_at + family_subscriptions table.
       const familyResult = await client.query(
         `INSERT INTO family (name, subscription_status, trial_ends_at, is_lifetime_free)
-         VALUES ($1, 'trial', NOW() + INTERVAL '14 days', $2)
+         VALUES ($1, 'none', NOW() + INTERVAL '14 days', $2)
          RETURNING id`,
         [finalFamilyName, isLifetimeFree]
       );
@@ -341,12 +341,17 @@ router.post('/register', registrationLimiter, validate(RegisterSchema), async (r
       // Analytics: funnel step — signup_started (family just created)
       require('../lib/analytics-tracker').trackSignupStarted(familyId);
 
-      // Send verification email after commit (fire-and-forget — don't block registration)
-      sendVerificationEmail(normalizedEmail, verifyToken).catch(err => {
-        console.error('[AUTH] Verification email send failed:', err.message);
+      // Register as contact FIRST so the email proxy accepts the verification mail
+      // (proxy blocks cold outreach unless the recipient is a known contact).
+      // This must complete before we call sendVerificationEmail — race = 429.
+      await registerContact(normalizedEmail, trimmedName, 'signup').catch(err => {
+        console.error('[AUTH] registerContact failed for', normalizedEmail, ':', err.message);
       });
-      // Register as known contact so future transactional emails are never rate-limited
-      registerContact(normalizedEmail, trimmedName, 'signup').catch(() => {});
+
+      // Send verification email (fire-and-forget — don't block the HTTP response)
+      sendVerificationEmail(normalizedEmail, verifyToken).catch(err => {
+        console.error('[AUTH] Verification email send failed for', normalizedEmail, ':', err.message);
+      });
 
       // Send welcome email (fire-and-forget — don't block registration response)
       // Gate 2J: valkomstmail — only send if feature is live/dev for this family
@@ -1364,8 +1369,8 @@ async function createParentWithApple({ appleUserId, appleEmail, displayName }) {
     const familyName = `${displayName}s familj`;
 
     const familyResult = await client.query(
-      `INSERT INTO family (name, subscription_status)
-       VALUES ($1, 'beta')
+      `INSERT INTO family (name, subscription_status, is_lifetime_free)
+       VALUES ($1, 'none', true)
        RETURNING id`,
       [familyName]
     );
@@ -1448,14 +1453,19 @@ async function createParentWithApple({ appleUserId, appleEmail, displayName }) {
     // Analytics: signup started
     require('../lib/analytics-tracker').trackSignupStarted(familyId);
 
-    // Welcome email (fire-and-forget)
+    // Register contact FIRST so emails are accepted by the proxy (no cold outreach block)
     if (appleEmail) {
+      await registerContact(appleEmail, displayName, 'signup').catch(err => {
+        console.error('[AUTH] registerContact failed for', appleEmail, ':', err.message);
+      });
+      // Welcome email (fire-and-forget)
       const { hasAccess } = require('../../db/features');
       const welcomeEmailAllowed = await hasAccess(familyId, 'valkomstmail');
       if (welcomeEmailAllowed) {
-        sendWelcomeEmail(appleEmail, parent.id, { foralderns_namn: displayName, barnets_namn: '' }).catch(() => {});
+        sendWelcomeEmail(appleEmail, parent.id, { foralderns_namn: displayName, barnets_namn: '' }).catch(err => {
+          console.error('[AUTH] Welcome email send failed for', appleEmail, ':', err.message);
+        });
       }
-      registerContact(appleEmail, displayName, 'signup').catch(() => {});
     }
 
     return parent;

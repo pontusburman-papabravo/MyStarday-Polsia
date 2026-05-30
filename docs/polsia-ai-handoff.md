@@ -2,11 +2,9 @@
 
 Kopiera blocket under **"Prompt att klistra in"** när du vill att Polsia ska deploya, granska eller fortsätta arbeta på Min Stjärndag.
 
-**Källa till sanning (produktion):** Senaste **ZIP-exporten** från Polsia (t.ex. `stjarndag (16).zip`) = exakt det som kör på https://stjarndag.polsia.app.  
-**Deploy (kanonisk):** https://github.com/Polsia-Inc/stjarndag — Polsia deployer **endast** härifrån.  
-**Personlig spegel:** https://github.com/pontusburman-papabravo/MyStarday-Polsia — packa upp ZIP → commit; använd för diff/handoff, inte som deploy-remote.  
-
-Byt branch/commit i länkarna efter behov. `main` på personliga repot kan ligga efter ZIP/prod tills du mergat en sync-PR.
+**Deploy (kanonisk):** https://github.com/Polsia-Inc/stjarndag — Polsia deployer **endast** härifrån.
+**Referens / diff:** https://github.com/pontusburman-papabravo/MyStarday-Polsia (spegel efter ZIP — inte deploy-remote).
+**Produktion:** https://stjarndag.polsia.app
 
 ---
 
@@ -19,17 +17,14 @@ Du är Polsia och hostar Min Stjärndag (Stjärndag). All drift, cron, e-post (p
 Familjeapp (svenska): scheman, stjärnor, belöningar (Skattkammaren), föräldra- och barnvy, PWA/Capacitor. Stack: Node.js 20, Express, Neon PostgreSQL, statiska filer i public/.
 
 ## Uppgift
-[BESKRIV HÄR: t.ex. "Deploya senaste main", "Kör migrate", "Verifiera cron efter ändring i polsia.toml"]
+[beskriv här]
 
 ## Git
 - Deploy-repo: https://github.com/Polsia-Inc/stjarndag @ [branch/commit]
 - Diff-källa (om ändringar kommer utifrån): https://github.com/pontusburman-papabravo/MyStarday-Polsia @ [branch/commit]
-- PR på personliga repot (endast referens): [länk]
 
 ## Filer som ändrats (läs och applicera dessa)
-1. [FIL 1 — GitHub blob-länk, gärna med radintervall #L10-L40]
-2. [FIL 2]
-3. [FIL 3]
+1. [fil — GitHub blob-länk med radintervall]
 
 ## Filer att inte röra utan anledning
 - migrate.js / migrations/* — endast vid avsiktlig schemaändring
@@ -41,7 +36,7 @@ Familjeapp (svenska): scheman, stjärnor, belöningar (Skattkammaren), föräldr
 - [ ] npm run migrate körd om db-schema ändrats
 - [ ] Crons i polsia.toml aktiva om [[crons]] ändrats
 - [ ] POLSIA_API_KEY / proxy-variabler oförändrade om e-post fortfarande ska fungera
-- [ ] Röktest: inloggning, barn-PIN, en schemarad (om UI/backend rörts)
+- [ ] Röktest: inloggning, barn-PIN, en schemarad
 
 ## Svar tillbaka till mig
 1. Vilken commit/branch som deployades
@@ -52,10 +47,10 @@ Familjeapp (svenska): scheman, stjärnor, belöningar (Skattkammaren), föräldr
 
 ---
 
-## Snabblänkar — kärnfiler (ersätt `main` vid behov)
+## Snabblänkar — kärnfiler
 
 | Syfte | Länk |
-|--------|------|
+|-------|------|
 | Cron-deklarationer | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/polsia.toml |
 | Serverstart | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/server.js |
 | DB-migrering | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/migrate.js |
@@ -66,19 +61,11 @@ Familjeapp (svenska): scheman, stjärnor, belöningar (Skattkammaren), föräldr
 | Midnatt-jobb | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/src/lib/midnight-scheduler.js |
 | Veckosammanfattning | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/src/lib/weekly-summary-scheduler.js |
 | package.json / scripts | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/package.json |
-| README | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/README.md |
 | Release-checklista | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/docs/RELEASE.md |
 | **Kontohantering A–F (Polsia-spec)** | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/docs/polsia-kontohantering-a-f.md |
 | **Barnlogin redesign (Polsia-spec)** | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/docs/polsia-barnlogin-design.md |
 | **Barnlogin mockup (PNG)** | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/docs/mockups/barnlogin-3-skarmar.png |
 | Denna handoff | https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/docs/polsia-ai-handoff.md |
-
-### Mappar (tree-länkar)
-
-- Routes: https://github.com/pontusburman-papabravo/MyStarday-Polsia/tree/main/src/routes  
-- Frontend: https://github.com/pontusburman-papabravo/MyStarday-Polsia/tree/main/public  
-- DB-lager: https://github.com/pontusburman-papabravo/MyStarday-Polsia/tree/main/db  
-- Tester: https://github.com/pontusburman-papabravo/MyStarday-Polsia/tree/main/test  
 
 ---
 
@@ -88,34 +75,14 @@ Familjeapp (svenska): scheman, stjärnor, belöningar (Skattkammaren), föräldr
 2. Klicka radnummer (t.ex. 10–40) → **Copy permalink**.
 3. Klistra in i prompten under "Filer som ändrats".
 
-Exempel:
-
-`https://github.com/pontusburman-papabravo/MyStarday-Polsia/blob/main/src/routes/rewards.js#L120-L185`
-
----
-
-## Gren med senaste zip-uppackning (tills PR är mergad)
-
-Om `main` bara har ZIP-filen, peka Polsia på:
-
-- Branch: `cursor/extract-stjarndag-zip-2440`  
-- PR: https://github.com/pontusburman-papabravo/MyStarday-Polsia/pull/1  
-- Exempel-länk: `.../blob/cursor/extract-stjarndag-zip-2440/server.js`
-
-Efter merge på personliga repot: skapa engineering task som cherry-pickar till **Polsia-Inc/stjarndag** — deploya aldrig direkt från MyStarday-Polsia.
-
 ---
 
 ## Röktest efter deploy (manuellt)
-
-App Store / demo (se `docs/RELEASE.md`, `docs/app-store-demo-konto.md`):
 
 | Steg | Kontroll |
 |------|----------|
 | Health | `GET https://stjarndag.polsia.app/health` → OK |
 | Inloggning | `review@mystarday.se` / lösenord enligt demo-doc |
 | Barn-PIN | Anna — PIN **4455** |
-| Lifetime free | I Neon: `SELECT is_lifetime_free FROM family WHERE id = (SELECT family_id FROM parent WHERE email = 'review@mystarday.se');` — demo-kontot kan hamna bland första 200 |
+| Lifetime free | `SELECT is_lifetime_free FROM family WHERE id = (SELECT family_id FROM parent WHERE email = 'review@mystarday.se');` |
 | Prenumeration | Ingen betalvägg för lifetime-free; `hasActiveSubscription` / IAP UI |
-
-Därefter: Xcode → TestFlight enligt `docs/app-store-testflight-checklist.md`.

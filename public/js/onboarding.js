@@ -16,6 +16,7 @@ let selectedDayPref = null;      // template_group key (e.g. 'forskola', 'morgon
 let selectedViewType = 'day';    // 'day' | 'timeline' — default: Dagsvy
 let selectedRewards = [];        // array of { name, icon, star_cost }
 let selectedEmojiValue = null;
+let selectedAvatarUrl = null;    // uploaded avatar URL (iOS native camera) — null = use emoji
 let weekendScheduleAdded = false; // true if parent opted in to helg schedule for Sat+Sun
 let availableRewards = [];       // loaded from admin library
 let loadedChildren = [];         // for invite child-selection
@@ -286,7 +287,9 @@ document.getElementById('step1Btn').addEventListener('click', async () => {
   errorEl.classList.add('hidden');
 
   if (!name) { showError(errorEl, 'Ange barnets namn'); return; }
-  if (!emoji) { showError(errorEl, 'Välj en emoji för barnet'); return; }
+  // iOS native with avatar: emoji is optional (falls back to ⭐ placeholder)
+  const hasAvatar = Platform && Platform.isNative() && selectedAvatarUrl;
+  if (!emoji && !hasAvatar) { showError(errorEl, 'Välj en emoji för barnet'); return; }
   if (!selectedDayPref) { showError(errorEl, 'Välj ett schema'); return; }
 
   const btn = document.getElementById('step1Btn');
@@ -296,7 +299,7 @@ document.getElementById('step1Btn').addEventListener('click', async () => {
     const birthday = document.getElementById('childBirthday').value || null;
     const res = await window.apiFetch('/api/onboarding/child', {
       method: 'POST',
-      body: JSON.stringify({ name, emoji, birthday }),
+      body: JSON.stringify({ name, emoji, birthday, avatar_url: selectedAvatarUrl }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Något gick fel');
@@ -702,6 +705,81 @@ function launchStars() {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// EMAIL VERIFICATION BANNER
+// ────────────────────────────────────────────────────────────────────────────
+function showVerificationBanner(user) {
+  if (!user) return;
+  // user.verified = true means email is confirmed; false means needs verification
+  if (user.verified === true) return;
+
+  const banner = document.getElementById('emailVerificationBanner');
+  if (!banner) return;
+
+  const emailSpan = document.getElementById('bannerEmailAddr');
+  if (emailSpan && user.email) {
+    emailSpan.textContent = maskEmail(user.email);
+  }
+
+  banner.classList.remove('hidden');
+}
+
+function maskEmail(email) {
+  if (!email || !email.includes('@')) return email;
+  const [local, domain] = email.split('@');
+  if (local.length <= 2) return email;
+  return local[0] + '***' + (local.length > 3 ? local[local.length - 1] : '') + '@' + domain;
+}
+
+window.dismissEmailBanner = function() {
+  const banner = document.getElementById('emailVerificationBanner');
+  if (banner) banner.classList.add('hidden');
+  try {
+    localStorage.setItem('emailBannerDismissed', '1');
+  } catch { /* ignore */ }
+};
+
+window.resendVerificationEmail = async function() {
+  const resendBtn = document.getElementById('resendBtn');
+  const successEl = document.getElementById('resendSuccess');
+  const errorEl = document.getElementById('resendError');
+
+  resendBtn.disabled = true;
+  resendBtn.textContent = 'Skickar…';
+  successEl.classList.add('hidden');
+  errorEl.classList.add('hidden');
+
+  try {
+    const me = await (await window.apiFetch('/api/auth/me')).json();
+    const email = me.email;
+    const res = await window.apiFetch('/api/auth/resend-verification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorEl.textContent = data?.error || 'Något gick fel. Försök igen.';
+      errorEl.classList.remove('hidden');
+    } else {
+      successEl.textContent = '✓ Skickat!';
+      successEl.classList.remove('hidden');
+      resendBtn.textContent = 'Skickat';
+    }
+  } catch {
+    errorEl.textContent = 'Nätverksfel. Försök igen.';
+    errorEl.classList.remove('hidden');
+  } finally {
+    resendBtn.disabled = false;
+    if (!successEl.classList.contains('hidden')) {
+      resendBtn.textContent = 'Skickat';
+    } else {
+      resendBtn.textContent = 'Skicka igen';
+    }
+  }
+};
+
+// ────────────────────────────────────────────────────────────────────────────
 // INVITE (Step 6)
 // ────────────────────────────────────────────────────────────────────────────
 async function loadInviteChildren() {
@@ -800,6 +878,67 @@ window.skipInvite = async function() {
 // ────────────────────────────────────────────────────────────────────────────
 // INIT
 // ────────────────────────────────────────────────────────────────────────────
+// IOS AVATAR PICKER
+// ────────────────────────────────────────────────────────────────────────────
+/**
+ * On iOS native: replaces emoji grid with photo-picker UI.
+ * On web: emoji grid stays as-is (emoji picker fallback).
+ */
+function initIOSAvatarPicker() {
+  // Only active on iOS native — Android camera support is future work
+  if (!window.Platform || !Platform.isIOS()) return;
+
+  const avatarSection = document.getElementById('avatarPickerSection');
+  const emojiSection = document.getElementById('emojiSection');
+  if (!avatarSection || !emojiSection) return;
+
+  // Hide web emoji picker, show iOS photo picker
+  emojiSection.classList.add('hidden');
+  avatarSection.classList.remove('hidden');
+
+  const preview = document.getElementById('avatarPreview');
+  const chooseBtn = document.getElementById('pickPhotoBtn');
+  const useDefaultBtn = document.getElementById('useDefaultAvatarBtn');
+
+  // "Use default" — deselects photo, falls back to emoji
+  useDefaultBtn.addEventListener('click', () => {
+    selectedAvatarUrl = null;
+    preview.src = 'https://pub-629428d185ca4960a0a73c850d32294b.r2.dev/generated-images/company_87240/bac2e263-dc2f-4046-8870-cc4f4dd6f3a0.jpg';
+    preview.classList.remove('ring-2', 'ring-gold');
+    chooseBtn.classList.remove('hidden');
+    useDefaultBtn.classList.add('hidden');
+  });
+
+  // "Choose photo" — opens camera/photo library
+  chooseBtn.addEventListener('click', async () => {
+    chooseBtn.disabled = true;
+    chooseBtn.textContent = 'Laddar…';
+    try {
+      const result = await Platform.camera.pick({ source: 'library', quality: 'medium' });
+      if (!result) {
+        chooseBtn.disabled = false;
+        chooseBtn.textContent = 'Välj foto';
+        return;
+      }
+      // Upload to CDN
+      chooseBtn.textContent = 'Laddar upp…';
+      const url = await Platform.camera.upload(result.dataUrl);
+      selectedAvatarUrl = url;
+      preview.src = url;
+      preview.classList.add('ring-2', 'ring-gold');
+      chooseBtn.classList.add('hidden');
+      useDefaultBtn.classList.remove('hidden');
+    } catch (err) {
+      console.error('[onboarding] avatar upload failed:', err.message);
+      showToast('Kunde inte ladda upp fotot. Försök igen.', true);
+    } finally {
+      chooseBtn.disabled = false;
+      chooseBtn.textContent = 'Välj foto';
+    }
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   if (!Auth.isLoggedIn()) { window.location.href = '/login'; return; }
 
@@ -816,8 +955,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   buildEmojiGrid();
   initBirthdayPicker();
+  initIOSAvatarPicker();
   setupPinInputs();
   goToStep(1);
+
+  // Show email verification banner if needed (after auth check)
+  showVerificationBanner(me);
 
   // Load template groups from admin library (for step 1 schema selection)
   try {

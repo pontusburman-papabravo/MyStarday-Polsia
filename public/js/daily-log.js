@@ -105,7 +105,7 @@
             style="min-height:44px"
             data-id="${c.id}"
             onclick="selectChild('${c.id}')">
-            ${c.emoji || '👤'} ${escHtml(c.name)}
+            ${renderChildAvatar(c, 24)} ${escHtml(c.name)}
           </button>
         `).join('');
 
@@ -425,7 +425,7 @@
       const pe = document.getElementById('printChildEmoji');
       const pn = document.getElementById('printChildName');
       const pd = document.getElementById('printDate');
-      if (pe) pe.textContent = child ? (child.emoji || '⭐') : '⭐';
+      if (pe) pe.innerHTML = child ? renderChildAvatar(child, 40) : '';
       if (pn) pn.textContent = child ? child.name : 'Barn';
       if (pd) pd.textContent = formatDateDisplay(currentDateStr);
 
@@ -891,7 +891,7 @@
       if (!currentChildId) { showToast('Välj ett barn först', 'error'); return; }
       const child = children.find(c => c.id === currentChildId);
       const childName = child ? child.name : 'Barn';
-      const childEmoji = child ? (child.emoji || '⭐') : '⭐';
+      const childAvatarHtml = child ? renderChildAvatar(child, 32) : '';
 
       // Calculate Monday of current week
       const current = new Date(currentDateStr + 'T12:00:00');
@@ -980,7 +980,7 @@
 
       const weekHtml = `
         <div class="week-header">
-          <span style="font-size:1.6em;">${childEmoji}</span>
+          <span style="font-size:1.6em;">${childAvatarHtml}</span>
           <div>
             <h1 style="font-family:Outfit,Arial,sans-serif;font-size:13px;margin:0;color:#1B2340;">${escHtml(childName)} — Veckoschema</h1>
             <p style="color:#5A6178;margin:2px 0 0;font-size:9px;">${mondayStr} – ${sundayStr}</p>

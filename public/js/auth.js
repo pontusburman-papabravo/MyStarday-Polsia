@@ -372,13 +372,18 @@ const Auth = {
         }
         // Cookies cleared by server — clear client state.
         // sessionRestored: true means child logged out AND parent session was restored
-        // (server re-issued parent httpOnly cookies). Redirect to /dashboard so parent
-        // stays logged in. Otherwise, go to landing page.
+        // (server re-issued parent httpOnly cookies). On web, keep parent at /dashboard.
+        // On native (iOS/Android), go to /login for role selection. Otherwise → landing.
         let redirectTo = '/';
         if (res.ok) {
           try {
             const data = await res.clone().json();
-            if (data.sessionRestored) redirectTo = '/dashboard';
+            if (data.sessionRestored) {
+              // Native app (iOS/Android): go to /login (role selection).
+              // Web: keep parent logged in at /dashboard.
+              const isNative = typeof Platform !== 'undefined' && Platform.isNative();
+              redirectTo = isNative ? '/login' : '/dashboard';
+            }
           } catch {}
         }
         this.clearAuth();
