@@ -1,8 +1,8 @@
 # Föräldaraktivering — 7-dagarsprogram
 
 **Skapad:** 2026-05-30  
-**Senast reviderad:** 2026-05-30 (v3 — vanebildning, datamodell, A/B, aha-UX)  
-**Status:** Produktdesign (spec klar för implementation)  
+**Senast reviderad:** 2026-05-30 (v3.2 — experimentdesign, control_holdout, analytics)  
+**Status:** Implementation-ready (experimentdesign för retention)  
 **Feature slug:** `foraldaraktivering_7d`  
 **Relaterat:** onboarding, push-reminder-scheduler, win-back, retention-dashboard
 
@@ -10,12 +10,28 @@
 
 ## 0. Vad det här är (och inte är)
 
-Det här är **inte** ett retention-flöde i win-back-stil ("kom tillbaka efter 18 dagar").
+Det här är **inte** en feature-spec eller ett retention-flöde i win-back-stil.
 
-Det är ett **vanebildningssystem med mätbar hypotes:**
+Det är en **experimentdesign för retention** — byggd för att svara på:
 
-> Föräldrar som lyckas bygger en vana under vecka 1.  
-> Föräldrar som churnar gör det **innan** vanan uppstår.
+> *Har vi identifierat den kausala mekanismen bakom retention, och kan vi mäta om vi påverkar den?*
+
+| v1-fråga | v3.2-fråga |
+|----------|------------|
+| "Hur får vi föräldrar att komma tillbaka?" | "Vilken mekanism gör att de stannar — och rör vår intervention den?" |
+
+**Kausal hypotes:**
+
+> Föräldrar som stannar upplever ett tidigt bevis på att de **slipper tjata**.
+
+Hela systemet är byggt för att **skapa**, **förstärka** och **mäta** det ögonblicket — inte för att maximera klick genom ett program.
+
+| Retention-initiativ (typiskt) | Det här experimentet |
+|-------------------------------|----------------------|
+| Completion rate blir North Star | Day 14 cohort retention är North Star |
+| Reagerar på inaktivitet | Förebygger innan vanan saknas |
+| Push som primär kanal | Celebratory card + banner som primär kanal |
+| Design för implementation | Design för **lärande** (A/B från dag 1) |
 
 Hela specifikationen är organiserad runt att skapa den vanan dag 1–7 — inte att rädda användare vecka 3.
 
@@ -57,10 +73,21 @@ Programmet **fortsätter vid miss** — en missad dag markeras internt men påve
 Jämförs via **treatment vs control** (se §13) — inte bara absolut förbättring. Utan kontrollgrupp riskerar teamet optimera dag 2-login och dag 7-completion utan att retention faktiskt förbättras.
 
 ### Leading indicators (diagnostiska, inte mål i sig)
-- Parent login dag 2–7
-- **`parent_aha_moment`** — internt produktkoncept; DB-event: `parent_first_completion_seen`
-- Dag 7 värde-score ("Har appen gjort vardagen enklare?")
-- Program completion rate
+
+```
+North Star
+  └── Day 14 retention (treatment vs control)
+
+Leading indicators
+  ├── Day 2 parent login
+  ├── parent_aha_moment (DB: parent_first_completion_seen)
+  ├── hours_since_completion (timing av aha)
+  ├── enrollment → first_banner_seen gap
+  ├── Day 7 value score
+  └── Program completion rate
+```
+
+Många team optimerar **completion rate** som North Star och får folk att klicka igenom utan retention-effekt. Den fällan är undvikbar via hierarkin ovan.
 
 ### Icke-mål (v1)
 - Trappa upp barnets schema gradvis
@@ -137,7 +164,7 @@ Push kl 08:00 = påminnelse. Mätning: `parent_login` någon gång under dygn 2.
 ### 5.1 Dashboard-banner
 
 - Placering: överst på `/dashboard`
-- Målgrupp: primär förälder med aktivt program (treatment-arm)
+- Målgrupp: primär förälder med `status = 'active'` (treatment only — inte `control_holdout`)
 - Progress: `Dag 3 av 7`
 - Actions: dag-CTA, "Hoppa över idag", dag 6 "Jag kör solo!", opt-out "Jag klarar mig själv"
 - **Dags-byte-animation:** triggas när `effective_day > last_seen_day` vid banner-load (§7.2)
@@ -208,11 +235,16 @@ CREATE TABLE parent_activation_program (
   family_id        UUID NOT NULL REFERENCES family(id) ON DELETE CASCADE,
   parent_id        UUID NOT NULL REFERENCES parent(id) ON DELETE CASCADE,
   status           TEXT NOT NULL DEFAULT 'active'
-                     CHECK (status IN ('active', 'completed', 'opted_out', 'expired')),
+                     CHECK (status IN (
+                       'active',           -- treatment: program pågår, banner visas
+                       'control_holdout',  -- control: med i experimentet, ingen behandling
+                       'completed', 'opted_out', 'expired'
+                     )),
   cohort_arm       TEXT NOT NULL DEFAULT 'treatment'
                      CHECK (cohort_arm IN ('treatment', 'control')),
   started_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  last_seen_day    SMALLINT NOT NULL DEFAULT 1 CHECK (last_seen_day BETWEEN 1 AND 7),
+  first_banner_seen_at TIMESTAMPTZ,  -- NULL tills treatment-förälder ser banner första gången
+  last_seen_day    SMALLINT NOT NULL DEFAULT 0 CHECK (last_seen_day BETWEEN 0 AND 7),
   completed_at     TIMESTAMPTZ,
   opted_out_at     TIMESTAMPTZ,
   day_status       JSONB NOT NULL DEFAULT '{}',
@@ -224,10 +256,22 @@ CREATE TABLE parent_activation_program (
 
 CREATE UNIQUE INDEX parent_activation_program_active_family
   ON parent_activation_program (family_id)
-  WHERE status = 'active';
+  WHERE status IN ('active', 'control_holdout');
 ```
 
-**Ingen `current_day`-kolumn.** Tidigare v2 hade två sanningar (`effective_day` + `current_day`) — risk för desync i scheduler/admin. v3 eliminerar det.
+**Status-semantik (v3.2):**
+
+| status | cohort_arm | Banner | Betydelse |
+|--------|------------|--------|-----------|
+| `active` | `treatment` | Ja | Pågående behandling |
+| `control_holdout` | `control` | Nej | Med i experimentet, ingen behandling |
+| `completed` | `treatment` | Nej | Dag 7 klar |
+| `opted_out` | `treatment` | Nej | Frivillig exit |
+| `expired` | * | Nej | >7 dagar utan completion |
+
+**Varför `control_holdout` — inte `active`:** Undviker framtida förvirring (*"500 aktiva program men bara 250 ser bannern?"*). Dashboard-queries filtrerar `status = 'active'`; kohort-analys inkluderar `control_holdout`.
+
+**Ingen `current_day`-kolumn.** v3 eliminerar dubbel sanning.
 
 ### 7.2 En sanning: `effective_day` + `last_seen_day`
 
@@ -304,13 +348,29 @@ Vid dashboard-load (`GET /api/me/daily-log` eller `/new-completions`):
 1. Hämta nya `daily_log_item` med `completed = true`
 2. Exkludera redan sedda ( `parent_seen_completion`)
 3. För varje ny:
-   - Emit analytics
+   - Emit analytics (inkl. `hours_since_completion`)
    - Visa **celebratory card** (§5.3)
    - Insert `parent_seen_completion`
 
 ### Metadata
 
-`{ child_id, daily_log_item_id, activity_name, effective_day }`
+```json
+{
+  "child_id": "...",
+  "daily_log_item_id": "...",
+  "activity_name": "Borsta tänderna",
+  "effective_day": 3,
+  "hours_since_completion": 4.2
+}
+```
+
+`hours_since_completion` = `(now - daily_log_item.completed_at)` i timmar, avrundat 1 decimal.
+
+**Analytiskt värde:** Om retention korrelerar med snabb exponering (t.ex. 60% inom 2h vs 25% nästa dag) vet vi att Fas 5-push ska optimeras för:
+
+> *"Estelle blev precis klar! Gå in och se hennes stjärna."*
+
+— inte generisk "kom ihåg att öppna appen". Tid är kritisk faktor i dopamin-loopen.
 
 ---
 
@@ -318,7 +378,7 @@ Vid dashboard-load (`GET /api/me/daily-log` eller `/new-completions`):
 
 | Method | Path | Beskrivning |
 |--------|------|-------------|
-| `GET` | `/api/me/activation-program` | Program, effective day, content; uppdaterar `last_seen_day` |
+| `GET` | `/api/me/activation-program` | Treatment only (`status = active`); sätter `first_banner_seen_at` + event vid första load |
 | `POST` | `/api/me/activation-program/skip-day` | `skipped` |
 | `POST` | `/api/me/activation-program/complete-day` | `done` |
 | `POST` | `/api/me/activation-program/solo-day` | Dag 6 solo |
@@ -344,14 +404,24 @@ Vid dashboard-load (`GET /api/me/daily-log` eller `/new-completions`):
 }
 ```
 
-Control-arm (`cohort_arm: "control"`): `active: false`, ingen banner — men rad finns för cohort-analys.
+Control-arm: `active: false`, `status: "control_holdout"` — ingen banner, rad finns för kohort-analys.
 
 ### Enrollment (Fas 4)
 
 Vid `POST /api/onboarding/complete`:
 1. A/B-assign `cohort_arm` (§13)
-2. Om `treatment` → skapa program, track `activation_program_started`
-3. Om `control` → skapa rad med `status = 'active'`, `cohort_arm = 'control'`, **ingen banner** (passiv holdout)
+2. Skapa rad i `parent_activation_program`
+3. Om **treatment:** `status = 'active'` → track `activation_program_started`
+4. Om **control:** `status = 'control_holdout'` → track `activation_program_started` (samma event, metadata `{ cohort_arm: 'control' }`)
+
+**`activation_program_started`** = enroll i experimentet (dag 0).  
+**`activation_program_first_banner_seen`** = första gång treatment-förälder exponeras för banner (sätts `first_banner_seen_at`, separat event).
+
+Gapet *started → first_banner_seen* isolerar om problemet är:
+- att de aldrig hittar tillbaka till dashboarden efter onboarding, eller
+- att de kommer tillbaka men ignorerar bannern.
+
+Många av de 93 "Väntar"-familjerna har troligen `started` men aldrig `first_banner_seen`.
 
 ---
 
@@ -365,34 +435,59 @@ Risk: medel (spam, timing). Byggs efter banner + aha bevisats.
 
 ## 11. Analytics
 
+### Experiment-events (dag 0 / exponering)
+
+| event_type | metadata | När |
+|------------|----------|-----|
+| **`activation_program_started`** | `{ cohort_arm }` | Enroll vid onboarding complete (treatment + control) |
+| **`activation_program_first_banner_seen`** | `{ effective_day, hours_since_enroll }` | Första banner-render (treatment only) |
+
+### Program-events (dag 1–7)
+
 | event_type | metadata |
 |------------|----------|
-| `activation_program_started` | `{ cohort_arm }` |
 | `activation_program_day_done` | `{ day, auto, trigger? }` |
 | `activation_program_day_skipped` | `{ day }` |
 | `activation_program_day_solo` | `{ day }` |
 | `activation_program_opted_out` | `{ day }` |
 | `activation_program_completed` | `{ reflection_score }` |
 | `child_view_opened` | `{ child_id, source: 'day1_cta' }` |
-| **`parent_first_completion_seen`** | `{ child_id, activity_name, effective_day }` |
+| **`parent_first_completion_seen`** | `{ child_id, activity_name, effective_day, hours_since_completion }` |
 | `parent_aha_moment_dismissed` | `{ daily_log_item_id }` |
+| `activation_program_push_sent` | `{ day }` |
+| `activation_program_push_clicked` | `{ day }` |
+
+### Admin-funnel (diagnostik)
+
+```
+activation_program_started
+  → activation_program_first_banner_seen   ← enrollment gap
+  → parent_first_completion_seen         ← aha rate
+  → activation_program_completed
+  → day_14_active                        ← North Star
+```
+
+Segmentera allt på `cohort_arm`.
 
 ### Day 14 cohort (North Star)
 
 ```
 Kohort: familjer registrerade vecka W
-Treatment: cohort_arm = 'treatment' (oavsett complete/opt-out)
-Control:   cohort_arm = 'control'
+Treatment: cohort_arm = 'treatment' (status active/completed/opted_out/expired)
+Control:   cohort_arm = 'control' (status control_holdout)
 Metric:    aktiv dag 14 ±1 (login_event OR daily_log_item.completed)
 ```
+
+Om 6 månader: *Fungerade programmet? Hur mycket? Påverkades olika familjetyper olika?* — utan att bygga om analysmodellen.
 
 ---
 
 ## 12. Admin
 
-- Funnel dag 1–7 (treatment only)
+- Funnel dag 0–7 (treatment only för banner-steg)
+- **Enrollment gap:** started vs first_banner_seen
+- **Aha-timing:** fördelning `hours_since_completion` vs day 14
 - **Day 14: treatment vs control** (North Star)
-- Aha-rate per kohort
 - Dag 7 score-distribution
 - Export reflektioner + aha-events
 
@@ -421,7 +516,7 @@ function assignCohortArm(familyId) {
 | `ACTIVATION_PROGRAM_TREATMENT_PCT=100` | Launch: alla treatment (default) |
 | `ACTIVATION_PROGRAM_TREATMENT_PCT=50` | A/B-test: 50/50 |
 
-**Control-familjer:** rad i DB med `cohort_arm = 'control'`, ingen banner, ingen push — lever normalt. Möjliggör Day 14-jämförelse utan retroaktiv kontrollgrupp.
+**Control-familjer:** `status = 'control_holdout'`, `cohort_arm = 'control'`. Ingen banner, ingen push — lever normalt. Inkluderas i alla retention-joins.
 
 **Viktigt:** Sätt `cohort_arm` **vid enroll**, inte vid first banner view — annars blir kontrollgruppen biased.
 
@@ -443,14 +538,15 @@ function assignCohortArm(familyId) {
 ### Checklistor
 
 **Fas 1 (~3h)**
-- [ ] Migration (utan `current_day`; med `last_seen_day`, `cohort_arm`)
+- [ ] Migration (`last_seen_day`, `cohort_arm`, `first_banner_seen_at`, `control_holdout`)
 - [ ] `getEffectiveProgramDay()` + tester (DST)
 - [ ] `assignCohortArm()`
 
 **Fas 2 (~5h)**
-- [ ] `parent_seen_completion` + `parent_first_completion_seen`
+- [ ] `parent_seen_completion` + `parent_first_completion_seen` (med `hours_since_completion`)
 - [ ] Celebratory card UI (`activation-program-aha-card.js`)
 - [ ] `child_view_opened` event (dag 1)
+- [ ] `activation_program_first_banner_seen` vid banner-mount
 
 **Fas 3 (~4h)**
 - [ ] Banner + dag 1 "kika tillsammans"
@@ -470,11 +566,11 @@ function assignCohortArm(familyId) {
 ## 15. Acceptanskriterier (MVP = Fas 1–4)
 
 1. `getEffectiveProgramDay()` — enda sanningen; inget `current_day` i DB
-2. `last_seen_day` används enbart för UI-animation
-3. `cohort_arm` sätts deterministiskt vid enroll; control ser ingen banner
-4. Celebratory card visas vid första unseen completion
-5. Dag 1 CTA → barnvy; mät `child_view_opened`
-6. Dag 2: login anytime; dag 6: solo; dag 7: värde-fråga
+2. `last_seen_day` enbart UI; `control_holdout` ≠ `active`
+3. `cohort_arm` vid enroll; control får `status = control_holdout`, ingen banner
+4. `activation_program_started` ≠ `activation_program_first_banner_seen`
+5. Celebratory card vid första unseen completion; metadata inkl. `hours_since_completion`
+6. Dag 1 → barnvy; dag 2 login anytime; dag 6 solo; dag 7 värde-fråga
 7. Miss → program fortsätter, ingen negativ copy
 8. `ACTIVATION_PROGRAM_TREATMENT_PCT` fungerar (100 och 50 testade)
 
@@ -486,6 +582,8 @@ function assignCohortArm(familyId) {
 |--------|-----|-----|
 | **Day 14 retention (treatment vs control)** | North Star | Signifikant högre treatment |
 | `parent_first_completion_seen` rate | Leading | >30% enrolled |
+| **`hours_since_completion` median** | Leading | TBD — driver push-strategi Fas 5 |
+| **Enrollment → banner gap** | Leading | Minimera andel started-never-seen |
 | Dag 7 score ≥4 | Value | >50% responders |
 | Dag 2 parent login | Leading | +20% vs control |
 | Opt-out | Guardrail | <25% |
@@ -506,7 +604,35 @@ function assignCohortArm(familyId) {
 
 ---
 
-## 18. Filer
+## 18. Arkitektur-check (v3.2)
+
+| Komponent | Beslut |
+|-----------|--------|
+| Status-semantik | `control_holdout` för kontrollgrupp |
+| Tracking | `hours_since_completion` + `first_banner_seen` |
+| Hjärta | Celebratory card vid första osedda logg-item |
+| Dag-logik | Runtime via Luxon (`getEffectiveProgramDay`) |
+| UI-state | `last_seen_day` — aldrig affärssanning |
+| Modulärhet | `src/lib/activation-program.js` = retention engine; innehåll utbytbart (7d → 30d, pedagoger) |
+
+---
+
+## 19. Retention Engine (modulär blueprint)
+
+Bygg modulärt så innehåll kan bytas utan att röra infrastruktur:
+
+```
+src/lib/activation-program.js          ← dag-logik, rollover, status
+src/lib/activation-program-enroll.js   ← A/B, cohort_arm
+src/lib/activation-program-content.js  ← 7-dagars copy (utbytbar)
+src/lib/activation-program-scheduler.js← push (Fas 5)
+```
+
+Framtida program (30 dagar, pedagog-onboarding) återanvänder samma motor — ny `content`-fil, samma experiment-ramverk.
+
+---
+
+## 20. Filer
 
 | Fil | Fas |
 |-----|-----|
@@ -525,7 +651,7 @@ function assignCohortArm(familyId) {
 
 ---
 
-## 19. Öppna frågor
+## 21. Öppna frågor (implementation, ej arkitektur)
 
 1. **Inline barnvy-preview på dag 1** — eller endast länk till `/child-login`?
 2. **Retroaktiv enroll för churn-risk** — admin-trigger v1.1
@@ -534,15 +660,16 @@ function assignCohortArm(familyId) {
 
 ---
 
-## 20. Revisionslogg
+## 22. Revisionslogg
 
 | Version | Datum | Ändring |
 |---------|-------|---------|
 | v1 | 2026-05-30 | Initial spec |
 | v2 | 2026-05-30 | Värdepress; solo dag 6; aha-event; build order; day 14 |
-| v3 | 2026-05-30 | Vanebildning-framing; `last_seen_day` (ej `current_day`); dag 1 barnvy; celebratory card; A/B `cohort_arm`; `parent_aha_moment` koncept; PO risktabell |
-| v3.1 | 2026-05-30 | Luxon-implementation av `getEffectiveProgramDay()` + obligatoriska DST-tester |
+| v3 | 2026-05-30 | Vanebildning; `last_seen_day`; dag 1 barnvy; celebratory card; A/B |
+| v3.1 | 2026-05-30 | Luxon `getEffectiveProgramDay()` + DST-tester |
+| v3.2 | 2026-05-30 | Experimentdesign-framing; `control_holdout`; `first_banner_seen_at`; `hours_since_completion`; enrollment gap-funnel; retention engine blueprint |
 
 ---
 
-*Produktdesign klar för implementation. Hypotes: föräldrar som lyckas bygger vana vecka 1; churn sker innan vanan uppstår.*
+*Implementation-ready experimentdesign. Hypotes: föräldrar som stannar upplever tidigt bevis på att de slipper tjata. Systemet skapar, förstärker och mäter det ögonblicket.*
