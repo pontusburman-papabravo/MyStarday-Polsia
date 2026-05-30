@@ -209,7 +209,7 @@ async function renderMonthView() {
   const activeDays = new Set(schedules.map(s => s.day_of_week)); // 0-6
 
   const child = children.find(c => c.id === currentChildId);
-  const childName = child ? `${child.emoji || '👤'} ${escHtml(child.name)}` : '';
+  const childName = child ? `${renderChildAvatar(child, 20)} ${escHtml(child.name)}` : '';
 
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
@@ -964,7 +964,7 @@ function renderDashboardCards() {
             stroke-dasharray="${ringCirc}" stroke-dashoffset="${ringOffset}"
             stroke-linecap="round" transform="rotate(-90 26 26)"/>
         </svg>` : ''}
-        <span class="dash-avatar-emoji">${c.emoji || '⭐'}</span>
+        <span class="dash-avatar-emoji">${renderChildAvatar(c, 28)}</span>
       </div>`;
 
     // ── Tidsblock-engine: map items → blocks with trafikljus-färg ─
@@ -2707,7 +2707,7 @@ function renderSbsView() {
     const data = sbsAllData[child.id] || { items: [], scheduleId: null };
     return `<div class="sbs-panel">
       <div class="sbs-panel-header">
-        <span class="text-2xl">${child.emoji || '👤'}</span>
+        ${renderChildAvatar(child, 28)}
         <span class="font-bold text-navy">${escHtml(child.name)}</span>
         <span class="text-xs text-text-soft ml-auto">${data.items.length} st</span>
       </div>

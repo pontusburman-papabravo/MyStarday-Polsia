@@ -189,9 +189,11 @@ function restoreParentSession(req, res, next) {
       }
     }
     if (!currentIsValidChild) {
-      // Token is not a valid child token — restore parent session.
-      // Clearing the saved session would destroy it; let restoreParentSession
-      // handle the next request when the parent re-authenticates.
+      // Token is null, invalid, or not a child token.
+      // Parent session restoration is NOT safe here — the current token may be
+      // a fresh parent/admin session that just happens to be unreadable locally
+      // (e.g., privacy mode, localStorage cleared). Let optionalAuth handle it.
+      return next();
     }
   }
 
