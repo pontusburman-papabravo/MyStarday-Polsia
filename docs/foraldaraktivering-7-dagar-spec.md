@@ -250,6 +250,35 @@ function getEffectiveProgramDay(program, timezone) { /* ... */ }
 3. Om `effectiveDay > last_seen_day` → response flag `day_advanced: true` (animation)
 4. Efter banner render → POST eller GET uppdaterar `last_seen_day = effectiveDay`
 
+#### Implementation: timezone-safe dagberäkning
+
+Använd etablerat bibliotek (**luxon** eller **date-fns-tz**) — undvik manuell DST-offset som i win-back-schedulern.
+
+```js
+// src/lib/activation-program.js
+const { DateTime } = require('luxon');
+
+function getEffectiveProgramDay(program, timezone = 'Europe/Stockholm') {
+  const startLocal = DateTime.fromJSDate(program.started_at, { zone: 'utc' })
+    .setZone(timezone)
+    .startOf('day');
+  const nowLocal = DateTime.now().setZone(timezone).startOf('day');
+  const diffDays = Math.floor(nowLocal.diff(startLocal, 'days').days);
+  return Math.min(Math.max(diffDays + 1, 1), 7); // dag 1 = enroll-dagen; cap at 7
+}
+// >7 hanteras av caller → status 'expired' eller dag-7-reflektion kvar
+```
+
+**Logik i klartext:**
+1. Ta `started_at` (UTC) → konvertera till `family.timezone` start-of-day
+2. Ta `now()` → samma timezone start-of-day
+3. Diff i hela dygn + 1 = `effective_day`
+
+**Tester (obligatoriska i Fas 1):**
+- Enroll kl 23:30 → fortfarande dag 1
+- Rollover vid midnatt lokal tid (inte UTC)
+- DST-skifte (mars/oktober) — luxon hanterar; skriv ett test per skifte
+
 ### 7.3 Tabell: `parent_seen_completion`
 
 ```sql
@@ -512,6 +541,7 @@ function assignCohortArm(familyId) {
 | v1 | 2026-05-30 | Initial spec |
 | v2 | 2026-05-30 | Värdepress; solo dag 6; aha-event; build order; day 14 |
 | v3 | 2026-05-30 | Vanebildning-framing; `last_seen_day` (ej `current_day`); dag 1 barnvy; celebratory card; A/B `cohort_arm`; `parent_aha_moment` koncept; PO risktabell |
+| v3.1 | 2026-05-30 | Luxon-implementation av `getEffectiveProgramDay()` + obligatoriska DST-tester |
 
 ---
 
