@@ -1080,6 +1080,10 @@ ACTIVATION_PROGRAM_LAUNCH_AT=2026-06-02T06:00:00Z  // 08:00 svensk sommartid
 **Fas 5 (~4h)** — Push
 
 **Fas 6 (~4h)** — Admin cohort dashboard
+- [ ] `activation-program-retention.js` — fönster 14/30/60
+- [ ] Aha opportunity rate + conversion rate
+- [ ] **Day 14 grouped by `parent_first_completion_seen`** (post-launch prioritet #1)
+- [ ] Day 30/60 API lagrar resultat; UI dold tills kohortmognad
 
 ---
 
