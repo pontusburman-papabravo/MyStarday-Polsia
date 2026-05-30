@@ -1,7 +1,7 @@
 # Föräldaraktivering — 7-dagarsprogram
 
 **Skapad:** 2026-05-30  
-**Senast reviderad:** 2026-05-30 (v3.7 — låst launch cutoff, expired dag 21, sekundära KPI:er, Dag 3 trigger)  
+**Senast reviderad:** 2026-05-30 (v3.8 — aha opportunity rate; Day 30/60 retention lagras)  
 **Status:** Implementation-ready (kausalt retention-experiment)  
 **Feature slug:** `foraldaraktivering_7d`  
 **Relaterat:** onboarding, push-reminder-scheduler, win-back, retention-dashboard
@@ -238,6 +238,52 @@ WHERE event_at::date BETWEEN enroll_date + 12 AND enroll_date + 14
 
 **Tolkning:** Om treatment slår control på Family men inte Parent → barnet driver; om Parent men inte Family → föräldern loggar in utan att vanan landar hos barnet. **Ändra inte North Star** baserat på dessa — de är hypotes-stöd, inte mål.
 
+### Aha opportunity rate — diagnostisk (v3.8, låst)
+
+Innan man tolkar `parent_first_completion_seen`-gap måste man veta **hur många familjer som ens kunde få aha**.
+
+| Metric | Definition | Tolkning |
+|--------|------------|----------|
+| **Aha opportunity rate** | Andel enrolled med minst ett `child_first_completion` | Barnet aktiverades — mekanismen *kunde* testas |
+| **Aha conversion rate** | Andel med `parent_first_completion_seen` / andel med `child_first_completion` | Celebratory card / exponering — givet att barnet agerade |
+| **Aha-to-retention** | Day 14 grouped by `parent_first_completion_seen` | Kärnhypotesen — prioriterad admin-vy post-launch |
+
+```sql
+-- Aha opportunity (per kohort, treatment + control)
+SELECT COUNT(DISTINCT family_id) FILTER (WHERE has_child_first_completion)
+     / COUNT(DISTINCT family_id)::float
+FROM cohort_enrolled;
+
+-- Aha conversion (bland de med opportunity)
+SELECT COUNT(DISTINCT family_id) FILTER (WHERE has_parent_first_completion_seen)
+     / NULLIF(COUNT(DISTINCT family_id) FILTER (WHERE has_child_first_completion), 0)::float
+FROM cohort_enrolled;
+```
+
+**Varför det behövs:** utan opportunity rate kan svagt aha-resultat bero på *barnet gjorde aldrig något* (aktiveringsproblem) — inte på att *celebratory card fungerade dåligt* (exponeringsproblem). Dag 3 `supportive_fallback` håller programmet levande men testar inte mekanismen.
+
+### Långsiktig retention — Day 30/60 (v3.8, lagras tidigt)
+
+Day 14 är rätt för **experimentets primära utvärdering**. Day 30/60 behövs för att skilja:
+
+| Mönster | Day 14 | Day 30 | Tolkning |
+|---------|--------|--------|----------|
+| Onboarding-friktion minskade | ↑ | flat | Tidig push, inte etablerad vana |
+| Vana etablerades | ↑ | ↑ | Mekanismen håller |
+
+**Definition (samma logik som Day 14, annat fönster):**
+
+| KPI | Retained-fönster (från `started_at`, familj timezone) |
+|-----|------------------------------------------------------|
+| Family Day 30 | parent_login **eller** child completion dag **29–31** |
+| Parent Day 30 | endast parent_login dag 29–31 |
+| Family Day 60 | parent_login **eller** child completion dag **59–61** |
+| Parent Day 60 | endast parent_login dag 59–61 |
+
+**Implementation (Fas 6):** ingen ny datamodell eller event krävs — samma query-motor som Day 14 med konfigurerbart fönster (`retentionWindowDays: 14 | 30 | 60`). Beräkna och **lagra** resultat (API + ev. nightly snapshot); **visa inte** Day 30/60 i admin förrän första kohorten nått mognad (≥30 resp. ≥60 dagar post-enroll).
+
+**North Star förblir Day 14** — Day 30/60 är uppföljning, inte experimentprimär.
+
 ### Leading indicators (diagnostiska, inte mål i sig)
 
 ```
@@ -245,6 +291,8 @@ North Star
   └── Day 14 retention (treatment vs control)
 
 Leading indicators
+  ├── aha_opportunity_rate (child_first_completion någonsin)
+  ├── aha_conversion_rate (aha-sett / opportunity)
   ├── child_first_completion (barnet lyckas)
   ├── parent_first_completion_seen (förälder upptäcker — aha)
   ├── hours_since_completion (tid barn → förälder)
@@ -891,17 +939,43 @@ Befintliga pre-launch familjer ingår **inte** i kohort — varken via retroakti
 
 Om 6 månader: *Fungerade programmet? Hur mycket? Påverkades olika familjetyper olika?* — utan att bygga om analysmodellen.
 
+### Day 30/60 cohort — lagras, visas senare (v3.8)
+
+Samma kohort-filter som Day 14 (§ ovan). Query-motor:
+
+```js
+// src/lib/activation-program-retention.js
+function isFamilyRetained(program, events, windowDays) {
+  // windowDays: 14 → dag 13–15; 30 → dag 29–31; 60 → dag 59–61
+  const start = enrollLocalDate(program.started_at, program.timezone);
+  const from = start.plus({ days: windowDays - 2 });
+  const to = start.plus({ days: windowDays });
+  return events.some(e =>
+    e.date >= from && e.date <= to &&
+    (e.type === 'parent_login' || e.type === 'child_completion')
+  );
+}
+```
+
+Fas 6: exponera `GET /api/admin/activation-program/retention?window=14|30|60`. Admin UI visar endast `window=14` vid launch; 30/60 aktiveras när kohortmognad tillåter.
+
 ---
 
 ## 12. Admin
 
+**Post-launch prioritet #1:** Day 14 retention grouped by `parent_first_completion_seen`. Om gapet mellan aha-sett / aha-ej-sett är tydligt → kärnhypotesen bekräftad. Om inte → mekanismen ifrågasatt — lika värdefullt lärande.
+
 - Funnel dag 0–7 (treatment: `status = 'active' AND cohort_arm = 'treatment'`)
 - **Enrollment gap:** started vs first_banner_seen
+- **Aha opportunity rate (v3.8):** andel enrolled med `child_first_completion` — visa före aha-gap-tolkning
+- **Aha conversion rate (v3.8):** `parent_first_completion_seen` / opportunity — isolerar exponeringsproblem
 - **Aha-timing:** `child_first_completion` → `parent_first_completion_seen` (hours_since_completion)
-- **Day 14 retention grouped by `parent_first_completion_seen`** *(prioriterad vy — v3.5)*
+- **Day 14 retention grouped by `parent_first_completion_seen`** *(prioriterad vy — v3.5, post-launch #1)*
   - Hypotes: aha-sett >> program-completed som prediktor
   - Bygg in Fas 6 så fort första kohort har dag-14-data
+  - Kräver opportunity rate i samma vy — annars missvisande
 - **Sekundära KPI:er (v3.7):** Family vs Parent Day 14 retention side-by-side (diagnostisk — ej North Star)
+- **Day 30/60 retention (v3.8):** beräknas och lagras i Fas 6; dold i UI tills kohortmognad ≥30/60 dagar
 - **Dag 3 fallback-analys:** andel `activation_program_day_done` med `trigger = 'supportive_fallback'` vs `trigger = 'aha'`
 - **Retention Wall 2×2** (§1.1): complete/incomplete × retained/churned
 - **Deep Dive Interview-flagga** (v3.6): treatment-familjer som
@@ -1025,6 +1099,8 @@ ACTIVATION_PROGRAM_LAUNCH_AT=2026-06-02T06:00:00Z  // 08:00 svensk sommartid
 12. Dag 3 stödjande fallback loggar `trigger: 'supportive_fallback'`
 13. `activation_program_cta_clicked` loggas vid banner-CTA
 14. `status = 'expired'` sätts lazy vid `calendar_day > 21` (konfigurerbar via env)
+15. Aha opportunity rate + conversion rate beräknas i admin (Fas 6)
+16. Day 30/60 retention lagras via samma query-motor; UI dold tills kohortmognad
 
 ---
 
@@ -1034,6 +1110,10 @@ ACTIVATION_PROGRAM_LAUNCH_AT=2026-06-02T06:00:00Z  // 08:00 svensk sommartid
 |--------|-----|-----|
 | **Family Day 14 retention (treatment vs control)** | North Star | Signifikant högre treatment |
 | **Parent Day 14 retention (treatment vs control)** | Diagnostisk | Jämför med Family — tolkning, inte mål |
+| **Aha opportunity rate** | Diagnostisk | Baslinje före aha-gap-tolkning |
+| **Aha conversion rate** | Diagnostisk | Celebratory card / exponering givet barn-aktivering |
+| **Day 14 grouped by aha-sett** | Post-launch #1 | Tydligt gap → hypotes bekräftad |
+| **Family Day 30/60 retention** | Uppföljning (lagras) | Day 14 ↑ men Day 30 flat → friktion, inte vana |
 | `parent_first_completion_seen` rate | Leading | >30% enrolled |
 | **`hours_since_completion` median** | Leading | TBD — driver push-strategi Fas 5 |
 | **Enrollment → banner gap** | Leading | Minimera andel started-never-seen |
@@ -1057,7 +1137,7 @@ ACTIVATION_PROGRAM_LAUNCH_AT=2026-06-02T06:00:00Z  // 08:00 svensk sommartid
 
 ---
 
-## 18. Arkitektur-check (v3.7)
+## 18. Arkitektur-check (v3.8)
 
 | Komponent | Beslut |
 |-----------|--------|
@@ -1065,7 +1145,9 @@ ACTIVATION_PROGRAM_LAUNCH_AT=2026-06-02T06:00:00Z  // 08:00 svensk sommartid
 | Dagbegrepp | `calendar_day` (expiry, Day 14) vs `effective_day` (innehåll, cap 7) |
 | Expiry | Lazy vid GET; `calendar_day > 21` → `expired` |
 | Launch | `ACTIVATION_PROGRAM_LAUNCH_AT` — enrollment + kohort-filter |
-| Retention KPI | Family = North Star; Parent = diagnostisk sekundär |
+| Retention KPI | Family Day 14 = North Star; Parent Day 14 = diagnostisk |
+| Aha-funnel | opportunity → conversion → Day 14 grouped by aha-sett |
+| Långsikt | Day 30/60 — samma query-motor, lagras tidigt, UI senare |
 | Dag 3 analytics | `trigger: 'supportive_fallback'` separat från `aha` |
 | Barn-event | `child_first_completion` (analytics) före parent aha |
 | Tracking | `hours_since_completion` = tid barn → förälder |
@@ -1108,6 +1190,7 @@ src/lib/activation-program.js          ← dag-logik, rollover, status
 src/lib/activation-program-enroll.js   ← A/B, cohort_arm
 src/lib/activation-program-content.js  ← per program_type (onboarding_7d | reactivation_3d)
 src/lib/activation-program-scheduler.js← push (Fas 5)
+src/lib/activation-program-retention.js← Day 14/30/60 + aha opportunity (Fas 6)
 ```
 
 Framtida program återanvänder samma motor — ny content-fil + `program_type`, samma experiment-ramverk.
@@ -1129,6 +1212,7 @@ Framtida program återanvänder samma motor — ny content-fil + `program_type`,
 | `public/js/activation-program-aha-card.js` | 2 |
 | `src/routes/onboarding.js` | 4 |
 | `src/lib/activation-program-scheduler.js` | 5 |
+| `src/lib/activation-program-retention.js` | 6 |
 | `src/routes/admin/activation-program.js` | 6 |
 
 ---
@@ -1139,13 +1223,15 @@ Framtida program återanvänder samma motor — ny content-fil + `program_type`,
 2. **Celebratory card: modal vs inline card** — A/B-testa i Fas 2?
 3. **När aktivera 50/50 A/B** — efter 2 veckor med 100% treatment baseline?
 
-**Besvarade (v3.3–v3.7 — ej öppna):**
+**Besvarade (v3.3–v3.8 — ej öppna):**
 - ~~Retroaktiv enroll för churn-risk~~ → **Nej i v1.0**; `reactivation_3d` i v1.2
 - ~~Befintliga familjer i samma program~~ → **Nej**; tre grupper, separata program
 - ~~Launch-datum cutoff~~ → **`ACTIVATION_PROGRAM_LAUNCH_AT`** ISO 8601 UTC (§13.1)
 - ~~Expired-logik~~ → **`calendar_day > 21`** lazy expiry (§5.2.1)
 - ~~Parent vs Family Day 14~~ → Family = North Star; Parent = diagnostisk (§2)
 - ~~Dag 3 fallback analytics~~ → `trigger: 'supportive_fallback'` (§4, §11)
+- ~~Aha opportunity vs conversion~~ → opportunity rate före gap-tolkning (§2, §12)
+- ~~Day 30/60 retention~~ → lagras Fas 6, samma query-motor; UI dold tills mognad (§2, §11)
 
 ---
 
@@ -1163,7 +1249,8 @@ Framtida program återanvänder samma motor — ny content-fil + `program_type`,
 | v3.5 | 2026-05-30 | Rena axlar; `child_first_completion`; Retention Wall 2×2 |
 | v3.6 | 2026-05-30 | Låst Day 14 (dag 13–15); Dag 3 fallback; CTA-click; reflektion dag 7+; Deep Dive flag |
 | v3.7 | 2026-05-30 | Låst `ACTIVATION_PROGRAM_LAUNCH_AT`; expired dag 21; `calendar_day`; Parent/Family Day 14 KPI; `supportive_fallback` trigger |
+| v3.8 | 2026-05-30 | Aha opportunity + conversion rate; Day 30/60 retention (lagras); post-launch admin-prioritet; `activation-program-retention.js` |
 
 ---
 
-*Implementation-ready v3.7. Alla pre-kod-punkter låsta. Fas 1 kan starta.*
+*Implementation-ready v3.8. Experimentdesign + analysplan komplett. Fas 1 kan starta.*
