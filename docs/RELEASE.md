@@ -20,9 +20,9 @@ Backend räknar befintliga familjer i samma transaktion som insert — race-cond
 
 ---
 
-## Miljövariabler att verifiera på Render
+## Miljövariabler att verifiera på Polsia
 
-Kontrollera att samtliga nedan är satta i Render → Environment-variabler innan submission:
+Kontrollera att samtliga nedan är satta i Polsia → Environment innan submission:
 
 | Variabel | Värde | Kommentar |
 |----------|-------|-----------|
@@ -51,9 +51,11 @@ https://mystarday.se/api/iap/webhook
 
 ---
 
-## Testkonto — skapa manuellt på mystarday.se
+## Testkonto — Apple Review
 
-Pontus registrerar sig manuellt på https://mystarday.se:
+> Om Polsia redan skapat kontot på produktion kan du hoppa över registreringen och bara verifiera inloggning.
+
+Annars — registrera manuellt på https://mystarday.se:
 1. Gå till https://mystarday.se/register
 2. E-post: `review@mystarday.se` | Lösenord: `AppReview2026!`
 3. Namn: Pontus (valfritt)
