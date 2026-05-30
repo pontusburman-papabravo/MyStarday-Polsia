@@ -1,8 +1,8 @@
 # Föräldaraktivering — 7-dagarsprogram
 
 **Skapad:** 2026-05-30  
-**Senast reviderad:** 2026-05-30 (v3.5 — rena dataaxlar, child_first_completion, Retention Wall 2×2)  
-**Status:** Implementation-ready (experimentdesign för retention)  
+**Senast reviderad:** 2026-05-30 (v3.6 — låst Day 14, Dag 3-fallback, CTA-tracking)  
+**Status:** Implementation-ready (kausalt retention-experiment)  
 **Feature slug:** `foraldaraktivering_7d`  
 **Relaterat:** onboarding, push-reminder-scheduler, win-back, retention-dashboard
 
@@ -188,10 +188,34 @@ Möjliga strukturella orsaker (hypoteser):
 
 ## 2. Mål och KPI-hierarki
 
-### North Star (enda KPI som avgör framgång)
-**Day 14 cohort retention** — andel familjer fortfarande aktiva 14 dagar efter registrering.
+### North Star-hypotes (en mening)
 
-Jämförs via **treatment vs control** (se §13) — inte bara absolut förbättring. Utan kontrollgrupp riskerar teamet optimera dag 2-login och dag 7-completion utan att retention faktiskt förbättras.
+> **Föräldrar som upplever ett tidigt "jag behövde inte tjata"-ögonblick har högre sannolikhet att vara kvar dag 14.**
+
+Det är *inte* hypotesen att "7-dagarsprogrammet ökar retention". Programmet är interventionen; aha-ögonblicket är den mekanism vi testar.
+
+### North Star (låst metric — ändras aldrig efter experimentstart)
+
+**Day 14 cohort retention** — treatment vs control.
+
+**Definition (v3.6 — FROZEN efter launch):**
+
+En familj räknas som **Retained Day 14** om minst ett av följande inträffar under **dag 13, 14 eller 15** (kalenderdagar från `started_at`, familj timezone):
+
+1. `login_event` med `role = 'parent'` för primär förälder i kohorten, **eller**
+2. `daily_log_item.completed = true` för något barn i familjen
+
+```sql
+-- Pseudologi — lås denna query vid launch, ändra inte efteråt
+WHERE event_at::date BETWEEN enroll_date + 12 AND enroll_date + 14
+  AND (event_type IN ('parent_login', 'child_completion'))
+```
+
+**Varför dag 13–15:** fångar föräldrar som loggar in varannan dag utan att glida definitionen efterhand (p-hacking).
+
+**Varför parent ELLER child:** retention = familjen använder produkten, inte bara förälderns dashboard-besök.
+
+Jämförs via **treatment vs control** (§13). Utan kontrollgrupp riskerar teamet optimera completion utan retention-effekt.
 
 ### Leading indicators (diagnostiska, inte mål i sig)
 
@@ -228,6 +252,17 @@ Många team optimerar **completion rate** som North Star och får folk att klick
 
 Tid mellan steg 2 och 3 (`hours_since_completion`) driver push-strategi (Fas 5).
 
+```mermaid
+flowchart LR
+  A[first_banner_seen] --> B[child_first_completion]
+  B --> C[parent_first_completion_seen]
+  C --> D[dag 7 värde-kvitto]
+  D --> E[Day 14 retained]
+  B -.->|Retention Wall| F[Complete + Churned]
+```
+
+Om kedjan bryts visar Retention Wall 2×2 var.
+
 ### Icke-mål (v1)
 - Trappa upp barnets schema gradvis
 - Ersätta onboarding-wizard
@@ -257,7 +292,18 @@ Barnets schema förblir oförändrat efter onboarding. Fokus: **förälderns bet
 |-----|--------|--------------|---------|---------|
 | **1** | Dag 1 — kika tillsammans | *(ingen)* | Öppna barnläget och visa första aktiviteten tillsammans | `child_view_opened` eller `child_login` |
 | **2** | Dag 2 — morgonkollen | "God morgon! Kolla [barn]s schema — tar 30 sek 🌅" | Öppna dashboarden någon gång under dygnet | `parent_login` dygn 2 |
-| **3** | Dag 3 — fira en stjärna | "Har [barn] fått en stjärna idag? Fira tillsammans ⭐" | Fira avklarad aktivitet | `parent_first_completion_seen` |
+| **3** | Dag 3 — fira en stjärna *(eller stödjande fallback)* | "Har [barn] fått en stjärna idag? Fira tillsammans ⭐" | Fira avklarad aktivitet **eller** stödjande copy om ingen completion | `parent_first_completion_seen` eller banner-view |
+
+### Dag 3 — celebratory card vs stödjande fallback (v3.6)
+
+Hypotesen vilar på aha — men vissa familjer får ingen `child_first_completion` första veckan. Programmet får inte kännas trasigt.
+
+| Villkor | UI |
+|---------|-----|
+| `child_first_completion` finns (osedd av förälder) | **Celebratory card** (§5.3) |
+| `effective_day >= 3` och ingen completion hittills | **Stödjande banner:** *"Första veckan handlar om att komma igång — det räcker att du kikar in och ser att schemat ligger redo."* |
+
+Dag 3 markeras `done` vid: aha-sett, **eller** banner visad (stödjande variant räknas).
 | **4** | Dag 4 — er app | "Något som känns fel? Byt ut en aktivitet ✏️" | Justera en aktivitet vid behov | `schedule_edit` eller `parent_login` |
 | **5** | Dag 5 — belöning | "Kolla Skattkammaren — vad drömmer [barn] om? 🎁" | Öppna belöningsvy | `parent_login` + skattkammaren |
 | **6** | Dag 6 — dela ansvaret | "Vill du dela ansvaret med någon? 👥" | Bjud in **eller** "Jag kör solo!" | `family_invite_created` / solo-dismiss |
@@ -305,12 +351,16 @@ Push kl 08:00 = påminnelse. Mätning: `parent_login` någon gång under dygn 2.
 - Placering: överst på `/dashboard`
 - Målgrupp: primär förälder med `status = 'active' AND cohort_arm = 'treatment'`
 - Progress: `Dag 3 av 7`
-- Actions: dag-CTA, "Hoppa över idag", dag 6 "Jag kör solo!", opt-out "Jag klarar mig själv"
+- Actions: dag-CTA (track `activation_program_cta_clicked`), "Hoppa över idag", dag 6 "Jag kör solo!", opt-out
 - **Dags-byte-animation:** triggas när `effective_day > last_seen_day` vid banner-load (§7.2)
 
-### 5.2 Dag 7 — värde-reflektion
+### 5.2 Dag 7 — värde-reflektion (v3.6: flexibelt fönster)
 
-Modal/inline: skala 1–5, valfri fritext (500 tecken), → `completed`.
+**Visas när:** `effective_day >= 7` — tills besvarad **eller** programmet `expired`.
+
+Föräldrar som missar exakt dag 7 ska inte tappa feedback. Reflektionen ligger kvar i bannern dag 7+ tills submit.
+
+Modal/inline: skala 1–5, valfri fritext (500 tecken), → `status = completed`.
 
 ### 5.3 Celebratory card — parent aha-ögonblick (v3)
 
@@ -351,6 +401,7 @@ Default auto-enroll i treatment. Control via A/B (§13).
 | Regel | Värde |
 |-------|-------|
 | Programlängd | 7 kalenderdagar från `started_at` |
+| Reflektion | Visas från `effective_day >= 7` tills besvarad eller expired |
 | Daggräns | Midnatt i `family.timezone` |
 | **Enda sanningen för dag** | `getEffectiveProgramDay()` — runtime |
 | Missad dag | `missed` internt — programmet fortsätter |
@@ -678,6 +729,11 @@ Risk: medel (spam, timing). Byggs efter banner + aha bevisats.
 |------------|----------|-----|
 | **`activation_program_started`** | `{ cohort_arm, program_type }` | Enroll (treatment + control) |
 | **`activation_program_first_banner_seen`** | `{ effective_day, hours_since_enroll }` | Första banner-render (treatment only) |
+| **`activation_program_cta_clicked`** | `{ day, cta_type, destination }` | Klick på dag-CTA i banner |
+
+`cta_type`-exempel: `open_child_view`, `open_schedule`, `open_rewards`, `invite_coparent`, `submit_reflection`.
+
+**Varför CTA-click:** skiljer *såg banner men ignorerade* från *såg aldrig banner* (jfr `first_banner_seen`).
 
 ### Program-events (dag 1–7)
 
@@ -700,7 +756,8 @@ Risk: medel (spam, timing). Byggs efter banner + aha bevisats.
 ```
 activation_program_started
   → activation_program_first_banner_seen   ← enrollment gap
-  → child_first_completion               ← barnet lyckas
+  → activation_program_cta_clicked         ← såg men ignorerade?
+  → child_first_completion
   → parent_first_completion_seen         ← aha (tid sedan child_first_completion)
   → activation_program_completed
   → day_14_active                        ← North Star
@@ -708,14 +765,18 @@ activation_program_started
 
 Segmentera på `cohort_arm`. **Prioritera aha-sett framför completion** i admin.
 
-### Day 14 cohort (North Star)
+### Day 14 cohort (North Star) — låst definition
 
 ```
-Kohort: familjer registrerade vecka W (post-launch only)
-Filter: program_type = 'onboarding_7d'  -- exkludera framtida reactivation_3d
-Treatment: cohort_arm = 'treatment'
-Control:   cohort_arm = 'control' (status = 'active', ingen banner)
-Metric:    aktiv dag 14 ±1 (login_event OR daily_log_item.completed)
+Kohort:     familjer registrerade vecka W (post-launch only)
+Filter:     program_type = 'onboarding_7d'
+Treatment:  cohort_arm = 'treatment'
+Control:    cohort_arm = 'control'
+
+Retained = minst en parent_login ELLER child completion
+           på dag 13, 14 eller 15 (familj timezone, från started_at)
+
+⚠️ FROZEN — ändra inte efter experimentstart
 ```
 
 Befintliga pre-launch familjer ingår **inte** i kohort — annars förorenas experimentet.
@@ -733,6 +794,10 @@ Om 6 månader: *Fungerade programmet? Hur mycket? Påverkades olika familjetyper
   - Hypotes: aha-sett >> program-completed som prediktor
   - Bygg in Fas 6 så fort första kohort har dag-14-data
 - **Retention Wall 2×2** (§1.1): complete/incomplete × retained/churned
+- **Deep Dive Interview-flagga** (v3.6): treatment-familjer som
+  - `activation_program_completed` + score 1–2 på dag 7-reflektion, **eller**
+  - `activation_program_completed` + **not** Retained Day 14  
+  → markera i admin för kvalitativ uppföljning (5–10 intervjuer > 1000 datapunkter)
 - Dag 7 score-distribution
 - Export reflektioner + completion-kedja-events
 
@@ -796,7 +861,9 @@ function assignCohortArm(familyId) {
 **Fas 3 (~4h)**
 - [ ] Banner + dag 1 "kika tillsammans"
 - [ ] Dags-byte-animation via `day_advanced`
-- [ ] Solo-knapp, dag 7-reflektion
+- [ ] Dag 3 fallback-copy (stödjande variant utan completion)
+- [ ] `activation_program_cta_clicked` i banner
+- [ ] Reflektion: `effective_day >= 7` tills submit/expired
 
 **Fas 4 (~2h)**
 - [ ] Enroll hook i onboarding complete
@@ -820,6 +887,9 @@ function assignCohortArm(familyId) {
 8. Miss → program fortsätter, ingen negativ copy
 9. Befintliga pre-launch familjer enrollas **inte** retroaktivt
 10. Endast `program_type = onboarding_7d` skapas i v1.0
+11. Day 14 metric enligt låst definition (dag 13–15); ändras inte efter launch
+12. Dag 3 stödjande fallback om ingen `child_first_completion`
+13. `activation_program_cta_clicked` loggas vid banner-CTA
 
 ---
 
@@ -851,7 +921,7 @@ function assignCohortArm(familyId) {
 
 ---
 
-## 18. Arkitektur-check (v3.5)
+## 18. Arkitektur-check (v3.6)
 
 | Komponent | Beslut |
 |-----------|--------|
@@ -946,8 +1016,9 @@ Framtida program återanvänder samma motor — ny content-fil + `program_type`,
 | v3.2 | 2026-05-30 | Experimentdesign; `control_holdout`; analytics enrichment |
 | v3.3 | 2026-05-30 | Tre grupper; `program_type`; enrollment endast nya |
 | v3.4 | 2026-05-30 | Tre grupper; Program Engine; Retention Wall; kausal kedja |
-| v3.5 | 2026-05-30 | Rena axlar (ej control_holdout); `child_first_completion`; Retention Wall 2×2; Day14 by aha |
+| v3.5 | 2026-05-30 | Rena axlar; `child_first_completion`; Retention Wall 2×2 |
+| v3.6 | 2026-05-30 | Låst Day 14 (dag 13–15); Dag 3 fallback; CTA-click; reflektion dag 7+; Deep Dive flag |
 
 ---
 
-*Implementation-ready v3.5. Fas 1 kan starta.*
+*Implementation-ready v3.6. North Star-hypotes: aha → retention. Fas 1 kan starta.*
