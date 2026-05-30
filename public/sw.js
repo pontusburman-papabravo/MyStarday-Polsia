@@ -1,5 +1,7 @@
 /**
- * Min Stjärndag — Service Worker v131
+ * Min Stjärndag — Service Worker v132
+ * v133: Fix GET /api/children — subscription guard före routes, familyId-normalisering,
+ *       tydligare fel i daglig logg.
  * v131: Hotfix — batch-ratings query referenced non-existent daily_log_item_rating table,
  *       crashing child daily-log endpoint. Fixed to use actual `rating` table.
  * v130: Barnvy-bugfix — humörbetyg nu styrs av show_mood_rating (per-child parent setting),
@@ -118,7 +120,7 @@
  */
 
 /* Wave 2: Offline reading — schema + belöningar vises offline i barnvy */
-const CACHE_NAME = 'stjarndag-v131';
+const CACHE_NAME = 'stjarndag-v133';
 // v129: Release prep — lifetime free för topp 200 familjer.
 // v127: DB-migration för IAP-beredskap — is_lifetime_free, rc_customer_id, subscription_status DEFAULT 'none'
 // v126: App Store-förberedelse — /terms route, privacy.html Apple ID + APNs sections

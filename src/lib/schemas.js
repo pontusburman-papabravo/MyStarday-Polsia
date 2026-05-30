@@ -62,6 +62,7 @@ const RegisterSchema = z.object({
   email: email,
   password: z.string().min(8, 'Lösenord måste vara minst 8 tecken').max(128),
   name: z.string().min(1, 'Namn krävs').max(100),
+  family_name: z.string().max(100).optional(),
   // invite_token is optional — used for multi-parent invite flow
   invite_token: z.string().max(128).optional(),
   // language is optional

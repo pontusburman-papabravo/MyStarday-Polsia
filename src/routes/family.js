@@ -1374,9 +1374,11 @@ router.get('/subscription-status', requireParent, async (req, res) => {
     if (!rows.length) return res.status(404).json({ error: 'Familj hittades inte' });
     const { subscription_status, trial_ends_at, is_lifetime_free } = rows[0];
     let trial_days_remaining = null;
-    if (subscription_status === 'trial' && trial_ends_at) {
+    if (trial_ends_at && !is_lifetime_free) {
       const diff = new Date(trial_ends_at) - new Date();
-      trial_days_remaining = Math.ceil(diff / (1000 * 60 * 60 * 24));
+      if (diff > 0) {
+        trial_days_remaining = Math.ceil(diff / (1000 * 60 * 60 * 24));
+      }
     }
     const payment_enabled = process.env.PAYMENT_ENABLED === 'true';
     res.json({ subscription_status, is_lifetime_free: !!is_lifetime_free, is_beta: subscription_status === 'beta', trial_days_remaining, payment_enabled });

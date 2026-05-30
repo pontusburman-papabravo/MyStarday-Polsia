@@ -125,14 +125,28 @@ router.post('/register', registrationLimiter, validate(RegisterSchema), async (r
       const familyCount = countResult.rows[0].count;
       const isLifetimeFree = familyCount < 200;
 
-      // Create family — new accounts get a 14-day trial
-      // trial_ends_at is used by requireActiveSubscription to gate access after trial expires
-      const familyResult = await client.query(
-        `INSERT INTO family (name, subscription_status, trial_ends_at, is_lifetime_free)
-         VALUES ($1, 'trial', NOW() + INTERVAL '14 days', $2)
-         RETURNING id`,
-        [finalFamilyName, isLifetimeFree]
-      );
+      // Create family — 14-day trial via trial_ends_at (+ family_subscriptions.tier).
+      // subscription_status: prefer IAP value 'none'; fall back to 'trial' on older CHECK constraints.
+      let familyResult;
+      try {
+        familyResult = await client.query(
+          `INSERT INTO family (name, subscription_status, trial_ends_at, is_lifetime_free)
+           VALUES ($1, 'none', NOW() + INTERVAL '14 days', $2)
+           RETURNING id`,
+          [finalFamilyName, isLifetimeFree]
+        );
+      } catch (familyInsertErr) {
+        if (familyInsertErr.code === '23514') {
+          familyResult = await client.query(
+            `INSERT INTO family (name, subscription_status, trial_ends_at, is_lifetime_free)
+             VALUES ($1, 'trial', NOW() + INTERVAL '14 days', $2)
+             RETURNING id`,
+            [finalFamilyName, isLifetimeFree]
+          );
+        } else {
+          throw familyInsertErr;
+        }
+      }
       const familyId = familyResult.rows[0].id;
 
       console.log(`[AUTH] Family #${familyCount + 1} created — lifetime_free: ${isLifetimeFree}`);
@@ -348,17 +362,20 @@ router.post('/register', registrationLimiter, validate(RegisterSchema), async (r
       // Register as known contact so future transactional emails are never rate-limited
       registerContact(normalizedEmail, trimmedName, 'signup').catch(() => {});
 
-      // Send welcome email (fire-and-forget — don't block registration response)
-      // Gate 2J: valkomstmail — only send if feature is live/dev for this family
-      const { hasAccess } = require('../../db/features');
-      const welcomeEmailAllowed = await hasAccess(familyId, 'valkomstmail');
-      if (welcomeEmailAllowed) {
-        sendWelcomeEmail(normalizedEmail, parentId, {
-          foralderns_namn: trimmedName,
-          barnets_namn: '',
-        }).catch(err => {
-          console.error('[AUTH] Welcome email send failed:', err.message);
-        });
+      // Send welcome email (fire-and-forget — must not fail the HTTP response after COMMIT)
+      try {
+        const { hasAccess } = require('../../db/features');
+        const welcomeEmailAllowed = await hasAccess(familyId, 'valkomstmail');
+        if (welcomeEmailAllowed) {
+          sendWelcomeEmail(normalizedEmail, parentId, {
+            foralderns_namn: trimmedName,
+            barnets_namn: '',
+          }).catch(err => {
+            console.error('[AUTH] Welcome email send failed:', err.message);
+          });
+        }
+      } catch (welcomeErr) {
+        console.error('[AUTH] Welcome email gate check failed:', welcomeErr.message);
       }
 
       res.status(201).json({
