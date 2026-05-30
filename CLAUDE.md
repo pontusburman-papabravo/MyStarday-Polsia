@@ -10,7 +10,7 @@ Express.js + Neon PostgreSQL + Tailwind CDN, deployed on Render.
 
 - `server.js` — Express entry point, middleware, route mounting (under 300 lines)
 - `src/routes/` — All API route handlers (auth, onboarding, rewards, schedules, messages, etc.)
-- `src/middleware/` — Auth middleware, rate limiter, maintenance mode, impersonation write-block, CSRF protection, validate (Zod), authz (centralized authorization helpers + middleware factories)
+- `src/middleware/` — Auth middleware, rate limiter, maintenance mode, impersonation write-block, CSRF protection, validate (Zod), authz (centralized authorization helpers + middleware factories), platform-html (injects platform-theme.js + platform-native.css into all HTML responses)
 - `src/lib/` — Shared utilities (db, config, hashing, i18n, schedulers, schemas, win-back-scheduler.js)
 - `db/` — Named DB query functions per entity (system-messages.js, etc.)
 - `public/` — Static HTML pages, CSS, client JS (SPA-like pages served by Express)
@@ -21,7 +21,7 @@ Express.js + Neon PostgreSQL + Tailwind CDN, deployed on Render.
 
 - `family` — household unit with timezone and section time settings; also holds is_lifetime_free BOOLEAN (all existing families = true), subscription_status ('none'|'active'|'expired'|'grace_period'|'cancelled'; defaults 'none' post-IAP migration), trial_ends_at, stripe_customer_id, stripe_subscription_id, rc_customer_id VARCHAR(255) (RevenueCat linkage)
 - `parent` — parent account (email auth, family role, account_type ('family'|'educator'|'dual'), preferred_view_mode ('parent'|'pedagog'), push_preferences JSONB, admin_push_enabled, apple_user_id/apple_email for Apple Sign In)
-- `child` — child profile (name, emoji, birthday, PIN, view_type, username, child_view_config JSONB with view_mode + element visibility flags)
+- `child` — child profile (name, emoji, avatar_url, birthday, PIN, view_type, username, child_view_config JSONB with view_mode + element visibility flags); avatar_url enables profile photo upload with fallback chain: image → emoji → ⭐-placeholder
 - `parent_child` — parent-to-child link (primary/shared/pedagog roles); revoked_at/revoked_by for soft deletion; connected_at when pedagogen linked
 - `pedagog_invite` — educator invite tokens (family_id, email, invitee_name, child_ids, token, expires_at, accepted/accepted_at)
 - `activity_template` — family-scoped activities (legacy table name; API is `/api/activities`); `source` column ('admin'|'user') tracks origin
@@ -72,7 +72,7 @@ Express.js + Neon PostgreSQL + Tailwind CDN, deployed on Render.
 
 ## External integrations
 
-- **Polsia R2 proxy** — image uploads for manual star grants
+- **Polsia R2 proxy** — image uploads for manual star grants and child avatar photos
 - **Polsia email proxy** — all outbound email (verification, invite, welcome, newsletter, PIN warning, account deletion, feedback, weekly summary); via `src/lib/email.js` → `https://polsia.com/api/proxy/email/send`; `POLSIA_API_KEY` env var; kill switch `EMAIL_ENABLED=false`; sender always `Min Stjärndag <info@mystarday.se>` (from name is hardcoded, never uses parent's name)
 - **Polsia Stripe proxy** — payment checkout and verification (Stripe SDK at `stripe@17` for webhook verification via `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` env vars)
 - **Web Push (VAPID)** — push notifications via VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY env vars
@@ -81,8 +81,8 @@ Express.js + Neon PostgreSQL + Tailwind CDN, deployed on Render.
 
 ## Recent changes
 
-- 2026-05-28: Hotfix — Barnvy krasch (SW v131): v130 batch-ratings query referenced non-existent `daily_log_item_rating` table, crashing GET /api/me/daily-log for all children. Fixed to use actual `rating` table with correct column names (daily_log_item_id, score, comment). Files: src/routes/daily-logs.js, public/sw.js, CLAUDE.md.
-- 2026-05-28: Bugfix — Barnvy humörbetyg (SW v130): betygsmodal `data-feature="kanslo_tracking"` → removed (nu styrs av `show_mood_rating` per child, parent setting). Check-off queue serialiserar snabba kryss + coalesced `loadDay` eliminerar race conditions (fel/inloggningskänsla). `GET /api/me/daily-log` batchar ratings (färre API-anrop). Files: public/child-dashboard.html, public/js/child-dashboard.js, src/routes/daily-logs.js, public/sw.js, CLAUDE.md.
-- 2026-05-28: Feature — RevenueCat webhook route (src/routes/iap.js): POST /api/iap/webhook handles INITIAL_PURCHASE/RENEWAL (→ active), CANCELLATION (→ cancelled), EXPIRATION (→ expired), BILLING_ISSUE (→ grace_period). HMAC-SHA256 Authorization header verification, lifetime-free guard skips status update, rate limit 100 req/min, returns 200 on soft errors (RevenueCat retry policy). SW v128. Files: src/routes/iap.js, src/middleware/rateLimiter.js, public/sw.js, CLAUDE.md.
-- 2026-05-28: Feature — IAP DB-migration: is_lifetime_free BOOLEAN DEFAULT false (existing families = true), rc_customer_id VARCHAR(255), subscription_status CHECK now includes 'none'/'grace_period'/'cancelled' + DEFAULT 'none'; production values 'trial'/'beta' migrated to 'none'; src/lib/subscription.js with hasActiveSubscription() helper; SW v127. Files: migrations/1790070000000_iap_subscription_cols.js, src/lib/subscription.js, public/sw.js, CLAUDE.md.
-- 2026-05-28: Feature — Radera konto (Apple 5.1.1): DELETE /api/family/delete-account endpoint (requireParent + CSRF, full family deletion in dependency order); settings.html two-step "RADERA"-typ confirmation modal; SW v126. Files: src/routes/family.js, public/settings.html, public/sw.js, CLAUDE.md.
+- 2026-05-29: Bugfix — Admin SyntaxError crash fix (SW v162): email validation regex on line 693 of admin-families.js had escaped closing slash (`\/` instead of `/`), preventing entire file from parsing → loadFamilies/loadMessages never defined → Familjer/Meddelanden/Bibliotek stuck on "Laddar..." forever. One-char fix. Files: public/admin/admin-families.js, public/sw.js, CLAUDE.md.
+- 2026-05-29: Bugfix — Admin mobile navigation fix PART 2 (SW v160): v159's static-asset exemption was insufficient — API calls to /api/admin/* and /api/auth/refresh still hit the 200 req/min globalLimiter (which runs before optionalAuth so req.user is always undefined). When /api/auth/refresh gets 429'd, the access token expires without renewal → next API call gets server-side 401 → silentRefresh returns 401 → redirect to /login. Fix: exempt /api/admin/* and /api/auth/refresh from globalLimiter; added redirect interceptor to admin page for remaining diagnostics. Files: src/middleware/rateLimiter.js, public/admin/index.html, public/sw.js, CLAUDE.md.
+- 2026-05-29: Bugfix — Admin mobile navigation fix (SW v159): global rate limiter was counting static assets (.js, .css, etc.) against the 200 req/min IP budget — admin panel loads 20+ JS files per page, exhausting the limit → 429 on API calls → redirect to /login. Fix: exempt static file extensions from globalLimiter; admin-core.js catch block now only redirects on 401/403, not 429/network errors. Files: src/middleware/rateLimiter.js, public/admin/admin-core.js, public/sw.js, CLAUDE.md.
+- 2026-05-29: Bugfix — child-login manual name fallback (SW v158): replaced "Be en vuxen logga in först" dead-end with manual name input form so children can type their name + PIN in browsers without a parent session; added handleManualName() + hideSuccess(); /child-login now works identically on all platforms. Files: public/child-login.html, public/js/child-login.js, public/sw.js, CLAUDE.md.
+- 2026-05-29: Bugfix — /child-login browser redirect fix (SW v157): removed isInstalledApp() guard from child-login.js and child-dashboard.js that was redirecting browser users to /login; /child-login (name + PIN) now works in all contexts (browser + installed app); platform-gating only applies to the role selector on /login. Files: public/js/child-login.js, public/js/child-dashboard.js, public/sw.js, CLAUDE.md.
