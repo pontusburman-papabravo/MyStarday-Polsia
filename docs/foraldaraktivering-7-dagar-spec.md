@@ -1,10 +1,30 @@
 # Föräldaraktivering — 7-dagarsprogram
 
 **Skapad:** 2026-05-30  
-**Senast reviderad:** 2026-05-30 (v2 — produktjusteringar)  
-**Status:** Utkast (spec)  
-**Feature slug (föreslagen):** `foraldaraktivering_7d`  
+**Senast reviderad:** 2026-05-30 (v3 — vanebildning, datamodell, A/B, aha-UX)  
+**Status:** Produktdesign (spec klar för implementation)  
+**Feature slug:** `foraldaraktivering_7d`  
 **Relaterat:** onboarding, push-reminder-scheduler, win-back, retention-dashboard
+
+---
+
+## 0. Vad det här är (och inte är)
+
+Det här är **inte** ett retention-flöde i win-back-stil ("kom tillbaka efter 18 dagar").
+
+Det är ett **vanebildningssystem med mätbar hypotes:**
+
+> Föräldrar som lyckas bygger en vana under vecka 1.  
+> Föräldrar som churnar gör det **innan** vanan uppstår.
+
+Hela specifikationen är organiserad runt att skapa den vanan dag 1–7 — inte att rädda användare vecka 3.
+
+| Retention-initiativ (typiskt) | Det här systemet |
+|-------------------------------|------------------|
+| Reagerar på inaktivitet | Förebygger innan vanan saknas |
+| Mäter logins | Mäter beteendeförändring + aha-ögonblick |
+| Optimerar dag 7-completion | Optimerar **Day 14 cohort retention** |
+| Push som primär kanal | Banner + celebratory card som primär kanal |
 
 ---
 
@@ -21,7 +41,7 @@ Retention-vyn visar ~93 familjer i "Risk för churn" (>72h inaktivitet eller ald
 | Högt aktivitetsindex + färsk login | Barnet (eller medförälder) driver — primärföräldern behöver inte agera |
 | Nöjda citat ("vi behövde inte ens påminna") | Föräldern har byggt en intern morgon-/kvällsvana |
 
-Nuvarande onboarding sätter upp barnets schema på ~6 steg och markerar `onboarding_completed`. Därefter finns inget strukturerat stöd för att få **föräldern** att återkomma dag 2–7. Win-back triggas först efter 18 dagars inaktivitet — för sent för att etablera vecka-1-vanor.
+Nuvarande onboarding sätter upp barnets schema på ~6 steg och markerar `onboarding_completed`. Därefter finns inget strukturerat stöd för att få **föräldern** att återkomma dag 2–7.
 
 ### Designprincip: stödjande, inte dömande
 
@@ -29,85 +49,86 @@ Programmet **fortsätter vid miss** — en missad dag markeras internt men påve
 
 ---
 
-## 2. Mål
+## 2. Mål och KPI-hierarki
 
-### Primärt mål
-Öka andelen nya familjer som **loggar in minst en gång per dag dag 2–7** efter slutförd onboarding.
+### North Star (enda KPI som avgör framgång)
+**Day 14 cohort retention** — andel familjer fortfarande aktiva 14 dagar efter registrering.
 
-### North Star (långsiktig)
-**Day 14 cohort retention** — andel familjer som fortfarande är aktiva 14 dagar efter registrering, jämfört med kontrollgruppen (familjer som churnar efter 72h utan program).
+Jämförs via **treatment vs control** (se §13) — inte bara absolut förbättring. Utan kontrollgrupp riskerar teamet optimera dag 2-login och dag 7-completion utan att retention faktiskt förbättras.
 
-### Sekundära mål
-- Minska andelen "Aldrig" i retention-vyn
-- Fånga **aha-ögonblicket** (`parent_first_completion_seen`) — när föräldern ser att barnet klarat något utan att de behövt tjata
-- Samla **värde-feedback** dag 7: landar value proposition?
+### Leading indicators (diagnostiska, inte mål i sig)
+- Parent login dag 2–7
+- **`parent_aha_moment`** — internt produktkoncept; DB-event: `parent_first_completion_seen`
+- Dag 7 värde-score ("Har appen gjort vardagen enklare?")
+- Program completion rate
 
 ### Icke-mål (v1)
-- Trappa upp barnets schema gradvis (aktivitetsantal per dag)
-- Ersätta befintlig onboarding-wizard
-- Automatiskt skicka mejl utan godkännande (win-back-flödet behålls separat)
-- Co-parent-specifik separat progression (samma program per familj, en aktiv förälder räcker)
+- Trappa upp barnets schema gradvis
+- Ersätta onboarding-wizard
+- Win-back-ersättning
+- Co-parent-specifik progression
 
 ---
 
 ## 3. Produktidé
 
-Ett **7-dagars föräldrarprogram** som startar automatiskt när onboarding slutförs (`POST /api/onboarding/complete`).
+Ett **7-dagars vaneprogram för föräldrar** som startar vid slutförd onboarding.
 
-Programmet coachar föräldern med:
-1. **Dashboard-banner** *(primär kanal)* — dagens uppdrag; förvandlar dashboarden från "tomt skal" till "coach"
-2. **Push-notis** *(sekundär kanal, Fas 2)* — max 1/dag, morgon (default 08:00 Stockholm)
-3. **Dag 7-reflektion** — värdefråga + valfri fritext
+| Kanal | Prioritet | Roll |
+|-------|-----------|------|
+| **Celebratory card** (aha-ögonblick) | Högst | Emotionellt värde — viktigare än push |
+| **Dashboard-banner** | Hög | Daglig coach; förvandlar tom dashboard till guide |
+| **Push** (Fas 5) | Låg | Påminnelse, inte drivkraft |
+| **Dag 7-reflektion** | Mätning | Value proposition-kvitto |
 
-> **Prioritet:** Bannern är viktigare än push. Den fungerar som trygg handhållning i en miljö som annars kan kännas tom innan man kommit igång.
-
-Barnets schema förblir oförändrat (redan satt i onboarding). Fokus är **förälderns beteende**: öppna appen, kolla läget, fira tillsammans, justera vid behov.
+Barnets schema förblir oförändrat efter onboarding. Fokus: **förälderns beteende**.
 
 ---
 
 ## 4. Sju dagars innehåll
 
-| Dag | Rubrik (banner) | Push (Fas 2) | Uppdrag | Mätning |
-|-----|-----------------|--------------|---------|---------|
-| **1** | Välkommen till vecka 1! | *(ingen push — onboarding nyss klar)* | Visa barnet PIN-inloggningen en gång idag | `parent_login` + ev. `child_login` |
-| **2** | Dag 2 — morgonkollen | "God morgon! Kolla [barn]s schema — tar 30 sek 🌅" | Öppna dashboarden någon gång under dygnet | `parent_login` under dygn 2 *(ingen tidsgräns)* |
-| **3** | Dag 3 — fira en stjärna | "Har [barn] fått en stjärna idag? Fira tillsammans ⭐" | Markera/fira minst en avklarad aktivitet | `daily_log_item.completed` eller `parent_first_completion_seen` |
-| **4** | Dag 4 — er app | "Något som känns fel? Byt ut en aktivitet — tar 1 min ✏️" | Justera en aktivitet om det behövs | `schedule_edit` eller `parent_login` |
-| **5** | Dag 5 — belöning | "Kolla Skattkammaren — vad drömmer [barn] om? 🎁" | Öppna belöningsvy / prata om mål | `parent_login` + `/skattkammaren` view |
-| **6** | Dag 6 — dela ansvaret | "Vill du dela ansvaret med någon? 👥" | Bjud in medförälder **eller** "Jag kör solo!" | `family_invite_created` **eller** solo-dismiss → `done` |
-| **7** | En vecka! 🎉 | "Grattis till en vecka! Hur har det gått?" | Värde-reflektion (se §5.2) | `activation_program_completed` |
+| Dag | Rubrik | Push (Fas 5) | Uppdrag | Mätning |
+|-----|--------|--------------|---------|---------|
+| **1** | Dag 1 — kika tillsammans | *(ingen)* | Öppna barnläget och visa första aktiviteten tillsammans | `child_view_opened` eller `child_login` |
+| **2** | Dag 2 — morgonkollen | "God morgon! Kolla [barn]s schema — tar 30 sek 🌅" | Öppna dashboarden någon gång under dygnet | `parent_login` dygn 2 |
+| **3** | Dag 3 — fira en stjärna | "Har [barn] fått en stjärna idag? Fira tillsammans ⭐" | Fira avklarad aktivitet | `parent_first_completion_seen` |
+| **4** | Dag 4 — er app | "Något som känns fel? Byt ut en aktivitet ✏️" | Justera en aktivitet vid behov | `schedule_edit` eller `parent_login` |
+| **5** | Dag 5 — belöning | "Kolla Skattkammaren — vad drömmer [barn] om? 🎁" | Öppna belöningsvy | `parent_login` + skattkammaren |
+| **6** | Dag 6 — dela ansvaret | "Vill du dela ansvaret med någon? 👥" | Bjud in **eller** "Jag kör solo!" | `family_invite_created` / solo-dismiss |
+| **7** | En vecka! 🎉 | "Grattis! Hur har veckan varit?" | Värde-reflektion (§5.2) | `activation_program_completed` |
 
-**Ton:** Varm, kort, icke-dömande. Aldrig "du har missat X dagar".
+### Dag 1 — kika tillsammans (v3)
 
-**Social proof (valfritt i copy):**  
-*"Många föräldrar berättar att barnet klarat tandborstningen första veckan — utan påminnelser."*
+**Varför ändrat:** "Visa PIN-inloggningen" ger föräldern inget direkt värde. Dag 1 ska optimera för:
 
-### Dag 2 — från tidspress till närvaro
+> **Föräldern ser barnvyn.**
 
-Push skickas kl 08:00 som **påminnelse**, inte deadline. Mätningen är enbart: *loggade föräldern in någon gång under dygn 2?* Ingen bestraffning eller sämre status om de öppnar appen kl 21.
+Copy: *"Öppna barnläget och visa första aktiviteten — tillsammans."*
 
-### Dag 6 — inkluderande "Dela ansvaret"
+CTA: "Öppna barnläget" → `/child-login` eller inline preview om tillgängligt.
 
-Rubriken **"Dela ansvaret"** (inte "Bjud in partner") — fungerar för alla konstellationer.
+Mätning: `child_view_opened` (ny analytics-event) eller `child_login`. Skapar första visuella "aha" — *så här ser barnet det*.
 
-| Action | Beteende |
+### Dag 2 — närvaro, inte tidspress
+
+Push kl 08:00 = påminnelse. Mätning: `parent_login` någon gång under dygn 2.
+
+### Dag 6 — dela ansvaret
+
+| Action | Resultat |
 |--------|----------|
-| **Primär CTA** | "Bjud in någon" → `/family` invite-flöde |
-| **Sekundär CTA** | **"Jag kör solo!"** → flaggar dag 6 som `done` omedelbart |
+| "Bjud in någon" | → invite-flöde |
+| **"Jag kör solo!"** | → dag `done` omedelbart (positiv handling) |
 
-"Solo" är en **positiv handling** (självständighet), inte ett misslyckande. Ensamstående föräldrar ska aldrig känna att de "misslyckats" med dagen.
+### Dag 7 — värdepress
 
-### Dag 7 — från "hur känts det?" till värdepress
+*"Har appen gjort vardagen enklare?"* (skala 1–5)
 
-**Huvudfråga:** *"Har appen gjort vardagen enklare?"*
-
-| Svar | Skala | Tolkning |
-|------|-------|----------|
-| Ja, tydligt | 5 | Value proposition landar — ambassadör-potential |
-| Delvis | 3–4 | Produkt funkar, copy/onboarding kan förbättras |
-| Inte ännu | 1–2 | **Viktig signal:** om de ändå genomfört programmet → teknisk/pedagogisk tröskel, inte brist på vilja |
-
-Valfri fritext (max 500 tecken) för djupare insikt.
+| Score | Tolkning |
+|-------|----------|
+| 4–5 | Value proposition landar |
+| 3 | Delvis — förbättra copy/onboarding |
+| 1–2 + genomfört program | Pedagogisk/teknisk tröskel, inte brist på vilja |
 
 ---
 
@@ -115,33 +136,47 @@ Valfri fritext (max 500 tecken) för djupare insikt.
 
 ### 5.1 Dashboard-banner
 
-- Placering: överst på `/dashboard`, under ev. systemmeddelanden
-- Visas endast för **primär förälder** (`parent.role = 'primary'`) med aktivt program
-- Innehåll:
-  - Progress: `Dag 3 av 7` (prickar eller tunn progress-bar)
-  - Dagens rubrik + 1 rad brödtext
-  - Primär knapp: context-dependent (t.ex. "Gå till schema", "Bjud in någon", "Skicka svar")
-  - Sekundär: "Hoppa över idag" (dismiss till midnatt → dag markeras `skipped`)
-  - Dag 6 extra: **"Jag kör solo!"** → dag `done` direkt
-- Dismiss hela programmet: "Jag klarar mig själv" → `status = opted_out`
-- **Grattis-animation:** triggas när `current_day` (DB) advances efter interaktion — se §7.2
+- Placering: överst på `/dashboard`
+- Målgrupp: primär förälder med aktivt program (treatment-arm)
+- Progress: `Dag 3 av 7`
+- Actions: dag-CTA, "Hoppa över idag", dag 6 "Jag kör solo!", opt-out "Jag klarar mig själv"
+- **Dags-byte-animation:** triggas när `effective_day > last_seen_day` vid banner-load (§7.2)
 
 ### 5.2 Dag 7 — värde-reflektion
 
-Modal eller inline expand:
-- Skala 1–5 med etiketter: *"Inte ännu"* ← → *"Ja, tydligt!"*
-- Frågetext: **"Har appen gjort vardagen enklare?"**
-- Valfri fritext (max 500 tecken)
-- Knapp: "Skicka" → avslutar programmet (`status = completed`)
-- Tack-meddelande + ev. CTA "Dela appen" / "Lämna recension"
+Modal/inline: skala 1–5, valfri fritext (500 tecken), → `completed`.
 
-### 5.3 Onboarding — val (v1.1, ej MVP)
+### 5.3 Celebratory card — parent aha-ögonblick (v3)
 
-Efter steg 6, valfritt:
-- **Rekommenderat:** "7-dagars mjuk start" (default på)
-- **Alternativ:** "Hoppa över — jag vill köra direkt"
+**Viktigaste emotionella skärmen i vecka 1.** Viktigare än push-notiser.
 
-MVP: alla nya som slutför onboarding auto-enrollas (Fas 4 i build order).
+När `parent_first_completion_seen` triggas — visa **dedikerad celebratory card** (inte bara banner-text):
+
+```
+┌─────────────────────────────────────────┐
+│  🎉                                     │
+│  Estelle klarade "Borsta tänderna"      │
+│                                         │
+│  Utan att du behövde påminna.          │
+│                                         │
+│  [ Toppen! ]                            │
+└─────────────────────────────────────────┘
+```
+
+- Placering: modal eller prominent card ovanför banner (engångs per completion)
+- Dismiss → sparad i `parent_seen_completion`
+- Kan triggas dag 1+ om barnet hinner checka av före dag 3
+- Design: varm, stor emoji, barnets namn + aktivitet — **fira stunden**
+
+Internt produktkoncept: **`parent_aha_moment`**.  
+DB/analytics-eventnamn: `parent_first_completion_seen` (behålls för konsistens).
+
+> Användare köper inte appen. De köper: *"Jag slipper tjata."*  
+> Det här UI:t är det ögonblicket.
+
+### 5.4 Onboarding-val (v1.1)
+
+Default auto-enroll i treatment. Control via A/B (§13).
 
 ---
 
@@ -149,27 +184,17 @@ MVP: alla nya som slutför onboarding auto-enrollas (Fas 4 i build order).
 
 | Regel | Värde |
 |-------|-------|
-| Programlängd | 7 kalenderdagar från `started_at` (familjens timezone) |
-| Daggräns | Midnakt i `family.timezone` (fallback `Europe/Stockholm`) |
-| Effektiv dag | Beräknas runtime via `getEffectiveProgramDay()` — se §7.2 |
-| En programkörning per familj | Ny körning först efter `completed`/`opted_out` + 90 dagar, eller manuellt av admin |
-| Push max | 1 per dag, dag 2–7 (Fas 2) |
-| Push-tid | Default 08:00 — påminnelse, **inte** deadline |
-| Quiet hours | Respektera befintlig push quiet hours (21:00–07:00) — skjut till 08:00 |
-| Kräver | `onboarding_completed = true`, minst 1 barn i familjen |
-| Exkludera | Admin-konton, impersonation, arkiverade familjer |
-| Medförälder | Ser banner om inloggad; push går till den som slutförde onboarding |
-| Missad dag | Markeras `missed` internt — programmet fortsätter, copy ändras inte |
+| Programlängd | 7 kalenderdagar från `started_at` |
+| Daggräns | Midnatt i `family.timezone` |
+| **Enda sanningen för dag** | `getEffectiveProgramDay()` — runtime |
+| Missad dag | `missed` internt — programmet fortsätter |
+| Push | Max 1/dag, dag 2–7, Fas 5 |
+| A/B | `cohort_arm` sätts vid enroll — se §13 |
 
-### Dag-avklarning (auto)
+### Dag-avklarning
 
-En dag räknas som **klar** om minst ett av följande inträffar före midnatt (familj timezone):
-- Förälder loggar in (`login_event` role=parent)
-- Dagens uppdrag markeras manuellt "Klar" i bannern
-- Uppdragets specifika event (t.ex. `parent_first_completion_seen` dag 3)
-- Dag 6: "Jag kör solo!" eller `family_invite_created`
-
-Om inget inträffar: dag markeras `missed` — **programmet fortsätter ändå**.
+Dag `done` om: login, manuell complete, dag-specifikt event, solo-dismiss (dag 6), eller aha (dag 3+).  
+Annars `missed` vid midnatt — **ingen UI-konsekvens**.
 
 ---
 
@@ -179,20 +204,22 @@ Om inget inträffar: dag markeras `missed` — **programmet fortsätter ändå**
 
 ```sql
 CREATE TABLE parent_activation_program (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  family_id       UUID NOT NULL REFERENCES family(id) ON DELETE CASCADE,
-  parent_id       UUID NOT NULL REFERENCES parent(id) ON DELETE CASCADE,
-  status          TEXT NOT NULL DEFAULT 'active'
-                    CHECK (status IN ('active', 'completed', 'opted_out', 'expired')),
-  current_day     SMALLINT NOT NULL DEFAULT 1 CHECK (current_day BETWEEN 1 AND 7),
-  started_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  completed_at    TIMESTAMPTZ,
-  opted_out_at    TIMESTAMPTZ,
-  day_status      JSONB NOT NULL DEFAULT '{}',  -- {"1":"done","2":"missed","3":"skipped",...}
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  family_id        UUID NOT NULL REFERENCES family(id) ON DELETE CASCADE,
+  parent_id        UUID NOT NULL REFERENCES parent(id) ON DELETE CASCADE,
+  status           TEXT NOT NULL DEFAULT 'active'
+                     CHECK (status IN ('active', 'completed', 'opted_out', 'expired')),
+  cohort_arm       TEXT NOT NULL DEFAULT 'treatment'
+                     CHECK (cohort_arm IN ('treatment', 'control')),
+  started_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_seen_day    SMALLINT NOT NULL DEFAULT 1 CHECK (last_seen_day BETWEEN 1 AND 7),
+  completed_at     TIMESTAMPTZ,
+  opted_out_at     TIMESTAMPTZ,
+  day_status       JSONB NOT NULL DEFAULT '{}',
   reflection_score SMALLINT CHECK (reflection_score BETWEEN 1 AND 5),
-  reflection_text TEXT,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  reflection_text  TEXT,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE UNIQUE INDEX parent_activation_program_active_family
@@ -200,38 +227,30 @@ CREATE UNIQUE INDEX parent_activation_program_active_family
   WHERE status = 'active';
 ```
 
-`day_status` nycklar `"1"`–`"7"`, värden: `pending` | `done` | `missed` | `skipped`.
+**Ingen `current_day`-kolumn.** Tidigare v2 hade två sanningar (`effective_day` + `current_day`) — risk för desync i scheduler/admin. v3 eliminerar det.
 
-### 7.2 `current_day` — materialiserad vy + UI-sync
-
-**Sanningen:** effektiv programdag beräknas alltid runtime:
+### 7.2 En sanning: `effective_day` + `last_seen_day`
 
 ```js
 /**
- * @param {{ started_at: Date }} program
- * @param {string} timezone — family.timezone, fallback 'Europe/Stockholm'
- * @returns {number} 1–7 (cap at 7; >7 → program expired/completable)
+ * Enda sanningen för vilken programdag vi är på.
+ * @returns {number} 1–7; >7 → program expired/completable
  */
-function getEffectiveProgramDay(program, timezone) {
-  // Räkna kalenderdagar mellan started_at (lokal midnatt) och now (lokal midnatt)
-  // Timezone-safe via Intl / temporal eller date-fns-tz
-}
+function getEffectiveProgramDay(program, timezone) { /* ... */ }
 ```
 
-**`current_day` i DB** uppdateras **endast vid förälder-interaktion** (GET `/api/me/activation-program`, complete-day, skip, solo-dismiss, reflection). Syfte:
-- Trigga "Grattis, dag X klar!"-animation i bannern
-- Undvika att UI hoppar fram utan att föräldern sett det
+**`last_seen_day`** — endast UI-state:
+- Uppdateras vid GET `/api/me/activation-program` (banner visad)
+- Syfte: trigga dags-byte-animation när `effective_day > last_seen_day`
+- Scheduler, admin och affärslogik använder **aldrig** `last_seen_day`
 
-**Midnight rollover:** lazy — vid nästa GET efter midnatt:
-1. Beräkna `effectiveDay = getEffectiveProgramDay(...)`
-2. Markera föregående dag `missed` om fortfarande `pending`
-3. Synka `current_day` om `effectiveDay > current_day`
+**Midnight rollover (lazy, vid GET):**
+1. `effectiveDay = getEffectiveProgramDay(...)`
+2. Föregående dag → `missed` om `pending`
+3. Om `effectiveDay > last_seen_day` → response flag `day_advanced: true` (animation)
+4. Efter banner render → POST eller GET uppdaterar `last_seen_day = effectiveDay`
 
-Ingen separat midnight-cron krävs för dag-övergång i MVP.
-
-### 7.3 Tabell: `parent_seen_completion` (aha-signal)
-
-Spårar vilka avklaringar föräldern redan sett — för `parent_first_completion_seen`:
+### 7.3 Tabell: `parent_seen_completion`
 
 ```sql
 CREATE TABLE parent_seen_completion (
@@ -242,300 +261,258 @@ CREATE TABLE parent_seen_completion (
 );
 ```
 
-Alternativ (enklare MVP): JSONB-array `seen_completion_ids` på `parent` — men separat tabell skalar bättre.
-
-### Befintliga tabeller (read-only)
-
-- `login_event` — parent login
-- `daily_log_item` — barnets avklaringar
-- `weekly_schedule` / schedule edits — dag 4
-- `family_invite` — dag 6
-
 ---
 
 ## 8. Aha-signal: `parent_first_completion_seen`
 
-**Mest prediktiva datapunkten** — appens existensberättigande i ett event.
+**Internt koncept:** `parent_aha_moment`  
+**DB/analytics:** `parent_first_completion_seen`
 
-### Trigger-logik
+### Trigger
 
-När föräldern öppnar dashboarden (`GET /api/me/daily-log` eller dedikerad check vid banner-load):
+Vid dashboard-load (`GET /api/me/daily-log` eller `/new-completions`):
 
-1. Hämta `daily_log_item` med `completed = true` för familjens barn idag (eller senaste 7 dagar vid första load)
-2. Filtrera bort items redan i `parent_seen_completion`
-3. Om ≥1 ny completion finns:
-   - Emit `analytics_events`: `parent_first_completion_seen`
-   - Metadata: `{ child_id, daily_log_item_id, activity_name, day_of_program }`
-   - Insert i `parent_seen_completion`
-   - Banner kan visa: *"[Barn] klarade [aktivitet] — utan att du behövde påminna! 🎉"*
+1. Hämta nya `daily_log_item` med `completed = true`
+2. Exkludera redan sedda ( `parent_seen_completion`)
+3. För varje ny:
+   - Emit analytics
+   - Visa **celebratory card** (§5.3)
+   - Insert `parent_seen_completion`
 
-### Varför det spelar roll
+### Metadata
 
-Det är ögonblicket då föräldern inser: **"Det fungerar. Jag behöver inte tjata."** Korrelerar troligen starkt med day 14 retention.
-
-### Implementation (Fas 2 i build order)
-
-Kan deployas **före bannern** — ger data om aha-frekvens redan under utveckling.
+`{ child_id, daily_log_item_id, activity_name, effective_day }`
 
 ---
 
 ## 9. API
 
-Alla endpoints kräver `requireParent` + CSRF där mutating.
-
 | Method | Path | Beskrivning |
 |--------|------|-------------|
-| `GET` | `/api/me/activation-program` | Program + effective day + dagens content; synkar `current_day` |
-| `POST` | `/api/me/activation-program/skip-day` | Markera dag som `skipped` |
-| `POST` | `/api/me/activation-program/complete-day` | Manuellt markera dag `done` |
-| `POST` | `/api/me/activation-program/solo-day` | Dag 6: "Jag kör solo!" → `done` |
-| `POST` | `/api/me/activation-program/opt-out` | Avsluta programmet |
-| `POST` | `/api/me/activation-program/reflection` | Dag 7: `{ score, text? }` → `completed` |
+| `GET` | `/api/me/activation-program` | Program, effective day, content; uppdaterar `last_seen_day` |
+| `POST` | `/api/me/activation-program/skip-day` | `skipped` |
+| `POST` | `/api/me/activation-program/complete-day` | `done` |
+| `POST` | `/api/me/activation-program/solo-day` | Dag 6 solo |
+| `POST` | `/api/me/activation-program/opt-out` | `opted_out` |
+| `POST` | `/api/me/activation-program/reflection` | Dag 7 → `completed` |
+| `GET` | `/api/me/activation-program/new-completions` | Aha-kandidater |
 | `GET` | `/api/admin/activation-program/stats` | Funnel + day 14 cohort |
-| `GET` | `/api/me/activation-program/new-completions` | Nya completions föräldern inte sett *(aha)* |
 
-### `GET /api/me/activation-program` — response
+### Response (förenklad)
 
 ```json
 {
   "active": true,
+  "cohort_arm": "treatment",
   "effective_day": 3,
-  "current_day": 3,
-  "total_days": 7,
-  "status": "active",
+  "last_seen_day": 2,
+  "day_advanced": true,
   "day_status": { "1": "done", "2": "done", "3": "pending" },
-  "day_advanced": false,
-  "content": {
-    "title": "Dag 3 — fira en stjärna",
-    "body": "Har ditt barn fått en stjärna idag? Ta en stund och fira tillsammans.",
-    "cta_label": "Öppna dagens schema",
-    "cta_url": "/dashboard",
-    "secondary_cta_label": null
-  },
-  "new_completions": [
-    { "child_name": "Estelle", "activity_name": "Tänderna", "completed_at": "..." }
+  "content": { "title": "Dag 3 — fira en stjärna", "body": "...", "cta_label": "...", "cta_url": "..." },
+  "aha_moments": [
+    { "child_name": "Estelle", "activity_name": "Borsta tänderna", "daily_log_item_id": "..." }
   ]
 }
 ```
 
-`day_advanced: true` när `effective_day > previous current_day` — banner visar grattis-animation.
+Control-arm (`cohort_arm: "control"`): `active: false`, ingen banner — men rad finns för cohort-analys.
 
-### Sidoeffekt vid onboarding complete (Fas 4)
+### Enrollment (Fas 4)
 
-I `POST /api/onboarding/complete`:
-1. Sätt `onboarding_completed = true` (befintligt)
-2. Skapa rad i `parent_activation_program` om ingen aktiv finns
-3. Track `activation_program_started`
+Vid `POST /api/onboarding/complete`:
+1. A/B-assign `cohort_arm` (§13)
+2. Om `treatment` → skapa program, track `activation_program_started`
+3. Om `control` → skapa rad med `status = 'active'`, `cohort_arm = 'control'`, **ingen banner** (passiv holdout)
 
 ---
 
 ## 10. Scheduler / push (Fas 5)
 
-### Jobb: `activation-program-scheduler.js`
+Sekundär kanal. Använder endast `getEffectiveProgramDay()` — aldrig `last_seen_day`.
 
-- Körs: kl 08:00 Europe/Stockholm ( eller hooka in i `push-reminder-scheduler`)
-- Lock: advisory lock-id `1008` i `scheduler-constants.js`
-- Guard: `POLSIA_IN_PROCESS_CRONS_ENABLED=true`
-
-**Per aktiv familj, dag 2–7:**
-1. `effectiveDay = getEffectiveProgramDay(program, family.timezone)`
-2. Om push inte skickats idag → skicka till `parent_id`
-3. Push-typ: `activation_program` i `notification_log`
-
-Push är **påminnelse**, inte krav. Ingen logik kopplad till "miss" om push ignoreras.
-
-Respektera `parent.push_preferences.activation_program` (default `true`).
+Risk: medel (spam, timing). Byggs efter banner + aha bevisats.
 
 ---
 
 ## 11. Analytics
 
-| event_type | metadata | När |
-|------------|----------|-----|
-| `activation_program_started` | `{ family_id }` | onboarding complete |
-| `activation_program_day_done` | `{ day, auto: bool, trigger? }` | dag avklarad |
-| `activation_program_day_skipped` | `{ day }` | skip |
-| `activation_program_day_solo` | `{ day }` | dag 6 solo |
-| `activation_program_opted_out` | `{ day }` | opt-out |
-| `activation_program_completed` | `{ reflection_score, reflection_text? }` | dag 7 |
-| `activation_program_push_sent` | `{ day }` | scheduler |
-| `activation_program_push_clicked` | `{ day }` | push open |
-| **`parent_first_completion_seen`** | `{ child_id, activity_name, day_of_program }` | aha-ögonblick |
+| event_type | metadata |
+|------------|----------|
+| `activation_program_started` | `{ cohort_arm }` |
+| `activation_program_day_done` | `{ day, auto, trigger? }` |
+| `activation_program_day_skipped` | `{ day }` |
+| `activation_program_day_solo` | `{ day }` |
+| `activation_program_opted_out` | `{ day }` |
+| `activation_program_completed` | `{ reflection_score }` |
+| `child_view_opened` | `{ child_id, source: 'day1_cta' }` |
+| **`parent_first_completion_seen`** | `{ child_id, activity_name, effective_day }` |
+| `parent_aha_moment_dismissed` | `{ daily_log_item_id }` |
 
-### Day 14 cohort retention (admin)
+### Day 14 cohort (North Star)
 
-```sql
--- Pseudologi för admin stats
--- Kohort: familjer med started_at i vecka W
--- Treatment: parent_activation_program.status = 'completed'
--- Control: onboarding_completed men inget program / opted_out dag 1
--- Metric: ANDEL med login_event ELLER daily_log_item.completed dag 14 ±1
 ```
-
-Visas i admin under Retention eller ny flik "Aktiveringsprogram":
-- Funnel: start → dag 2 login → dag 7 complete → **dag 14 active**
-- Jämförelse treatment vs control
-- `parent_first_completion_seen` rate per kohort
+Kohort: familjer registrerade vecka W
+Treatment: cohort_arm = 'treatment' (oavsett complete/opt-out)
+Control:   cohort_arm = 'control'
+Metric:    aktiv dag 14 ±1 (login_event OR daily_log_item.completed)
+```
 
 ---
 
 ## 12. Admin
 
-### Aktiveringsprogram-vy
-
-- Funnel per dag (1–7)
-- Day 14 retention: program complete vs control
-- Dag 7 värde-fördelning (1–5 histogram)
-- Export: reflektioner + aha-events (CSV)
-
-### Retention-koppling
-
-Kolumn **"Aktiveringsprogram"** i befintlig retention-tabell: dag X/7, complete, opted_out, —.
+- Funnel dag 1–7 (treatment only)
+- **Day 14: treatment vs control** (North Star)
+- Aha-rate per kohort
+- Dag 7 score-distribution
+- Export reflektioner + aha-events
 
 ---
 
-## 13. Feature flag
+## 13. Feature flag och A/B (v3 — definieras före launch)
+
+### Feature slug
+
+`foraldaraktivering_7d` i `family_features` + `ACTIVATION_PROGRAM_ENABLED`.
+
+### A/B vid enrollment (bygg in från dag 1, även om 100% treatment initialt)
 
 ```js
-// scripts/seed-features.js
-{
-  slug: 'foraldaraktivering_7d',
-  name: 'Föräldaraktivering 7 dagar',
-  description: 'Coachar nya föräldrar dag för dag i vecka 1 efter onboarding',
-  status: 'dev',
-  tags: ['retention', 'onboarding'],
-  priority: 'high',
-  complexity: 5,
-  estimated_hours: 20,
+// src/lib/activation-program-enroll.js
+function assignCohortArm(familyId) {
+  const pct = parseInt(process.env.ACTIVATION_PROGRAM_TREATMENT_PCT ?? '100', 10);
+  // Deterministisk hash på family_id → reproducerbar arm
+  return hashToPercent(familyId) < pct ? 'treatment' : 'control';
 }
 ```
 
-Miljövariabel: `ACTIVATION_PROGRAM_ENABLED=true` (default false tills launch).
+| Env | Betydelse |
+|-----|-----------|
+| `ACTIVATION_PROGRAM_ENABLED=true` | Master switch |
+| `ACTIVATION_PROGRAM_TREATMENT_PCT=100` | Launch: alla treatment (default) |
+| `ACTIVATION_PROGRAM_TREATMENT_PCT=50` | A/B-test: 50/50 |
+
+**Control-familjer:** rad i DB med `cohort_arm = 'control'`, ingen banner, ingen push — lever normalt. Möjliggör Day 14-jämförelse utan retroaktiv kontrollgrupp.
+
+**Viktigt:** Sätt `cohort_arm` **vid enroll**, inte vid first banner view — annars blir kontrollgruppen biased.
 
 ---
 
-## 14. Build order (reviderad)
+## 14. Build order
 
-| Fas | Innehåll | Varför denna ordning |
-|-----|----------|----------------------|
-| **1** | Migration + `getEffectiveProgramDay()` helper | Fundament, timezone-safe |
-| **2** | `parent_first_completion_seen` tracking | Data innan banner är live; validerar aha-hypotesen |
-| **3** | Dashboard-banner (MVP UI) | Primär kanal; solo-knapp dag 6; dag 7 värde-fråga |
-| **4** | Auto-enrollment vid onboarding complete | Kopplar ihop flödet |
-| **5** | Push-scheduler | Sekundär kanal; banner bevisad först |
-| **6** | Admin funnel + day 14 cohort | Mätning efter launch |
+| Fas | Innehåll | Risk |
+|-----|----------|------|
+| **1** | Migration + `getEffectiveProgramDay()` + A/B helper | Låg |
+| **2** | Aha-tracking + celebratory card | Låg |
+| **3** | Dashboard-banner | Låg |
+| **4** | Auto-enrollment + cohort_arm | Låg |
+| **5** | Push-scheduler | Medel |
+| **6** | Admin + Day 14-analys | Medel |
 
-### Fas 1 — Migration & helper (~3h)
-- [ ] Migration `parent_activation_program` + `parent_seen_completion`
-- [ ] `src/lib/activation-program.js` — `getEffectiveProgramDay()`, day rollover, mark missed
-- [ ] `db/parent-activation-program.js` — CRUD
+**Effekt på retention:** hög potential — hårt kopplat till observerat beteende (vanor vs churn före vana).
 
-### Fas 2 — Tracking-motorn (~4h)
-- [ ] `GET /api/me/activation-program/new-completions`
-- [ ] Hook i dashboard daily-log load → `parent_first_completion_seen`
-- [ ] Analytics event + `parent_seen_completion` inserts
+### Checklistor
 
-### Fas 3 — Dashboard-banner (~5h)
-- [ ] `public/js/activation-program-banner.js`
-- [ ] `GET /api/me/activation-program` + skip/complete/solo/opt-out/reflection
-- [ ] Grattis-animation vid `day_advanced`
-- [ ] Dag 6 "Jag kör solo!" + dag 7 värde-fråga
-- [ ] SW cache bump
+**Fas 1 (~3h)**
+- [ ] Migration (utan `current_day`; med `last_seen_day`, `cohort_arm`)
+- [ ] `getEffectiveProgramDay()` + tester (DST)
+- [ ] `assignCohortArm()`
 
-### Fas 4 — Auto-enrollment (~2h)
-- [ ] Hook i `POST /api/onboarding/complete`
-- [ ] Feature seed + `ACTIVATION_PROGRAM_ENABLED` guard
+**Fas 2 (~5h)**
+- [ ] `parent_seen_completion` + `parent_first_completion_seen`
+- [ ] Celebratory card UI (`activation-program-aha-card.js`)
+- [ ] `child_view_opened` event (dag 1)
 
-### Fas 5 — Push (~4h)
-- [ ] `activation-program-scheduler.js`
-- [ ] Push-pref i settings
-- [ ] UTM på länkar
+**Fas 3 (~4h)**
+- [ ] Banner + dag 1 "kika tillsammans"
+- [ ] Dags-byte-animation via `day_advanced`
+- [ ] Solo-knapp, dag 7-reflektion
 
-### Fas 6 — Admin (~4h)
-- [ ] `/api/admin/activation-program/stats` — funnel + day 14 cohort
-- [ ] Admin UI (minimal)
+**Fas 4 (~2h)**
+- [ ] Enroll hook i onboarding complete
+- [ ] Feature seed + env vars
+
+**Fas 5 (~4h)** — Push
+
+**Fas 6 (~4h)** — Admin cohort dashboard
 
 ---
 
 ## 15. Acceptanskriterier (MVP = Fas 1–4)
 
-1. `getEffectiveProgramDay()` returnerar korrekt dag över midnatt och sommartid.
-2. `parent_first_completion_seen` fires exakt en gång per ny completion per förälder.
-3. Dashboard-banner visar dag 1–7 med korrekt copy och progress.
-4. Dag 2: login någon gång under dygnet räcker — ingen tidsgräns i kod eller copy.
-5. Dag 6: "Jag kör solo!" markerar dagen `done` utan negativ copy.
-6. Dag 7: frågan "Har appen gjort vardagen enklare?" sparas med score 1–5.
-7. Missad dag → programmet fortsätter; ingen "miss"-text i UI.
-8. Opt-out avslutar programmet permanent för körningen.
-9. Auto-enroll vid onboarding complete (med feature flag).
-10. Barnvy/pedagog-vy påverkas inte.
+1. `getEffectiveProgramDay()` — enda sanningen; inget `current_day` i DB
+2. `last_seen_day` används enbart för UI-animation
+3. `cohort_arm` sätts deterministiskt vid enroll; control ser ingen banner
+4. Celebratory card visas vid första unseen completion
+5. Dag 1 CTA → barnvy; mät `child_view_opened`
+6. Dag 2: login anytime; dag 6: solo; dag 7: värde-fråga
+7. Miss → program fortsätter, ingen negativ copy
+8. `ACTIVATION_PROGRAM_TREATMENT_PCT` fungerar (100 och 50 testade)
 
 ---
 
 ## 16. Success metrics
 
-| Metric | Baseline | Mål (4 veckor) |
-|--------|----------|----------------|
-| Parent login dag 2 | TBD | +20% relativt |
-| Parent login dag 7 | TBD | +15% relativt |
-| **`parent_first_completion_seen` rate** | — | >30% av enrolled dag 1–7 |
-| Dag 7 program completion | — | >40% av enrolled |
-| **Day 14 retention (treatment vs control)** | TBD | Signifikant högre än control |
-| Dag 7 score ≥4 ("vardagen enklare") | — | >50% av responders |
-| Opt-out rate | — | <25% |
+| Metric | Typ | Mål |
+|--------|-----|-----|
+| **Day 14 retention (treatment vs control)** | North Star | Signifikant högre treatment |
+| `parent_first_completion_seen` rate | Leading | >30% enrolled |
+| Dag 7 score ≥4 | Value | >50% responders |
+| Dag 2 parent login | Leading | +20% vs control |
+| Opt-out | Guardrail | <25% |
 
 ---
 
-## 17. Risker och mitigering
+## 17. Riskbedömning (produktägare)
 
-| Risk | Mitigering |
-|------|------------|
-| Push-upplevs som spam | Fas 5 efter banner; max 1/dag; opt-out |
-| Förälder känner sig tillrättavisad | Ingen miss-copy; program fortsätter; "Hoppa över idag" |
-| Dag 6 exkluderar ensamstående | "Jag kör solo!" som positiv exit |
-| Tidspress dag 2 | Borttagen — endast närvaro mäts |
-| Timezone-buggar | `getEffectiveProgramDay()` + tester för DST |
-| Banner känns som tom dashboard | Coach-copy + aha-celebration vid new completion |
+| Del | Risk |
+|-----|------|
+| Datamodell | Låg |
+| Banner | Låg |
+| Enrollment + A/B | Låg |
+| Aha-tracking + celebratory card | Låg |
+| Push | Medel |
+| Day 14-analys | Medel |
+| **Effekt på retention** | **Hög potential** |
 
 ---
 
-## 18. Filer att skapa/ändra
+## 18. Filer
 
-| Fil | Fas | Ändring |
-|-----|-----|---------|
-| `migrations/*_parent_activation_program.js` | 1 | Tabeller |
-| `src/lib/activation-program.js` | 1 | `getEffectiveProgramDay()`, rollover |
-| `src/lib/activation-program-content.js` | 3 | Dag 1–7 copy |
-| `db/parent-activation-program.js` | 1 | CRUD |
-| `db/parent-seen-completion.js` | 2 | Seen-tracking |
-| `src/routes/activation-program.js` | 2–3 | API |
-| `src/routes/onboarding.js` | 4 | Auto-enroll |
-| `public/js/activation-program-banner.js` | 3 | Dashboard UI |
-| `public/dashboard.html` | 3 | Script + mount |
-| `src/lib/activation-program-scheduler.js` | 5 | Push |
-| `src/routes/admin/activation-program.js` | 6 | Admin stats |
-| `scripts/seed-features.js` | 4 | Feature slug |
-| `public/sw.js` | 3 | Cache bump |
+| Fil | Fas |
+|-----|-----|
+| `migrations/*_parent_activation_program.js` | 1 |
+| `src/lib/activation-program.js` | 1 |
+| `src/lib/activation-program-enroll.js` | 1 |
+| `src/lib/activation-program-content.js` | 3 |
+| `db/parent-activation-program.js` | 1 |
+| `db/parent-seen-completion.js` | 2 |
+| `src/routes/activation-program.js` | 2–3 |
+| `public/js/activation-program-banner.js` | 3 |
+| `public/js/activation-program-aha-card.js` | 2 |
+| `src/routes/onboarding.js` | 4 |
+| `src/lib/activation-program-scheduler.js` | 5 |
+| `src/routes/admin/activation-program.js` | 6 |
 
 ---
 
 ## 19. Öppna frågor
 
-1. **Medförälder enroll** → Den som anropar `/complete`.
-2. **Retroaktiv enroll för churn-risk** → Nej v1; admin-trigger i v1.1.
-3. **Dag 4 auto-complete på schedule edit** → Ja, om schedule API anropas samma effective day.
-4. **Win-back-koppling** → Separata flows; win-back = 18+ dagar, detta = vecka 1.
-5. **A/B av dag 7-frågan** → Ev. testa "enklare vardag" vs "mindre påminnelser" i Fas 6.
+1. **Inline barnvy-preview på dag 1** — eller endast länk till `/child-login`?
+2. **Retroaktiv enroll för churn-risk** — admin-trigger v1.1
+3. **Celebratory card: modal vs inline card** — A/B-testa i Fas 2?
+4. **När aktivera 50/50 A/B** — efter 2 veckor med 100% treatment baseline?
 
 ---
 
 ## 20. Revisionslogg
 
-| Datum | Ändring |
-|-------|---------|
-| 2026-05-30 | v1 — initial spec |
-| 2026-05-30 | v2 — värdepress dag 2/7; solo-knapp dag 6; `parent_first_completion_seen`; `getEffectiveProgramDay()`; day 14 North Star; reviderad build order; banner > push |
+| Version | Datum | Ändring |
+|---------|-------|---------|
+| v1 | 2026-05-30 | Initial spec |
+| v2 | 2026-05-30 | Värdepress; solo dag 6; aha-event; build order; day 14 |
+| v3 | 2026-05-30 | Vanebildning-framing; `last_seen_day` (ej `current_day`); dag 1 barnvy; celebratory card; A/B `cohort_arm`; `parent_aha_moment` koncept; PO risktabell |
 
 ---
 
-*Spec utarbetad utifrån retention-data, användarcitat, NPF-perspektiv och befintlig stack (Express, push-scheduler, onboarding, analytics_events).*
+*Produktdesign klar för implementation. Hypotes: föräldrar som lyckas bygger vana vecka 1; churn sker innan vanan uppstår.*
