@@ -17,11 +17,11 @@
 
 **Paste into App Review Information → Notes:**
 ```
-Sign in with Apple on the login screen is for existing linked accounts only.
+In the previously reviewed build 1139, Sign in with Apple authentication itself completed successfully. The issue occurred afterward because an Apple ID without an existing account was incorrectly handled as account creation from the Login screen and was then blocked by the required country-selection step.
 
-If the reviewer uses an Apple ID that has no My Starday account yet, the app routes to account creation (/register) to choose country and continue with Apple there. Please use the email/password review account below to test the full parent + child flow, or create a new account via Register → choose country → Continue with Apple.
+This has been corrected. Existing Apple accounts sign in normally. If an Apple ID does not yet have an account, the app now routes the user to registration, where country is selected before continuing with Sign in with Apple.
 
-Native Sign in with Apple on iPad is unchanged and working (presentation context + main-thread dispatch verified in build logs).
+Please use the email/password review account below to test the full parent and child flow.
 ```
 
 ---

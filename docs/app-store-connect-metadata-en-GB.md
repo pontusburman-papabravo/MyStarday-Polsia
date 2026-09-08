@@ -44,7 +44,7 @@ Privacy Policy: [APP_URL]/privacy
 
 ## Keywords
 
-daily schedule family,picture schedule,routine app,family rewards,star chart,preschool routine,visual schedule parents
+daily schedule family,picture schedule,routine app,family rewards,star chart,daily structure,parent planner
 
 ---
 
