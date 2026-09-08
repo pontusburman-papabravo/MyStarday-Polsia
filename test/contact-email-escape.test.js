@@ -16,8 +16,35 @@ test('contact route escapes HTML in outgoing owner email', async () => {
   const capturedHtml = [];
 
   mock.setQuery(async (sql) => {
-    if (String(sql).includes('INSERT INTO contact_message')) {
+    const q = String(sql);
+    if (q.includes('INSERT INTO contact_message_reply_token')) {
+      return {
+        rows: [{
+          id: '11111111-1111-1111-1111-111111111111',
+          contact_message_id: 99,
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          created_by: 'system',
+        }],
+      };
+    }
+    if (q.includes('INSERT INTO contact_message_event')) {
+      return { rows: [{ id: 1, contact_message_id: 99, event_type: 'reply_token_created' }] };
+    }
+    if (q.includes('INSERT INTO contact_message')) {
       return { rows: [{ id: 99 }] };
+    }
+    if (q.includes('FROM contact_message') && q.includes('WHERE id')) {
+      return {
+        rows: [{
+          id: 99,
+          status: 'new',
+          name: 'x',
+          email: 'contact-test@notexample.com',
+          message: 'x',
+          message_type: 'contact',
+          metadata: {},
+        }],
+      };
     }
     return { rows: [] };
   });
@@ -70,7 +97,8 @@ test('contact route escapes HTML in outgoing owner email', async () => {
     assert.doesNotMatch(joined, /<img src=x onerror=alert\(1\)>/);
     assert.match(joined, /&lt;img src=x onerror=alert\(1\)&gt;/);
     const body = await res.json();
-    assert.match(body.threadUrl || '', /\/support\/svar\/sf1\.99\./);
+    assert.match(body.threadUrl || '', /\/support\/svar\/sr1\.[A-Za-z0-9_-]{40,}$/);
+    assert.equal((body.threadUrl || '').includes('99'), false);
   } finally {
     await new Promise((resolve) => server.close(resolve));
     if (previousEmail) require.cache[emailPath] = previousEmail;
