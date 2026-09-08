@@ -15,6 +15,7 @@ const {
   resolveNewAccountRegistrationContext,
   assertRegistrationMarketOpen,
 } = require('../../lib/registration-market-context');
+const { authApiMessage, resolveAuthApiLocale } = require('../../lib/auth-api-messages');
 const { completeLogin } = require('./session');
 
 const router = express.Router();
@@ -24,8 +25,9 @@ const router = express.Router();
 // then create or link the parent account.
 // Scenarios:
 //   1. Existing Apple user (by apple_user_id) → 200 + session
-//   2. New user (email not found) → 201 + session, lifetime_free tier
+//   2. New user (intent=register + country) → 201 + session
 //   3. Existing password account (email found, no Apple link) → 409 + email_conflict
+//   4. Login intent but no linked Apple account → 409 + REGISTRATION_REQUIRED
 router.post('/apple', appleLoginLimiter, async (req, res) => {
   try {
     const { idToken, firstName, lastName, name } = req.body;
@@ -75,7 +77,19 @@ router.post('/apple', appleLoginLimiter, async (req, res) => {
       }
     }
 
-    // SCENARIO 2 — New user: apple_user_id not linked and email not in DB
+    const intent = req.body.intent === 'register' ? 'register' : 'login';
+    const preAuthLang = resolveAuthApiLocale(req);
+
+    // SCENARIO 4 — Login screen: Apple ID valid but not linked → route to registration
+    if (intent === 'login') {
+      console.log('[APPLE] login intent: no linked account → registration required');
+      return res.status(409).json({
+        error: authApiMessage(preAuthLang, 'errors.registrationRequired'),
+        code: 'REGISTRATION_REQUIRED',
+      });
+    }
+
+    // SCENARIO 2 — Register intent: create account when country is provided
     const displayName = (firstName && lastName)
       ? `${firstName.trim()} ${lastName.trim()}`
       : (firstName?.trim() || (typeof name === 'string' && name.trim()) || appleEmail?.split('@')[0] || 'Förälder');

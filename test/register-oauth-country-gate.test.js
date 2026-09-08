@@ -516,16 +516,18 @@ describe('Apple register language-before-country', () => {
   });
 });
 
-describe('Apple login remains unchanged', () => {
-  it('login Apple handler does not use the registration country gate', () => {
+describe('Apple login routes unknown Apple IDs to registration', () => {
+  it('login Apple handler sends intent login and handles REGISTRATION_REQUIRED', () => {
     const login = fs.readFileSync(path.join(ROOT, 'public/login.html'), 'utf8');
     const start = login.indexOf('async function handleAppleLogin');
     assert.ok(start > 0);
     const fn = login.slice(start, login.indexOf('function openAppleLinkModal', start));
+    assert.match(fn, /intent:\s*'login'/);
+    assert.match(fn, /data\.code === 'REGISTRATION_REQUIRED'/);
     assert.doesNotMatch(fn, /CountryChoice/);
     assert.doesNotMatch(fn, /RegistrationCountryGate/);
     assert.doesNotMatch(fn, /RegisterAppleAuth/);
-    assert.match(fn, /Platform\.isIOS\(\) && !Platform\.appleSignIn\.isAvailable\(\)/);
+    assert.doesNotMatch(fn, /status === 201/);
   });
 });
 

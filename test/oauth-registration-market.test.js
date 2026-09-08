@@ -206,6 +206,7 @@ test('IE Google new signup blocked while market_ie_open=false', async () => {
   const req = {
     body: {
       idToken: 'valid-token',
+      intent: 'register',
       country_code: 'IE',
       preferred_locale: 'en-GB',
     },
@@ -396,13 +397,13 @@ function getAppleHandler() {
   return stack[stack.length - 1].handle;
 }
 
-test('New Apple OAuth without country_code rejected (fail closed)', async () => {
+test('New Apple OAuth register intent without country_code rejected (fail closed)', async () => {
   setupAppleMocks();
   mockParentByApple = null;
 
   const handler = getAppleHandler();
   const req = {
-    body: { idToken: 'valid-token' },
+    body: { idToken: 'valid-token', intent: 'register' },
     ip: '127.0.0.1',
     headers: {},
   };
@@ -419,6 +420,29 @@ test('New Apple OAuth without country_code rejected (fail closed)', async () => 
   assert.equal(mockCreateParent, null);
 });
 
+test('Apple login intent with unknown Apple ID returns REGISTRATION_REQUIRED', async () => {
+  setupAppleMocks();
+  mockParentByApple = null;
+
+  const handler = getAppleHandler();
+  const req = {
+    body: { idToken: 'valid-token', intent: 'login' },
+    ip: '127.0.0.1',
+    headers: {},
+  };
+  let statusCode = 200;
+  let body = null;
+  const res = {
+    status(code) { statusCode = code; return this; },
+    json(payload) { body = payload; },
+  };
+
+  await handler(req, res);
+  assert.equal(statusCode, 409);
+  assert.equal(body.code, 'REGISTRATION_REQUIRED');
+  assert.equal(mockCreateParent, null);
+});
+
 test('IE Apple new signup blocked while market_ie_open=false', async () => {
   setupAppleMocks();
   mockParentByApple = null;
@@ -432,6 +456,7 @@ test('IE Apple new signup blocked while market_ie_open=false', async () => {
   const req = {
     body: {
       idToken: 'valid-token',
+      intent: 'register',
       country_code: 'IE',
       preferred_locale: 'en-GB',
     },
@@ -467,6 +492,7 @@ test('IE Apple new signup passes market context when gate enabled in test', asyn
     const req = {
       body: {
         idToken: 'valid-token',
+        intent: 'register',
         country_code: 'IE',
         preferred_locale: 'en-GB',
         firstName: 'Aoife',

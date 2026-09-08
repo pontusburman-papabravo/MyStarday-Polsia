@@ -12,7 +12,7 @@
 **App Name:** My Starday
 
 **Subtitle** (max 30 characters):
-> Daily routines for children
+> Calmer everyday routines
 
 ---
 
@@ -44,7 +44,7 @@ Privacy Policy: [APP_URL]/privacy
 
 ## Keywords
 
-daily schedule children,picture schedule,routine app,family rewards,star chart,preschool routine,visual schedule kids
+daily schedule family,picture schedule,routine app,family rewards,star chart,preschool routine,visual schedule parents
 
 ---
 

@@ -1,7 +1,28 @@
 # App Store Review Notes — Min Stjärndag
 
 > English — paste this directly into the App Store Connect "Review Notes" field.
-> Last updated: 2026-08-28 | Metadata rejection — missing Terms of Use (EULA) link (corrected)
+> Last updated: 2026-09-08 | Build 1140+ — Apple login/register split (2.1a) + subtitle metadata (2.3.8)
+
+---
+
+## Build 1140+ — Apple Sign In login vs registration (2026-09-08, after 2.1(a) rejection build 1139)
+
+**Rejection (2 Sep 2026, build 1139):** Sign in with Apple showed an error on iPad when reviewer tapped the login button.
+
+**Root cause (prod-verified):** Native Apple auth succeeded, but `/login` called `POST /api/auth/apple` without `country_code` for a **new** Apple ID. Backend attempted account creation and returned `400 COUNTRY_REQUIRED` → visible error. Not a native iPad plugin regression.
+
+**Fix:** Login sends `intent: login`. Unknown Apple IDs return `409` + `code: REGISTRATION_REQUIRED` and the client routes to `/register?method=apple` (no token stored). Registration requires explicit country choice, then a fresh native Apple authorize with `intent: register`.
+
+**Metadata (2.3.8):** Subtitle changed to parent/family positioning — see `docs/app-store-connect-metadata.md` (no binary required for subtitle-only resubmit, but ship with new build).
+
+**Paste into App Review Information → Notes:**
+```
+Sign in with Apple on the login screen is for existing linked accounts only.
+
+If the reviewer uses an Apple ID that has no My Starday account yet, the app routes to account creation (/register) to choose country and continue with Apple there. Please use the email/password review account below to test the full parent + child flow, or create a new account via Register → choose country → Continue with Apple.
+
+Native Sign in with Apple on iPad is unchanged and working (presentation context + main-thread dispatch verified in build logs).
+```
 
 ---
 
