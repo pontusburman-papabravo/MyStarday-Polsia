@@ -38,7 +38,7 @@ Suitable for families with children aged 3–10.
 **English Beta (Sweden):** English UI is rolling out gradually. Swedish remains the default. Report language issues in Settings → Feedback.
 
 Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
-Privacy Policy: [APP_URL]/privacy
+Privacy Policy: [APP_URL]/en/eea/privacy
 
 ---
 
@@ -79,7 +79,15 @@ Build calm routines with picture schedules and stars. My Starday — one step at
 |-------|-------|
 | Support | `[APP_URL]/kontakt` |
 | Marketing | `[APP_URL]` |
-| Privacy | `[APP_URL]/integritet` |
+| Privacy | `[APP_URL]/en/eea/privacy` |
+
+**Privacy URL (English (UK) locale — verified):** use `[APP_URL]/en/eea/privacy`.
+
+- Do not use `/en/privacy` — English chrome with Swedish body copy.
+- Do not use `/en/uk/privacy` — closed-market placeholder, not a privacy policy.
+- Do not use `/privacy` — Swedish Integritetspolicy (correct for the Swedish locale only).
+- Do not use `/integritet` — that path is not a privacy page.
+- `/en/eea/privacy` is the fully English EEA notice and matches `resolveLegalRoutes()` for SE + en-GB. English (UK) in App Store Connect is the listing locale for the Sweden English beta, not a UK storefront launch.
 
 ---
 
