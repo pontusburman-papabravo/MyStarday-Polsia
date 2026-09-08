@@ -226,12 +226,13 @@ function createApp() {
   });
 
   app.use((err, req, res, _next) => {
+    const { redactSupportText } = require('./src/lib/log-redact');
     const errPath = req.path.startsWith('/api/events') ? req.path : req.originalUrl;
     console.error('[SERVER] Unhandled error', {
       operation: 'server.error',
-      path: errPath,
-      error: err.message || String(err),
-    }, err);
+      path: redactSupportText(errPath),
+      error: redactSupportText(err.message || String(err)),
+    });
     res.status(500).json({ error: 'Internt serverfel' });
   });
 

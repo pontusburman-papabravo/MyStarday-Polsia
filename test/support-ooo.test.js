@@ -56,6 +56,14 @@ describe('support OOO window (Sept 2026)', () => {
     assert.equal(en.auth.supportBubble.oooSuccess, ooo.COPY['en-GB'].success);
   });
 
+  it('OOO playbook hands off to the permanent agent after the window', () => {
+    const doc = fs.readFileSync(path.join(ROOT, 'docs/support-ooo-sept-2026.md'), 'utf8');
+    assert.match(doc, /support-agent\.md/);
+    assert.match(doc, /Stäng \*\*inte\*\* av schemat/);
+    const agent = require('../config/support-agent');
+    assert.equal(agent.resolveSupportAgentMode(new Date('2026-09-12T12:00:00+02:00')), 'normal');
+  });
+
   it('playbook requires how-to for known tasks even when typed as bug', () => {
     const doc = fs.readFileSync(path.join(ROOT, 'docs/support-ooo-sept-2026.md'), 'utf8');
     assert.match(doc, /message_type=bug/);

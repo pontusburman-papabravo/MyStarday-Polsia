@@ -1,6 +1,8 @@
 # Support under bortresa 1–10 september 2026
 
-**Uppdrag:** Läs allt som kommer in i admin-inkorgen. Svara bara när svaret är verifierat. Hitta inte på. Kan du inte svara: säg att vi är bortresta och återkommer så snart vi kan, senast 11 september.
+**Permanent agent:** [`docs/support-agent.md`](support-agent.md). OOO is a timed **mode**, not the agent's lifetime. After 11 September the same daily job continues in `normal` mode (`config/support-agent.js`).
+
+**Uppdrag (OOO-läge t.o.m. 2026-09-11):** Läs allt som kommer in i admin-inkorgen. Svara bara när svaret är verifierat. Hitta inte på. Kan du inte svara: säg att vi är bortresta och återkommer så snart vi kan, senast 11 september.
 
 Betalning är **inte påslagen**.
 
@@ -10,7 +12,7 @@ Admin → Meddelanden (`GET /api/admin/contact-messages`). Inloggning: `ADMIN_EM
 
 Detta fångar `/kontakt`, support-bubblan, in-app-feedback och systemhjälp → "Rapportera problem".
 
-**Lucka:** Reply i Mail till supportadressen syns **inte** i inkorgen (ingen inbound-mejl). Användaren får en länk till webtråden (`/support/svar/…`) redan när ärendet skapas, och igen i våra svar (**Öppna konversationen** / **Öppna ditt ärende**). Där följer de ärendet och skriver tillbaka. Det öppnar ärendet igen som oläst (`status=new`, `user_reply`). Hämta `GET /api/admin/contact-messages/:id` **och** `…/:id/events`.
+**Lucka:** Reply i Mail till supportadressen syns **inte** i inkorgen (ingen inbound-mejl). Användaren får en opaque länk till webtråden (`/support/svar/sr1.…`) redan när ärendet skapas, och igen i våra svar. Där följer de ärendet och skriver tillbaka (`user_reply`). `answered` → `new`. Arkiverade ärenden återöppnas **inte** via länken. Hämta `GET /api/admin/contact-messages/:id` **och** `…/:id/events`.
 
 ## Beslut
 
@@ -45,7 +47,7 @@ Engelska ärenden: motsvarande text i `config/support-ooo.js` (`replyFallback`).
 
 ## Daglig automation (Cursor)
 
-Skapa en **daglig** Cloud Agent 1–11 september, ~08:00 Europe/Stockholm, med prompten:
+Permanent daglig Cloud Agent ~08:00 Europe/Stockholm. Under OOO-fönstret: prompten nedan. Efter 11 september: byt till prompten i `docs/support-agent.md`. Stäng **inte** av schemat.
 
 ```
 Läs docs/support-ooo-sept-2026.md och följ den exakt.
@@ -59,4 +61,4 @@ Läs docs/support-ooo-sept-2026.md och följ den exakt.
 7. Inga ärenden = skriv det och sluta. Ändra inte produktkod om inget ärende kräver det.
 ```
 
-Efter 11 september: stäng av automationen. Datumstyrd copy släcks av sig själv.
+Efter 11 september: behåll schemat, byt prompt till `docs/support-agent.md`. Datumstyrd OOO-copy släcks av sig själv.

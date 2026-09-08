@@ -4,8 +4,10 @@
  * Confirmation email after a contact_message is created — points at the web thread.
  */
 const config = require('./config');
-const { supportFollowUpUrl, signSupportFollowUpToken } = require('./support-follow-up-token');
+const { issueReplyToken, threadPath, followUpUrl } = require('./support-reply-token');
 const { escapeHtml } = require('./contact-message-reply');
+const { t } = require('./i18n');
+const { validateLocale } = require('./locale');
 
 function isLandingShareMailbox(email) {
   return String(email || '').toLowerCase().startsWith('landing-share@');
@@ -15,57 +17,40 @@ function shouldSendSupportReceipt(email) {
   return Boolean(email) && email.includes('@') && !isLandingShareMailbox(email);
 }
 
-function threadPath(messageId) {
-  return `/support/svar/${signSupportFollowUpToken(messageId)}`;
-}
-
-function buildReceiptBodies({ recipientName, followUpUrl, locale }) {
-  const en = String(locale || '').toLowerCase().startsWith('en');
+function buildReceiptBodies({ recipientName, followUpUrl: url, locale }) {
+  const loc = validateLocale(locale);
   const greetingName = recipientName && !String(recipientName).includes('@')
     ? String(recipientName).trim()
-    : (en ? 'there' : 'där');
+    : t(loc, 'support.receipt.greetingFallback');
 
-  const text = en
-    ? `Hi ${greetingName}!
+  const text = t(loc, 'support.receipt.text', {
+    name: greetingName,
+    url,
+    fromName: config.email.fromName,
+  });
 
-We have received your message. Follow the conversation and write back here (a normal email reply is not visible to us):
-${followUpUrl}
-
-Best regards,
-${config.email.fromName}`
-    : `Hej ${greetingName}!
-
-Vi har tagit emot ditt meddelande. Följ ärendet och skriv tillbaka här (ett vanligt mejlsvar syns inte hos oss):
-${followUpUrl}
-
-Vänliga hälsningar,
-${config.email.fromName}`;
-
-  const linkLabel = en ? 'Open your conversation' : 'Öppna ditt ärende';
   const html = `
     <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; color: #1B2340;">
-      <p>${en ? 'Hi' : 'Hej'} ${escapeHtml(greetingName)}!</p>
-      <p>${en
-    ? 'We have received your message.'
-    : 'Vi har tagit emot ditt meddelande.'}</p>
-      <p style="line-height: 1.5;"><a href="${escapeHtml(followUpUrl)}" style="color: #C4851A; font-weight: 600;">${linkLabel}</a>
-      ${en
-    ? 'to follow the conversation and write back. A normal email reply is not visible to us.'
-    : 'för att följa ärendet och skriva tillbaka. Ett vanligt mejlsvar syns inte hos oss.'}</p>
-      <p style="margin-top: 24px;">${en ? 'Best regards' : 'Vänliga hälsningar'},<br>${escapeHtml(config.email.fromName)}</p>
+      <p>${t(loc, 'support.receipt.htmlHi', { name: escapeHtml(greetingName) })}</p>
+      <p>${t(loc, 'support.receipt.htmlReceived')}</p>
+      <p style="line-height: 1.5;"><a href="${escapeHtml(url)}" style="color: #C4851A; font-weight: 600;">${t(loc, 'support.receipt.openLink')}</a>
+      ${t(loc, 'support.receipt.htmlHint')}</p>
+      <p style="margin-top: 24px;">${t(loc, 'support.receipt.htmlBye')},<br>${escapeHtml(config.email.fromName)}</p>
     </div>`;
 
   return {
-    subject: en ? 'Your support conversation' : 'Ditt ärende',
+    subject: t(loc, 'support.receipt.subject'),
     text,
     html,
   };
 }
 
-function publicThreadFor(messageId) {
+async function publicThreadFor(messageId, { createdBy = 'system' } = {}) {
+  const issued = await issueReplyToken(messageId, { createdBy });
   return {
-    threadUrl: threadPath(messageId),
-    followUpUrl: supportFollowUpUrl(messageId),
+    threadUrl: threadPath(issued.raw),
+    followUpUrl: followUpUrl(issued.raw),
+    tokenPrefix: issued.raw.split('.')[0],
   };
 }
 

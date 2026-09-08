@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Cache-Control" content="no-store">
   <title>Ditt ärende</title>
   <link rel="stylesheet" href="/css/landing.css?v=1">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -71,6 +73,7 @@
   <div class="kontakt-page">
     <h1>Ditt ärende</h1>
     <p class="intro">Här är hela konversationen. Skriv under om du vill fortsätta. Ett vanligt mejlsvar syns inte här.</p>
+    <p class="intro" id="supportMeta" hidden></p>
     <div class="contact-error" id="followUpError"></div>
     <div id="supportThread" class="thread" hidden></div>
     <div class="contact-form-card" id="supportComposer" hidden>
@@ -81,8 +84,9 @@
         <textarea id="followUpMessage" name="message" required minlength="10" placeholder="Skriv vad som händer…"></textarea>
         <button type="submit" class="btn-primary" id="followUpSubmit" style="width:100%;min-height:44px;">Skicka</button>
       </form>
+      <button type="button" class="btn-primary" id="supportEscalateBtn" style="width:100%;min-height:44px;margin-top:0.75rem;background:#1B2340;color:#fff;">Jag behöver mer hjälp från en person</button>
     </div>
   </div>
-  <script src="/js/support-follow-up.js?v=2"></script>
+  <script src="/js/support-follow-up.js?v=3"></script>
 </body>
 </html>

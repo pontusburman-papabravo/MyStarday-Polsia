@@ -32,11 +32,14 @@ function parseBlocks(text) {
   return out;
 }
 
+const PUBLIC_EVENT_TYPES = new Set(['user_reply', 'reply_sent']);
+
 function eventTurns(events) {
   return (events || [])
     .slice()
     .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
     .flatMap((ev) => {
+      if (!PUBLIC_EVENT_TYPES.has(ev.event_type)) return [];
       const body = ev.payload && ev.payload.body != null ? String(ev.payload.body).trim() : '';
       if (!body) return [];
       if (ev.event_type === 'user_reply') return [{ role: 'user', body, at: ev.created_at }];

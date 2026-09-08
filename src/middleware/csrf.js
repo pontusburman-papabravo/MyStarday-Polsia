@@ -59,6 +59,7 @@ const CSRF_EXEMPT_PATHS = new Set([
   // Public data endpoints that don't mutate user state
   '/contact',
   '/support/follow-up',
+  '/support/escalate',
   '/feedback',
   '/consent',
   // Public waitlist form — no session, no auth; CSRF not applicable

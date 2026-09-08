@@ -20,4 +20,21 @@ function maskEmail(email) {
   return `${maskedLocal}@${domain}`;
 }
 
-module.exports = { maskEmail };
+const SUPPORT_TOKEN_IN_PATH = /\/support\/svar\/(?:sr1|sf1)\.[A-Za-z0-9._~-]+/gi;
+const SUPPORT_TOKEN_QUERY = /([?&]token=)([^&#\s]+)/gi;
+const SUPPORT_TOKEN_BARE = /\b(?:sr1|sf1)\.[A-Za-z0-9._~-]{8,}/gi;
+
+function redactSupportText(value) {
+  if (value == null) return value;
+  if (typeof value !== 'string') return value;
+  return value
+    .replace(SUPPORT_TOKEN_IN_PATH, '/support/svar/[REDACTED]')
+    .replace(SUPPORT_TOKEN_QUERY, '$1[REDACTED]')
+    .replace(SUPPORT_TOKEN_BARE, '[REDACTED]');
+}
+
+function redactSupportUrl(url) {
+  return redactSupportText(url);
+}
+
+module.exports = { maskEmail, redactSupportText, redactSupportUrl };

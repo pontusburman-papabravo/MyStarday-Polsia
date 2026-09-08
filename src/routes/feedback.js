@@ -126,6 +126,7 @@ router.post('/', requireParent, requireFeature('feedback_formular'), validate(Fe
     );
 
     const insertedId = result.rows[0].id;
+    const thread = await publicThreadFor(insertedId);
     const typeLabel = TYPE_LABELS[type] || type;
     console.log(`[FEEDBACK] New ${type} from parent ${req.user.id}: ${title.trim()} (${insertedId})`);
 
@@ -154,7 +155,6 @@ router.post('/', requireParent, requireFeature('feedback_formular'), validate(Fe
     });
 
     const commLocale = resolveCommunicationLocale(familyLocale);
-    const thread = publicThreadFor(insertedId);
     if (shouldSendSupportReceipt(parentEmail) && !isTestMailbox(parentEmail)) {
       try {
         const receipt = buildReceiptBodies({
