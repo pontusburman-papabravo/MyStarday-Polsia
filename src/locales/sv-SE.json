@@ -1113,5 +1113,66 @@
     "giftSuccess": "Presentkortet är inlöst!",
     "giftFailed": "Kunde inte lösa in koden.",
     "launchEnded": "Lanseringsåtkomsten har tagit slut. Prenumerera i appen för att behålla full tillgång."
+  },
+  "support": {
+    "receipt": {
+      "greetingFallback": "där",
+      "subject": "Ditt ärende",
+      "text": "Hej {{name}}!\n\nVi har tagit emot ditt meddelande. Följ ärendet och skriv tillbaka här (ett vanligt mejlsvar syns inte hos oss):\n{{url}}\n\nVänliga hälsningar,\n{{fromName}}",
+      "htmlHi": "Hej {{name}}!",
+      "htmlReceived": "Vi har tagit emot ditt meddelande.",
+      "openLink": "Öppna ditt ärende",
+      "htmlHint": "för att följa ärendet och skriva tillbaka. Ett vanligt mejlsvar syns inte hos oss.",
+      "htmlBye": "Vänliga hälsningar"
+    },
+    "reply": {
+      "subjectBug": "Re: Din buggrapport",
+      "subjectFeedback": "Re: Din feedback",
+      "subjectLanguage": "Re: Ditt språkmeddelande",
+      "subjectContact": "Re: Ditt meddelande",
+      "text": "Hej {{name}}!\n\n{{reply}}\n\nLäs hela ärendet och skriv tillbaka här (ett vanligt mejlsvar syns inte hos oss):\n{{url}}\n\n---\nDitt ursprungliga meddelande:\n{{original}}\n\nVänliga hälsningar,\n{{fromName}}",
+      "htmlHi": "Hej {{name}}!",
+      "openLink": "Öppna konversationen",
+      "htmlHint": "för att läsa hela ärendet och skriva tillbaka. Ett vanligt mejlsvar syns inte hos oss.",
+      "originalLabel": "Ditt ursprungliga meddelande:",
+      "htmlBye": "Vänliga hälsningar"
+    },
+    "page": {
+      "title": "Ditt ärende",
+      "intro": "Här är hela konversationen. Skriv under om du vill fortsätta. Ett vanligt mejlsvar syns inte här.",
+      "you": "Du",
+      "us": "Vi",
+      "empty": "Inga meddelanden ännu.",
+      "label": "Skriv till oss",
+      "placeholder": "Skriv vad som händer…",
+      "submit": "Skicka",
+      "submitting": "Skickar…",
+      "needHuman": "Jag behöver mer hjälp från en person",
+      "escalating": "Skickar…",
+      "caseRef": "Ärende {{ref}}",
+      "status": {
+        "new": "Mottaget",
+        "read": "Läst",
+        "in_progress": "Pågår",
+        "answered": "Besvarat",
+        "archived": "Avslutat"
+      }
+    },
+    "errors": {
+      "invalid": "Länken är ogiltig. Be oss skicka ett nytt svar.",
+      "expired": "Länken har gått ut. Be oss skicka en ny.",
+      "revoked": "Länken fungerar inte längre. Be oss skicka en ny.",
+      "archived": "Ärendet är avslutat. Kontakta oss på nytt om du behöver mer hjälp.",
+      "legacySunset": "Den här länken är för gammal. Kontakta oss så skickar vi en ny.",
+      "tooShort": "Skriv minst 10 tecken så vi förstår vad som händer.",
+      "tooLong": "Svaret får vara högst 5000 tecken.",
+      "notFound": "Ärendet hittades inte.",
+      "rateLimit": "För många försök. Försök igen om en timme.",
+      "generic": "Kunde inte öppna ärendet."
+    },
+    "success": {
+      "submitted": "Tack! Vi har tagit emot svaret.",
+      "escalated": "Tack. En person tittar på ärendet."
+    }
   }
 }

@@ -138,6 +138,11 @@ async function runMidnightJob() {
       if (result.archived > 0) {
         console.log(`[MIDNIGHT-SCHEDULER] Auto-archived ${result.archived} answered contact messages`);
       }
+      const { autoEscalateStaleCases } = require('./support-escalation');
+      const escalation = await autoEscalateStaleCases();
+      if (escalation.escalated > 0) {
+        console.log(`[MIDNIGHT-SCHEDULER] Auto-escalated ${escalation.escalated} stale support cases`);
+      }
     } catch (err) {
       console.error('[MIDNIGHT-SCHEDULER] Contact message auto-archive failed:', err.message);
     }

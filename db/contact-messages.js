@@ -43,6 +43,7 @@ async function listMessages({
   followup,
   q,
   rootCause,
+  escalated,
   limit = 100,
 } = {}) {
   const conditions = ['1=1'];
@@ -76,6 +77,9 @@ async function listMessages({
   if (rootCause) {
     conditions.push(`COALESCE(cm.root_cause, 'unknown') = $${idx++}`);
     params.push(rootCause);
+  }
+  if (escalated) {
+    conditions.push(`COALESCE(cm.metadata->'support_ops'->>'escalated_at', '') <> ''`);
   }
   if (q && String(q).trim()) {
     const term = String(q).trim();
@@ -113,6 +117,7 @@ async function listMessages({
        cm.status, cm.answered_at, cm.assigned_to, cm.family_id,
        cm.root_cause, cm.resolution_type, cm.resolution_summary, cm.fix_reference,
        cm.resolved_at, cm.resolved_by, cm.archived_at, cm.archived_by,
+       cm.metadata,
        f.name AS family_name,
        inf.id AS inferred_family_id,
        inf.name AS inferred_family_name
@@ -166,12 +171,12 @@ async function updateMessageStatus(id, status, adminId) {
 
   const { rows } = await db.query(
     `UPDATE contact_message SET
-       status = $1,
+       status = $1::text,
        is_read = $2,
-       answered_at = CASE WHEN $1 = 'answered' THEN COALESCE(answered_at, NOW()) ELSE answered_at END,
+       answered_at = CASE WHEN $1::text = 'answered' THEN COALESCE(answered_at, NOW()) ELSE answered_at END,
        assigned_to = COALESCE(assigned_to, $3),
-       archived_at = CASE WHEN $1 = 'archived' THEN COALESCE(archived_at, NOW()) ELSE archived_at END,
-       archived_by = CASE WHEN $1 = 'archived' THEN COALESCE(archived_by, $3) ELSE archived_by END
+       archived_at = CASE WHEN $1::text = 'archived' THEN COALESCE(archived_at, NOW()) ELSE archived_at END,
+       archived_by = CASE WHEN $1::text = 'archived' THEN COALESCE(archived_by, $3) ELSE archived_by END
      WHERE id = $4
      RETURNING *`,
     [status, isRead, adminId, id]
@@ -243,6 +248,7 @@ const MESSAGE_DETAIL_SELECT = `
   cm.status, cm.answered_at, cm.assigned_to, cm.family_id,
   cm.root_cause, cm.resolution_type, cm.resolution_summary, cm.fix_reference,
   cm.resolved_at, cm.resolved_by, cm.archived_at, cm.archived_by,
+  cm.metadata,
   f.name AS family_name,
   inf.id AS inferred_family_id,
   inf.name AS inferred_family_name
@@ -270,7 +276,8 @@ async function getMessageDetail(id) {
 
 async function getMessageById(id) {
   const { rows } = await db.query(
-    `SELECT id, name, email, message, message_type, status, internal_note
+    `SELECT id, name, email, message, message_type, status, internal_note,
+            family_id, metadata
      FROM contact_message
      WHERE id = $1`,
     [id]
@@ -278,7 +285,7 @@ async function getMessageById(id) {
   return rows[0] || null;
 }
 
-async function recordMessageReply(id, { replyBody, adminId, emailId }) {
+async function recordMessageReply(id, { replyBody, adminId, emailId, actor = 'admin' }) {
   const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
   const noteBlock = [
     `--- Svar ${stamp} ---`,
@@ -306,7 +313,11 @@ async function recordMessageReply(id, { replyBody, adminId, emailId }) {
   if (row) {
     await events.logEvent(id, 'reply_sent', {
       adminId,
-      payload: { email_id: emailId || null, body: String(replyBody || '').trim().slice(0, 5000) },
+      payload: {
+        email_id: emailId || null,
+        body: String(replyBody || '').trim().slice(0, 5000),
+        actor,
+      },
     });
   }
   return row;
@@ -314,7 +325,7 @@ async function recordMessageReply(id, { replyBody, adminId, emailId }) {
 
 async function getPublicThread(id) {
   const { rows } = await db.query(
-    `SELECT id, message, created_at, internal_note
+    `SELECT id, message, created_at, internal_note, status, metadata
      FROM contact_message
      WHERE id = $1`,
     [id]
@@ -324,6 +335,8 @@ async function getPublicThread(id) {
   const eventRows = await events.listEventsForMessage(id, 100);
   return {
     id: row.id,
+    status: row.status,
+    metadata: row.metadata || {},
     thread: buildPublicSupportThread({
       createdAt: row.created_at,
       message: row.message,
@@ -334,22 +347,32 @@ async function getPublicThread(id) {
 }
 
 async function recordUserFollowUp(id, { body }) {
+  const existing = await getMessageById(id);
+  if (!existing) return null;
+  if (existing.status === 'archived') {
+    const err = new Error('archived');
+    err.statusCode = 410;
+    err.code = 'ARCHIVED';
+    throw err;
+  }
+
   const text = String(body || '').trim();
   const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
   const block = [`--- Användarsvar ${stamp} ---`, text.slice(0, 5000)].join('\n');
+  const nextStatus = existing.status === 'answered' ? 'new' : (existing.status === 'in_progress' ? 'in_progress' : 'new');
   const { rows } = await db.query(
     `UPDATE contact_message SET
-       status = 'new',
+       status = $3::text,
        is_read = false,
-       archived_at = NULL,
-       archived_by = NULL,
+       answered_at = CASE WHEN $3::text = 'new' THEN NULL::timestamptz ELSE answered_at END,
        message = CASE
          WHEN message IS NULL OR message = '' THEN $2
          ELSE message || E'\n\n' || $2
        END
      WHERE id = $1
+       AND status != 'archived'
      RETURNING *`,
-    [id, block]
+    [id, block, nextStatus]
   );
   const row = rows[0] || null;
   if (row) {
@@ -484,6 +507,14 @@ async function archiveMessage(id, { adminId = null, auto = false, resolution = n
         resolution_type: row.resolution_type,
       },
     });
+    const replyTokens = require('./contact-message-reply-tokens');
+    const revoked = await replyTokens.revokeActiveForMessage(id);
+    if (revoked.length) {
+      await events.logEvent(id, 'reply_token_revoked', {
+        adminId,
+        payload: { count: revoked.length, reason: auto ? 'auto_archived' : 'archived' },
+      });
+    }
   }
   return row;
 }

@@ -51,7 +51,13 @@
         "public/js/adult-privilege*.js",
         "public/js/session*.js",
         "public/js/parent-handoff*.js",
-        "db/pin-*.js"
+        "db/pin-*.js",
+        "src/lib/support-reply-token.js",
+        "src/lib/support-follow-up-token.js",
+        "src/lib/support-security-headers.js",
+        "src/lib/support-escalation.js",
+        "src/routes/support-follow-up.js",
+        "db/contact-message-reply-tokens.js"
       ],
       "l1Tests": [
         "test/auth.test.js",
@@ -76,6 +82,9 @@
         "test/*jwt*.test.js",
         "test/authz*.test.js",
         "test/credential-leak-guard.test.js",
+        "test/support-reply-token.integration.test.js",
+        "test/support-reply-token.test.js",
+        "test/support-follow-up.test.js",
         "test/r4-final-security-blockers.integration.test.js",
         "test/r4-final-authority.integration.test.js",
         "test/register-form-gate.test.js",
@@ -129,6 +138,8 @@
         "public/js/language-choice.js",
         "public/js/cookie*.js",
         "locales/**",
+        "src/locales/**",
+        "src/lib/support-locale.js",
         "config/markets/**"
       ],
       "l1Tests": [
@@ -233,7 +244,10 @@
         "public/js/family*.js",
         "src/routes/onboarding.js",
         "src/routes/family/**",
-        "src/routes/account/**"
+        "src/routes/account/**",
+        "public/support-svar.html",
+        "public/js/support-follow-up.js",
+        "src/lib/support-locale.js"
       ],
       "l1Tests": [
         "test/onboarding-handoff-p0.test.js",
@@ -252,7 +266,9 @@
         "test/family-hub*.test.js",
         "test/planning-hub*.test.js",
         "test/rewards-hub*.test.js",
-        "test/signup*.test.js"
+        "test/signup*.test.js",
+        "test/support-follow-up.test.js",
+        "test/support-ooo.test.js"
       ]
     },
     "db-migrations": {

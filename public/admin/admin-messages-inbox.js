@@ -43,6 +43,15 @@
     archived: 'Arkiverat',
     auto_archived: 'Auto-arkiverat',
     family_linked: 'Familj kopplad',
+    cursor_note: 'Cursor-anteckning',
+    reply_token_created: 'Svarslänk skapad',
+    reply_token_revoked: 'Svarslänk spärrad',
+    legacy_reply_token_migrated: 'Gammal länk migrerad',
+    human_escalation_requested: 'Användaren bad om människa',
+    human_escalation_auto: 'Automatisk eskalering',
+    human_escalation_notified: 'Eskalering notifierad',
+    human_takeover: 'Mänsklig takeover',
+    returned_to_agent: 'Tillbaka till agenten',
   };
 
   function esc(str) {
@@ -122,6 +131,36 @@
 
   function statusBadge(status) {
     return `<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-sky text-navy">${esc(STATUS_LABELS[status] || status)}</span>`;
+  }
+
+  function supportOps(m) {
+    return (m.metadata && m.metadata.support_ops) || {};
+  }
+
+  function escalationBadge(m) {
+    const ops = supportOps(m);
+    if (ops.human_takeover_at) {
+      return '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-navy text-white">Människa övertar</span>';
+    }
+    if (ops.escalated_at) {
+      return '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-coral text-white">Eskalerat</span>';
+    }
+    return '';
+  }
+
+  function renderSupportOpsBlock(m) {
+    if (m.status === 'archived') return '';
+    const ops = supportOps(m);
+    const reason = ops.escalation_reason ? `<p class="text-xs text-text-soft mb-2">Orsak: ${esc(ops.escalation_reason)}</p>` : '';
+    return `<div class="mb-3 p-3 rounded-xl border border-lavender bg-white">
+      <p class="text-xs font-bold text-navy mb-2">Supportagent</p>
+      ${reason}
+      <div class="flex flex-wrap gap-2">
+        ${!ops.human_takeover_at ? `<button type="button" onclick="takeOverSupportCase('${m.id}')" class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded">Ta över</button>` : `<button type="button" onclick="returnSupportToAgent('${m.id}')" class="px-3 py-1.5 bg-mint text-xs font-bold rounded">Lämna tillbaka till agent</button>`}
+        <button type="button" onclick="revokeSupportReplyToken('${m.id}')" class="px-3 py-1.5 bg-lavender text-xs font-bold rounded">Spärra svarslänk</button>
+        <button type="button" onclick="regenerateSupportReplyToken('${m.id}')" class="px-3 py-1.5 bg-sky text-xs font-bold rounded">Ny svarslänk</button>
+      </div>
+    </div>`;
   }
 
   function extractManualNote(note) {
@@ -336,6 +375,7 @@
         </div>
         <div class="flex flex-wrap gap-1 items-start">
           ${statusBadge(m.status)}
+          ${escalationBadge(m)}
           ${resolutionBadge(m)}
           ${m.status !== 'answered' ? `<button type="button" onclick="setMessageStatus('${m.id}','answered')" class="px-2 py-1 text-xs font-bold bg-gold rounded">Besvarad</button>` : ''}
           ${m.status === 'new' ? `<button type="button" onclick="toggleRead('${m.id}', true)" class="px-2 py-1 text-xs font-bold bg-sky rounded">Markera läst</button>` : ''}
@@ -352,6 +392,7 @@
         <textarea id="reply-${m.id}" rows="5" placeholder="Skriv ditt svar här…" class="w-full px-3 py-2 rounded-xl border border-lavender text-sm mb-2"></textarea>
         <button type="button" onclick="sendMessageReply('${m.id}')" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-navy text-sm font-bold rounded-xl">Skicka svar</button>
       </div>` : '<p class="text-xs text-coral mb-3">Kan inte svara — meddelandet saknar e-postadress.</p>'}
+      ${renderSupportOpsBlock(m)}
       ${renderResolutionBlock(m)}
       ${renderEventHistoryBlock(m)}
       <div class="flex gap-2 mt-4">
@@ -559,6 +600,7 @@
       else if (activeInbox !== 'all') params.set('inbox', activeInbox);
       if (rootCauseFilter) params.set('root_cause', rootCauseFilter);
       if (searchVal) params.set('q', searchVal);
+      if (window.location.hash.includes('escalated=1')) params.set('escalated', '1');
       params.set('queue', currentQueue);
       params.set('limit', '200');
 
@@ -685,6 +727,34 @@
   window.archiveMessageWithResolution = archiveMessageWithResolution;
   window.loadMessageEvents = loadMessageEvents;
   window.initMessagesInbox = initMessagesInbox;
+
+  async function takeOverSupportCase(id) {
+    await Auth.api('/api/admin/contact-messages/' + id + '/takeover', { method: 'POST', body: '{}' });
+    loadMessagesInbox();
+  }
+  async function returnSupportToAgent(id) {
+    await Auth.api('/api/admin/contact-messages/' + id + '/return-to-agent', { method: 'POST', body: '{}' });
+    loadMessagesInbox();
+  }
+  async function revokeSupportReplyToken(id) {
+    if (!confirm('Spärra aktiva svarslänkar för ärendet?')) return;
+    await Auth.api('/api/admin/contact-messages/' + id + '/reply-token/revoke', { method: 'POST', body: '{}' });
+    alert('Svarslänkar spärrade');
+  }
+  async function regenerateSupportReplyToken(id) {
+    const result = await Auth.api('/api/admin/contact-messages/' + id + '/reply-token/regenerate', {
+      method: 'POST',
+      body: '{}',
+    });
+    if (result.followUpUrl) {
+      alert('Ny länk skapad. Den skickas nästa gång du svarar användaren.');
+    }
+  }
+
+  window.takeOverSupportCase = takeOverSupportCase;
+  window.returnSupportToAgent = returnSupportToAgent;
+  window.revokeSupportReplyToken = revokeSupportReplyToken;
+  window.regenerateSupportReplyToken = regenerateSupportReplyToken;
 
   document.addEventListener('DOMContentLoaded', initMessagesInbox);
 })();

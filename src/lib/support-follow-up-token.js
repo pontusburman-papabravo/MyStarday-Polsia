@@ -36,9 +36,8 @@ function verifySupportFollowUpToken(token) {
   return { ok: true, messageId: Number(id) };
 }
 
-function supportFollowUpUrl(messageId) {
-  const base = String(config.email.baseUrl || '').replace(/\/$/, '');
-  return `${base}/support/svar/${signSupportFollowUpToken(messageId)}`;
+function supportFollowUpUrl(_messageId) {
+  throw new Error('sf1 URLs are retired after cutover — use support-reply-token.followUpUrl');
 }
 
 module.exports = {

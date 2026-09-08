@@ -5,6 +5,8 @@ const db = require('../lib/db');
 const { sendEmail, isTestMailbox } = require('../lib/email');
 const { maskEmail } = require('../lib/log-redact');
 const { shouldSendSupportReceipt, publicThreadFor, buildReceiptBodies } = require('../lib/support-receipt');
+const { t } = require('../lib/i18n');
+const { validateLocale } = require('../lib/locale');
 const { createProfessionalInterest } = require('../../db/professional-interest');
 const {
   addWaitlistEntry,
@@ -82,12 +84,21 @@ router.post('/contact', async (req, res) => {
     const normalizedEmail = email.toLowerCase().trim();
 
     // Store in DB with message_type = 'contact'
+    const contactLocale = validateLocale(typeof req.body?.locale === 'string' ? req.body.locale : '');
     const inserted = await db.query(
-      'INSERT INTO contact_message (name, email, message, message_type) VALUES ($1, $2, $3, $4) RETURNING id',
-      [name.trim(), normalizedEmail, message.trim(), 'contact']
+      `INSERT INTO contact_message (name, email, message, message_type, metadata)
+       VALUES ($1, $2, $3, $4, $5::jsonb)
+       RETURNING id`,
+      [
+        name.trim(),
+        normalizedEmail,
+        message.trim(),
+        'contact',
+        JSON.stringify({ locale: contactLocale }),
+      ]
     );
     const messageId = inserted.rows[0] && inserted.rows[0].id;
-    const thread = messageId ? publicThreadFor(messageId) : null;
+    const thread = messageId ? await publicThreadFor(messageId) : null;
 
     if (!isTestMailbox(normalizedEmail)) {
       const safeName = escapeHtml(name.trim());
@@ -130,8 +141,9 @@ router.post('/contact', async (req, res) => {
       }
     }
 
+    const ackLocale = typeof req.body?.locale === 'string' ? req.body.locale : '';
     res.json({
-      message: 'Tack! Vi har tagit emot ditt meddelande.',
+      message: t(validateLocale(ackLocale), 'api.contactAck'),
       threadUrl: thread ? thread.threadUrl : undefined,
     });
   } catch (err) {

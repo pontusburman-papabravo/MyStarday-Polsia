@@ -9,6 +9,8 @@ const ROOT = path.join(__dirname, '..');
 
 describe('admin contact message reply', () => {
   it('contact-message-reply builds localized subject + bodies', () => {
+    const { loadLocales } = require('../src/lib/i18n');
+    loadLocales();
     const mod = require('../src/lib/contact-message-reply');
     assert.equal(mod.buildReplySubject('feedback'), 'Re: Din feedback');
     const bodies = mod.buildReplyBodies({
@@ -34,7 +36,8 @@ describe('admin contact message reply', () => {
     assert.match(src, /router\.post\('\/contact-messages\/:id\/reply'/);
     assert.match(src, /sendEmail/);
     assert.match(src, /recordMessageReply/);
-    assert.match(src, /supportFollowUpUrl/);
+    assert.match(src, /issueReplyToken/);
+    assert.match(src, /followUpUrl\(issued\.raw\)/);
     assert.match(src, /config\.email\.from/);
   });
 
@@ -45,10 +48,10 @@ describe('admin contact message reply', () => {
     assert.match(src, /async function getPublicThread/);
     assert.match(src, /user_reply/);
     assert.match(src, /Användarsvar/);
-    assert.match(src, /archived_at = NULL/);
+    assert.match(src, /status != 'archived'/);
     assert.match(src, /status = 'answered'/);
     assert.match(src, /--- Svar /);
-    assert.match(src, /payload: \{ email_id: emailId \|\| null, body:/);
+    assert.match(src, /actor/);
   });
 
   it('admin inbox UI can send reply from Meddelanden', () => {

@@ -385,7 +385,7 @@
         successEl.textContent = isSupportOooActive()
           ? t('auth.supportBubble.oooSuccess')
           : t('auth.supportBubble.success');
-        const threadPath = typeof data.threadUrl === 'string' && data.threadUrl.indexOf('/support/svar/sf1.') === 0
+        const threadPath = typeof data.threadUrl === 'string' && /^\/support\/svar\/(sr1|sf1)\./.test(data.threadUrl)
           ? data.threadUrl
           : '';
         if (threadPath) {

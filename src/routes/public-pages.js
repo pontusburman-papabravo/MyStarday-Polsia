@@ -32,8 +32,29 @@ router.get('/kontakt', (req, res) => {
   res.sendFile(path.join(__dirname, '../../public', 'kontakt.html'));
 });
 
-router.get('/support/svar/:token', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../public', 'support-svar.html'));
+router.get('/support/svar/:token', async (req, res, next) => {
+  const { applySupportSecurityHeaders } = require('../lib/support-security-headers');
+  const {
+    isLegacyToken,
+    resolveSupportToken,
+    migrateLegacyToOpaque,
+    threadPath,
+  } = require('../lib/support-reply-token');
+  applySupportSecurityHeaders(res);
+  try {
+    const token = String(req.params.token || '').trim();
+    if (isLegacyToken(token)) {
+      const verified = await resolveSupportToken(token);
+      if (!verified.ok) {
+        return res.sendFile(path.join(__dirname, '../../public', 'support-svar.html'));
+      }
+      const issued = await migrateLegacyToOpaque(verified.messageId);
+      return res.redirect(303, threadPath(issued.raw));
+    }
+    res.sendFile(path.join(__dirname, '../../public', 'support-svar.html'));
+  } catch (err) {
+    next(err);
+  }
 });
 
 // About page (founder story)

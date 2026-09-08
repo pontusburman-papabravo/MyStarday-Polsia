@@ -1113,5 +1113,66 @@
     "giftSuccess": "Gift card redeemed!",
     "giftFailed": "Could not redeem the code.",
     "launchEnded": "Launch access has ended. Subscribe in the app to keep full access."
+  },
+  "support": {
+    "receipt": {
+      "greetingFallback": "there",
+      "subject": "Your support conversation",
+      "text": "Hi {{name}}!\n\nWe have received your message. Follow the conversation and write back here (a normal email reply is not visible to us):\n{{url}}\n\nBest regards,\n{{fromName}}",
+      "htmlHi": "Hi {{name}}!",
+      "htmlReceived": "We have received your message.",
+      "openLink": "Open your conversation",
+      "htmlHint": "to follow the conversation and write back. A normal email reply is not visible to us.",
+      "htmlBye": "Best regards"
+    },
+    "reply": {
+      "subjectBug": "Re: Your bug report",
+      "subjectFeedback": "Re: Your feedback",
+      "subjectLanguage": "Re: Your language report",
+      "subjectContact": "Re: Your message",
+      "text": "Hi {{name}}!\n\n{{reply}}\n\nRead the full conversation and write back here (a normal email reply is not visible to us):\n{{url}}\n\n---\nYour original message:\n{{original}}\n\nBest regards,\n{{fromName}}",
+      "htmlHi": "Hi {{name}}!",
+      "openLink": "Open the conversation",
+      "htmlHint": "to read the full conversation and write back. A normal email reply is not visible to us.",
+      "originalLabel": "Your original message:",
+      "htmlBye": "Best regards"
+    },
+    "page": {
+      "title": "Your conversation",
+      "intro": "This is the full conversation. Write below if you want to continue. A normal email reply is not visible here.",
+      "you": "You",
+      "us": "Us",
+      "empty": "No messages yet.",
+      "label": "Write to us",
+      "placeholder": "Tell us what is happening…",
+      "submit": "Send",
+      "submitting": "Sending…",
+      "needHuman": "I need more help from a person",
+      "escalating": "Sending…",
+      "caseRef": "Case {{ref}}",
+      "status": {
+        "new": "Received",
+        "read": "Read",
+        "in_progress": "In progress",
+        "answered": "Replied",
+        "archived": "Closed"
+      }
+    },
+    "errors": {
+      "invalid": "This link is invalid. Ask us to send a new reply.",
+      "expired": "This link has expired. Ask us to send a new one.",
+      "revoked": "This link no longer works. Ask us to send a new one.",
+      "archived": "This case is closed. Contact us again if you need more help.",
+      "legacySunset": "This link is too old. Contact us and we will send a new one.",
+      "tooShort": "Write at least 10 characters so we understand what is happening.",
+      "tooLong": "The reply can be at most 5000 characters.",
+      "notFound": "The case was not found.",
+      "rateLimit": "Too many attempts. Try again in an hour.",
+      "generic": "Could not open the case."
+    },
+    "success": {
+      "submitted": "Thanks! We have received your reply.",
+      "escalated": "Thanks. A person will look at this case."
+    }
   }
 }

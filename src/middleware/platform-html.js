@@ -288,6 +288,8 @@ function injectParentMagicHtml(body, reqPath) {
 
 function maybeSetNoindexHeader(res, reqPath) {
   if (!isSeoIndexable(normalizeSeoPath(reqPath))) {
+    const existing = String(res.getHeader('X-Robots-Tag') || '');
+    if (existing.toLowerCase().includes('noindex')) return;
     res.setHeader('X-Robots-Tag', 'noindex');
   }
 }
@@ -487,10 +489,19 @@ function ensureNativeDebugAssets(body) {
   return body;
 }
 
+function isSupportBearerHtmlPath(reqPath) {
+  const path = String(reqPath || '');
+  return path === '/support/svar' || path.startsWith('/support/svar/');
+}
+
 function injectPlatformHtml(body, reqPath, req) {
   if (typeof body !== 'string') return body;
   const injectDebug = shouldInjectNativeDebug(req);
   body = injectNoindexMeta(body, reqPath);
+  // Bearer token lives in the URL — do not inject analytics, Meta, or platform chrome.
+  if (isSupportBearerHtmlPath(reqPath)) {
+    return body;
+  }
   if (body.includes(INJECT_MARKER)) {
     body = injectParentMagicStack(body, reqPath, req);
     body = bumpNativeRuntimeAssetVersions(body);

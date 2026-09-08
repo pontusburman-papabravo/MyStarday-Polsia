@@ -80,7 +80,7 @@
       if (!res.ok) throw new Error(data.error || ct('genericError'));
       form.style.display = 'none';
       if (successEl) successEl.style.display = 'block';
-      const threadPath = typeof data.threadUrl === 'string' && data.threadUrl.indexOf('/support/svar/sf1.') === 0
+      const threadPath = typeof data.threadUrl === 'string' && /^\/support\/svar\/(sr1|sf1)\./.test(data.threadUrl)
         ? data.threadUrl
         : '';
       const threadLink = document.getElementById('contactThreadLink');
