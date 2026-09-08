@@ -227,6 +227,7 @@
       "childLoginLink": "Are you a child? Log in here",
       "gateHintLanguage": "Choose a language above to continue registration.",
       "gateHintCountry": "Choose your country above to continue registration.",
+      "appleFromLoginHint": "No account is linked to this Apple ID yet. Choose your country above, then tap Continue with Apple.",
       "tagline": "A calm day, one star at a time",
       "orDivider": "or",
       "continueWithApple": "Sign up with Apple",
@@ -417,6 +418,7 @@
         "registrationClosed": "Registration is currently closed",
         "invalidCountry": "Invalid country",
         "countryRequired": "Choose your country before creating an account",
+        "registrationRequired": "No account is linked to this Apple ID yet. Create an account to continue.",
         "familyNameRequired": "Name is required to create a family account",
         "marketClosed": {
           "MARKET_SE_CLOSED": "Registration from Sweden is temporarily closed.",

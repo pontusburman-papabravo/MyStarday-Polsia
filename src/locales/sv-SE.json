@@ -227,6 +227,7 @@
       "childLoginLink": "Är du barn? Logga in här",
       "gateHintLanguage": "Välj språk ovan för att fortsätta med registreringen.",
       "gateHintCountry": "Välj land ovan för att fortsätta med registreringen.",
+      "appleFromLoginHint": "Du har inget konto kopplat till detta Apple-ID ännu. Välj land ovan och tryck sedan Fortsätt med Apple.",
       "tagline": "En lugn dag, en stjärna i taget",
       "orDivider": "eller",
       "continueWithApple": "Registrera med Apple",
@@ -417,6 +418,7 @@
         "registrationClosed": "Registrering är för närvarande stängd",
         "invalidCountry": "Ogiltigt land",
         "countryRequired": "Välj land innan du skapar konto",
+        "registrationRequired": "Det finns inget konto kopplat till detta Apple-ID ännu. Skapa konto för att fortsätta.",
         "familyNameRequired": "Namn krävs för att skapa ett familjkonto",
         "marketClosed": {
           "MARKET_SE_CLOSED": "Registrering från Sverige är tillfälligt stängd.",

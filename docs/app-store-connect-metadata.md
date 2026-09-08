@@ -17,7 +17,7 @@
 **App Name:** Min Stjärndag
 
 **Subtitle** (max 30 tecken):
-> Dagliga scheman för barn
+> Lugnare rutiner i vardagen
 
 ---
 
@@ -53,25 +53,25 @@ Integritetspolicy: [REDACTED]/privacy
 > Max 100 tecken per nyckelord. Sju nyckelord à max 100 tecken = 700 tecken totalt.
 
 Nyckelord 1 (59 tecken):
-> dagliga scheman barn förskola föräldrar rutiner aktiviteter
+> dagliga scheman familj föräldrar rutiner aktiviteter vardag
 
 Nyckelord 2 (69 tecken):
-> stjärnbelöning belöningssystem familjeapp barnschema vardagsrutiner
+> stjärnbelöning belöningssystem familjeapp vardagsrutiner bildschema struktur
 
 Nyckelord 3 (51 tecken):
-> förskola skola pedagoganteckningar observationer barnutveckling
+> föräldraapp familjeliv schema planering belöningar vardagsstruktur
 
 Nyckelord 4 (57 tecken):
-> push-notiser påminnelse föräldraapp familjeliv schema barn
+> push-notiser påminnelse familjeapp vardagsrutiner schema struktur
 
 Nyckelord 5 (60 tecken):
-> skattkammare belöningskammare star rewards barn app rutiner
+> skattkammare belöningskammare star rewards familj rutiner planering
 
 Nyckelord 6 (37 tecken):
-> offline familjeapp förskolebarn dagliga rutiner
+> offline familjeapp dagliga rutiner struktur
 
 Nyckelord 7 (46 tecken):
-> swedish family app kids schedule routine star rewards
+> swedish family app schedule routine star rewards
 
 ---
 

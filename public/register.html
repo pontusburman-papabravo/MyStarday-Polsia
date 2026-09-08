@@ -106,6 +106,7 @@
         <p class="text-text-soft mt-2 text-xs leading-relaxed max-w-sm mx-auto" data-i18n="auth.register.pageLeadSecondary"></p>
         <div class="mt-4 flex justify-center" data-language-choice-mount></div>
         <div class="mt-2 flex justify-center" data-country-choice-mount></div>
+        <div id="appleRegistrationHint" class="hidden mt-3 max-w-sm mx-auto rounded-xl border border-lavender bg-white/80 px-4 py-3 text-sm text-navy text-center leading-relaxed" data-i18n="auth.register.appleFromLoginHint" role="status"></div>
         <div class="mt-2 flex justify-center hidden" data-locale-switcher-mount aria-hidden="true"></div>
       </div>
 
@@ -390,6 +391,15 @@
         }
       }
 
+      if (params.get('method') === 'apple') {
+        const hint = document.getElementById('appleRegistrationHint');
+        if (hint) hint.classList.remove('hidden');
+        const countryMount = document.querySelector('[data-country-choice-mount]');
+        if (countryMount && typeof countryMount.scrollIntoView === 'function') {
+          countryMount.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+
       const form = document.getElementById('registerForm');
       const submitBtn = document.getElementById('submitBtn');
       const nameInput = document.getElementById('name');
@@ -577,9 +587,12 @@
           return;
         }
 
-        const applePayload = (window.OAuthRegistrationPayload && OAuthRegistrationPayload.withOAuthRegistrationFields)
-          ? OAuthRegistrationPayload.withOAuthRegistrationFields({ idToken: result.idToken, name: result.name })
-          : { idToken: result.idToken, name: result.name };
+        const applePayload = Object.assign(
+          (window.OAuthRegistrationPayload && OAuthRegistrationPayload.withOAuthRegistrationFields)
+            ? OAuthRegistrationPayload.withOAuthRegistrationFields({ idToken: result.idToken, name: result.name })
+            : { idToken: result.idToken, name: result.name },
+          { intent: 'register' }
+        );
 
         const res = await fetch('/api/auth/apple', {
           method: 'POST',

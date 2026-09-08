@@ -748,11 +748,14 @@
 
         diag.log('step_3_token_received', { hasName: !!result.name });
 
-        const applePayload = (window.OAuthRegistrationPayload && OAuthRegistrationPayload.withOAuthRegistrationFields)
-          ? OAuthRegistrationPayload.withOAuthRegistrationFields({ idToken: result.idToken, name: result.name })
-          : ((window.LoginLocale && LoginLocale.withLoginLocale)
-            ? LoginLocale.withLoginLocale({ idToken: result.idToken, name: result.name })
-            : { idToken: result.idToken, name: result.name });
+        const applePayload = Object.assign(
+          (window.OAuthRegistrationPayload && OAuthRegistrationPayload.withOAuthRegistrationFields)
+            ? OAuthRegistrationPayload.withOAuthRegistrationFields({ idToken: result.idToken, name: result.name })
+            : ((window.LoginLocale && LoginLocale.withLoginLocale)
+              ? LoginLocale.withLoginLocale({ idToken: result.idToken, name: result.name })
+              : { idToken: result.idToken, name: result.name }),
+          { intent: 'login' }
+        );
 
         const res = await fetch('/api/auth/apple', {
           method: 'POST',
@@ -775,19 +778,10 @@
           } else {
             redirectAfterParentLogin();
           }
-        } else if (res.status === 201 && data.user) {
-          Auth.setAuth(null, data.user, data.csrfToken, data.expiresAt);
-          if (window.Pixel) window.Pixel.lead();
-          if (window.MarketingEvents) MarketingEvents.trackSignup('apple');
-          if (window.AppEntry) {
-            AppEntry.trackAuthSuccess('apple');
-            AppEntry.track('signup_completed', { method: 'apple' });
-          }
-          diag.startPostLoginTrace();
-          diag.log('step_5_login_complete', { scenario: 'created', onboarding_completed: data.user.onboarding_completed });
-          diag.logPost('step_5b_session_after_setAuth', {});
-          diag.logPost('step_6_redirect_start', { target: '/onboarding', via: 'new_account' });
-          setTimeout(() => window.location.href = '/onboarding', 300);
+        } else if (res.status === 409 && data.code === 'REGISTRATION_REQUIRED') {
+          diag.log('step_4c_registration_required');
+          if (window.AppEntry) AppEntry.track('apple_registration_required', { method: 'apple' });
+          window.location.href = '/register?method=apple';
         } else if (res.status === 409 && data.error === 'email_conflict') {
           _applePendingEmail = data.email;
           _applePendingIdToken = result.idToken;
