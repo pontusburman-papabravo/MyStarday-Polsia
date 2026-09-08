@@ -134,6 +134,7 @@
       "l1Tests": [
         "test/market-region.test.js",
         "test/legal-routing.test.js",
+        "test/legal-privacy-asc-routes.test.js",
         "test/i18n-locale.test.js",
         "test/register-language-displayed.test.js"
       ],
