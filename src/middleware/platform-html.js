@@ -288,6 +288,8 @@ function injectParentMagicHtml(body, reqPath) {
 
 function maybeSetNoindexHeader(res, reqPath) {
   if (!isSeoIndexable(normalizeSeoPath(reqPath))) {
+    const existing = String(res.getHeader('X-Robots-Tag') || '');
+    if (existing.toLowerCase().includes('noindex')) return;
     res.setHeader('X-Robots-Tag', 'noindex');
   }
 }
