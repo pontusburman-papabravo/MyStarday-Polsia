@@ -6,6 +6,10 @@
  */
 module.exports = {
   name: '1810450000000_contact_message_reply_token',
+  snapshotContract: {
+    backwardCompatible: true,
+    schemaOnly: true,
+  },
 
   up: async (client) => {
     await client.query(`
