@@ -62,6 +62,8 @@ describe('support follow-up link', () => {
   });
 
   it('receipt and reply emails use i18n and opaque URL placeholder', () => {
+    const { loadLocales } = require('../src/lib/i18n');
+    loadLocales();
     const { buildReceiptBodies, shouldSendSupportReceipt } = require('../src/lib/support-receipt');
     assert.equal(shouldSendSupportReceipt('landing-share@example.se'), false);
     assert.equal(shouldSendSupportReceipt('parent@example.com'), true);

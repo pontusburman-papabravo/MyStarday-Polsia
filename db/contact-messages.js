@@ -171,12 +171,12 @@ async function updateMessageStatus(id, status, adminId) {
 
   const { rows } = await db.query(
     `UPDATE contact_message SET
-       status = $1,
+       status = $1::text,
        is_read = $2,
-       answered_at = CASE WHEN $1 = 'answered' THEN COALESCE(answered_at, NOW()) ELSE answered_at END,
+       answered_at = CASE WHEN $1::text = 'answered' THEN COALESCE(answered_at, NOW()) ELSE answered_at END,
        assigned_to = COALESCE(assigned_to, $3),
-       archived_at = CASE WHEN $1 = 'archived' THEN COALESCE(archived_at, NOW()) ELSE archived_at END,
-       archived_by = CASE WHEN $1 = 'archived' THEN COALESCE(archived_by, $3) ELSE archived_by END
+       archived_at = CASE WHEN $1::text = 'archived' THEN COALESCE(archived_at, NOW()) ELSE archived_at END,
+       archived_by = CASE WHEN $1::text = 'archived' THEN COALESCE(archived_by, $3) ELSE archived_by END
      WHERE id = $4
      RETURNING *`,
     [status, isRead, adminId, id]
@@ -362,9 +362,9 @@ async function recordUserFollowUp(id, { body }) {
   const nextStatus = existing.status === 'answered' ? 'new' : (existing.status === 'in_progress' ? 'in_progress' : 'new');
   const { rows } = await db.query(
     `UPDATE contact_message SET
-       status = $3,
+       status = $3::text,
        is_read = false,
-       answered_at = CASE WHEN $3 = 'new' THEN NULL ELSE answered_at END,
+       answered_at = CASE WHEN $3::text = 'new' THEN NULL::timestamptz ELSE answered_at END,
        message = CASE
          WHEN message IS NULL OR message = '' THEN $2
          ELSE message || E'\n\n' || $2

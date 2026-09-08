@@ -34,6 +34,7 @@ const CRITICAL_INTEGRATION = [
   'test/iap-webhook-ordering.integration.test.js',
   'test/iap-app-review-eligibility.test.js',
   'test/standard-library-v11-foundation.test.js',
+  'test/support-reply-token.integration.test.js',
 ];
 
 const CRITICAL_UNIT = [
@@ -64,6 +65,10 @@ const CRITICAL_UNIT = [
   'test/e2-notification-archive.test.js',
   'test/activation-slim-handoff.test.js',
   'test/a2-pin-url-static-scan.test.js',
+  'test/support-reply-token.test.js',
+  'test/support-follow-up.test.js',
+  'test/support-ooo.test.js',
+  'test/admin-contact-reply.test.js',
 ];
 
 test('critical integration tests are listed in test:gate:db', () => {

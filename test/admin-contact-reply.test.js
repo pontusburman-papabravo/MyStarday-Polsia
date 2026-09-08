@@ -9,6 +9,8 @@ const ROOT = path.join(__dirname, '..');
 
 describe('admin contact message reply', () => {
   it('contact-message-reply builds localized subject + bodies', () => {
+    const { loadLocales } = require('../src/lib/i18n');
+    loadLocales();
     const mod = require('../src/lib/contact-message-reply');
     assert.equal(mod.buildReplySubject('feedback'), 'Re: Din feedback');
     const bodies = mod.buildReplyBodies({

@@ -27,9 +27,12 @@ router.use((req, res, next) => {
 });
 
 function limiter(name, max) {
+  if (process.env.RATE_LIMIT_ENABLED === 'false') {
+    return (_req, _res, next) => next();
+  }
   return rateLimit({
     windowMs: 60 * 60 * 1000,
-    max: process.env.RATE_LIMIT_ENABLED === 'false' ? 0 : max,
+    max,
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req) => `${name}:${req.ip}`,

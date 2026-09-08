@@ -83,6 +83,7 @@
         "test/authz*.test.js",
         "test/credential-leak-guard.test.js",
         "test/support-reply-token.integration.test.js",
+        "test/support-reply-token.test.js",
         "test/support-follow-up.test.js",
         "test/r4-final-security-blockers.integration.test.js",
         "test/r4-final-authority.integration.test.js",
