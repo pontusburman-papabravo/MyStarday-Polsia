@@ -74,6 +74,14 @@ async function parentContext(db, session) {
   return parentRow.rows[0];
 }
 
+/** Wall-clock inside the 30d KPI window on a distinct Stockholm calendar day. */
+function daysAgoUtc(days, hourUtc = 8) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - days);
+  d.setUTCHours(hourUtc, 0, 0, 0);
+  return d.toISOString();
+}
+
 async function insertTdSession(db, familyId, parentId, deviceId, createdAt) {
   await db.query(
     `INSERT INTO analytics_events (family_id, event_type, metadata, created_at)
@@ -119,8 +127,8 @@ test('trusted device impact KPI definitions', async (t) => {
     const deviceId = deviceRow.rows[0].id;
 
     await db.query('DELETE FROM analytics_events WHERE family_id = $1', [familyId]);
-    await insertTdSession(db, familyId, parentId, deviceId, '2026-08-10 10:00:00+02');
-    await insertTdSession(db, familyId, parentId, deviceId, '2026-08-11 10:00:00+02');
+    await insertTdSession(db, familyId, parentId, deviceId, daysAgoUtc(3, 8));
+    await insertTdSession(db, familyId, parentId, deviceId, daysAgoUtc(2, 8));
 
     const impact = await fetchTrustedDeviceImpactKpis('30d');
     assert.equal(impact.recurring.families_2plus_days, 1);
@@ -139,8 +147,8 @@ test('trusted device impact KPI definitions', async (t) => {
     const deviceId = deviceRow.rows[0].id;
 
     await db.query('DELETE FROM analytics_events WHERE family_id = $1', [familyId]);
-    await insertTdSession(db, familyId, parentId, deviceId, '2026-08-12 08:00:00+02');
-    await insertTdSession(db, familyId, parentId, deviceId, '2026-08-12 18:00:00+02');
+    await insertTdSession(db, familyId, parentId, deviceId, daysAgoUtc(2, 6));
+    await insertTdSession(db, familyId, parentId, deviceId, daysAgoUtc(2, 16));
 
     const impact = await fetchTrustedDeviceImpactKpis('30d');
     const tdFamilies = impact.adoption.td_families;
