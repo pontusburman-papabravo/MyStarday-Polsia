@@ -48,6 +48,33 @@ describe('acquisition attribution normalize', () => {
     assert.equal(n.platform, 'pwa');
   });
 
+  it('persists paid wave_01 contract values', () => {
+    const n = normalizeAttributionInput({
+      utm_source: 'meta',
+      utm_medium: 'paid_social',
+      utm_campaign: 'activation_wave_01',
+      platform: 'web',
+    });
+    assert.equal(n.source, 'meta');
+    assert.equal(n.medium, 'paid_social');
+    assert.equal(n.campaign, 'activation_wave_01');
+    assert.equal(n.platform, 'web');
+  });
+
+  it('drops email-like and uuid-like acquisition values', () => {
+    const n = normalizeAttributionInput({
+      utm_source: 'parent@example.com',
+      utm_campaign: '11111111-2222-4333-8555-666666666666',
+      platform: 'web',
+    });
+    assert.equal(n.source, 'direct');
+    assert.equal(n.medium, 'none');
+    assert.equal(n.campaign, null);
+    const meta = toAnalyticsMetadata(n);
+    assert.equal(meta.utm_source, 'direct');
+    assert.equal(meta.utm_campaign, undefined);
+  });
+
   it('returns null for empty input', () => {
     assert.equal(normalizeAttributionInput({}), null);
     assert.equal(normalizeAttributionInput(null), null);

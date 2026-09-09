@@ -517,7 +517,7 @@ function injectPlatformHtml(body, reqPath, req) {
       'if(c&&c.isNativePlatform&&c.isNativePlatform()){' +
       'var np=(location.pathname||"/").replace(/\\/$/,"")||"/";' +
       'if(np==="/"||np==="/index.html"||np==="/en"||np==="/en.html"){' +
-      'location.replace("/home");return;}' +
+      'location.replace("/home"+location.search+location.hash);return;}' +
       'window.WEBVIEW_SERVER_URL=location.origin;' +
       'var el=document.documentElement;el.classList.add("is-native");' +
       'if(c.getPlatform&&c.getPlatform()==="android"){' +
@@ -559,9 +559,12 @@ function injectPlatformHtml(body, reqPath, req) {
     '<script src="/js/settings-native-nav.js?v=' + MAGIC_VERSION + '"><\/script>',
     '<script src="/js/session-gate.js?v=' + RELEASE_TAG + '"><\/script>',
     '<script src="/js/analytics-shim.js?v=' + RELEASE_TAG + '"><\/script>',
-    '<script src="/js/meta-app-events.js?v=' + RELEASE_TAG + '"><\/script>',
-    '<script src="/js/platform-theme.js?v=' + RELEASE_TAG + '"><\/script>'
+    '<script src="/js/meta-app-events.js?v=' + RELEASE_TAG + '"><\/script>'
   );
+  if (!/\/js\/utm-capture\.js/i.test(body)) {
+    headParts.push('<script src="/js/utm-capture.js?v=' + RELEASE_TAG + '"><\/script>');
+  }
+  headParts.push('<script src="/js/platform-theme.js?v=' + RELEASE_TAG + '"><\/script>');
   if (injectDebug) {
     headParts.push('<link rel="stylesheet" href="/css/native-debug.css?v=1.0.4">');
   }

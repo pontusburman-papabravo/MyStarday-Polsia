@@ -18,6 +18,9 @@
         payload.country_code = countryCode;
       }
     }
+    if (window.UtmCapture && typeof window.UtmCapture.applyToPayload === 'function') {
+      payload = window.UtmCapture.applyToPayload(payload);
+    }
     return payload;
   }
 

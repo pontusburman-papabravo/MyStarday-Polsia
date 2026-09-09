@@ -139,6 +139,27 @@
     };
   }
 
+  const ATTR_KEYS = [
+    'utm_source',
+    'utm_medium',
+    'utm_campaign',
+    'utm_content',
+    'utm_term',
+    'platform',
+    'landing_locale',
+    'first_touch_at',
+  ];
+
+  /** Fill missing attribution keys on an existing register/OAuth payload. */
+  function applyToPayload(body) {
+    const payload = body && typeof body === 'object' ? body : {};
+    const attr = toRegisterFields();
+    ATTR_KEYS.forEach(function (key) {
+      if (attr[key] && !payload[key]) payload[key] = attr[key];
+    });
+    return payload;
+  }
+
   capture();
 
   window.UtmCapture = {
@@ -146,6 +167,7 @@
     clear: clear,
     capture: capture,
     toRegisterFields: toRegisterFields,
+    applyToPayload: applyToPayload,
     detectPlatform: detectPlatform,
   };
 })();
