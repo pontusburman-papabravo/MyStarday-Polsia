@@ -17,6 +17,13 @@ Use for **agent** logged-in QA on prod — [`docs/founder-qa-test-account.md`](d
 - **Engineering-spec:** [`docs/for-dig-spec.md`](docs/for-dig-spec.md)
 - **Branch:** `cursor/for-dig-10-10-2c04`
 
+### Nästa årsgrupp 12–18 (research — inte build)
+
+- **Stängd spec:** [`docs/nasta-arsgrupp-12-18-kravstallning.md`](docs/nasta-arsgrupp-12-18-kravstallning.md) — ingen rev. 4, inga OQ som beslut
+- **De-risk:** [`docs/nasta-arsgrupp-12-18-derisk.md`](docs/nasta-arsgrupp-12-18-derisk.md)
+- **UX-hypoteskarta:** [`docs/nasta-arsgrupp-12-18-ux-hypoteskarta.md`](docs/nasta-arsgrupp-12-18-ux-hypoteskarta.md) · visuell: [`docs/nasta-arsgrupp-12-18-ux-hypoteskarta.html`](docs/nasta-arsgrupp-12-18-ux-hypoteskarta.html)
+- **Regel:** Åldersplanschen v1 är kommunikation (~7/10), inte build-underlag (4–5/10). Bygg inte skärmar från den. Nästa steg är 4–6 klickbara hypoteser + beteendetest, inte snyggare UI.
+
 ## Cursor Cloud specific instructions
 
 The startup update script already installs npm dependencies. The notes below are the non-obvious things needed to run/test the app here.

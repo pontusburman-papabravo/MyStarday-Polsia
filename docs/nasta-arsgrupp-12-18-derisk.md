@@ -6,6 +6,13 @@
 
 **Syfte:** Ta bort osäkerhet med artefakter och tester — inte med mer kravtext.
 
+**UX-plansch v1 är inte evidens.** Founder-review 2026-09-09: ~7/10 som visualisering, 4–5/10 som build-underlag. Får inte behandlas som beslut. Nästa kommunikationsyta är hypoteskartan, inte snyggare appar.
+
+| Dokument | Roll |
+|----------|------|
+| `docs/nasta-arsgrupp-12-18-ux-hypoteskarta.md` | Research-protokoll + tvådimensionell karta |
+| `docs/nasta-arsgrupp-12-18-ux-hypoteskarta.html` | Visuell hypoteskarta (inte mockup att koda) |
+
 ---
 
 ## 0. Vad som redan är låst
@@ -42,8 +49,9 @@ Gör **inte** fem saker i serie om de är oberoende. Gör **inte** Ung-kod för 
 
 ```
 NU, parallellt
-  ├─ A. Mellan innehållsspec          → kommersiell leverans
+  ├─ A. Mellan innehållsspec          → kommersiell leverans (copy/schema/För dig — inte låst UI)
   ├─ B. Mätplan H1 (ev. H2-upplägg)   → lär av 9–12 som redan finns
+  ├─ B2. Kvalitativ UX-research       → hypoteskarta + 4–6 klickbara proto
   └─ C. Legal memo SE / FI / IE       → rättslig grund, inte produktfeatures
 
 DÄREFTER
@@ -56,7 +64,7 @@ SEDAN
          måste finnas innan spike får kallas “bevis”
 ```
 
-**REK:** A är det enda som får bli *produkt* i närtid. C blockerar D. D + F blockerar att E tolkas som go-ship. E blockerar Ung-release, inte Mellan.
+**REK:** A är det enda som får bli *produkt* i närtid. **A får inte bygga Mellan-UI som om planschen v1 eller variant B vore vald** — H1 och Mellan A/B/C är öppna. B2 (kvalitativa uppgifter på klickbara proto) tar bort mer UX-osäkerhet än mer skärmdesign. C blockerar D. D + F blockerar att E tolkas som go-ship. E blockerar Ung-release, inte Mellan.
 
 ---
 
@@ -75,7 +83,10 @@ SEDAN
 | Hem tomt för förälder till 14-åring (H5) | E + F | Ung-release utan förälder-värde |
 | Betalande vuxen tappar WTP (H7) | F (förbered), E (signal) | Packaging antas oförändrad |
 | Ung = Reminders (moat) | E + F | P0 blir privata todos / Mina mål / XP |
-| Mitt/Vårt/Delat inte begripligt / inte internationellt | A (sv copy 9–12), F (språktest), inte fork | Termer hårdkodas som evig sanning |
+| Mitt/Vårt/Delat inte begripligt / inte internationellt | A (sv copy 9–12), **B2** (beteendetest), F (språktest), inte fork | Termer hårdkodas som evig sanning |
+| Planschen v1 behandlas som build-spec | **B2** | Agent/design “implementerar planschen” |
+| H1 avgörs som “bara ton” utan A/B/C-proto | **B2** + B | Mellan shippas som vuxnare Liten |
+| Face ID / Mitt-flik / stjärnor OFF låses i UI | **B2** | Ung-detaljer ritas som beslut |
 | Store lovar 13+ innan Ung finns | A + butikstext orörd | Deklaration/copy utökas |
 | Familje-OS / samma Journey till 18 | F efter E | Behandlas som FACT |
 
@@ -210,6 +221,32 @@ Skriv mätplanen **innan** ni drar produkt-slutsats. H1 kan börja på *befintli
 
 ---
 
+## 8b. Spår B2 — Kvalitativ UX-research (hypoteskarta)
+
+**Varför nu:** Founder-review av åldersplanschen. Strategin håller. Specifika skärmar är nästan obevisade. Största risken är att en övertygande plansch blir beslut.
+
+**Artefakt:** `docs/nasta-arsgrupp-12-18-ux-hypoteskarta.md` (+ HTML-karta). Inte rev. 4. Inte produktkod.
+
+**Måste innehålla / följa**
+
+- Två axlar: autonomi × stödintensitet. Ålder = typisk default.
+- Fem rader: Liten · Mellan · Ung 13–15 (Noah 14) · Ung 16–18 (Maja 17) · Förälder.
+- Enhetsaxel och first use ≠ daily use.
+- Tre Mellan-proto (A vuxnare Liten / B förslag / C delat skapande) mot H1.
+- Ung: testa IA (Mitt/Vårt vs tidslinje); delning på objektet; auth märkt OQ; stjärnor = H4.
+- Förälder-Hem märkt H5/H7 — fyll inte tomrum med surveillance.
+- Pedagog + två hem som stress-test, inte v1-bygge.
+- Rekrytering och *beteendeuppgifter*, inte “tycker ni planschen är snygg?”.
+
+**Nästa 10/10-steg i B2:** 4–6 klickbara UX-hypoteser. Inte snyggare UI.
+
+**Osäkerhet den tar bort:** “vi vet hur 9–17-ytan ska se ut.”  
+**Osäkerhet den *inte* tar bort:** legal (C), inference-läckage (E), WTP-siffror (F).
+
+**DoD:** en agent kan inte ärligt säga att planschen v1 är build-underlag. En research-runda kan underkänna Mellan-B, Mitt/Vårt-flikar eller förälder-Hem utan att skriva om specen.
+
+---
+
 ## 9. Vad som medvetet *inte* görs i denna fas
 
 - Revision 4 av kravställningen.
@@ -219,12 +256,13 @@ Skriv mätplanen **innan** ni drar produkt-slutsats. H1 kan börja på *befintli
 - 13+ i butikstext eller Families/Kids-deklaration.
 - Nytt bundle-id, socialt, habit tracker, ersättningsvaluta.
 - Att stänga OQ i chatt.
+- Att behandla åldersplanschen v1 eller hypoteskartan som UI att implementera.
 
 ---
 
 ## 10. DoD för de-risk-fasen (inte för specen)
 
-De-risk-fasen har *börjat* när A, B och C är igång. Den har *lyckats för Mellan* när innehållsspecen är byggbar och H1 inte längre är gissning. Den har *lyckats för Ung* först när C + D + E + F finns och Noah-scenariot kan underkännas.
+De-risk-fasen har *börjat* när A, B, **B2** och C är igång. Den har *lyckats för Mellan* när innehållsspecen är byggbar och H1 inte längre är gissning (B + B2: ton vs ägarskap, inte bara copy). Den har *lyckats för Ung* först när C + D + E + F finns och Noah-scenariot kan underkännas. B2 kan underkänna Mitt/Vårt-flikar och förälder-Hem *innan* E kodas.
 
 Tills dess: **Mellan är produkten. Ung är ett kontrakt att bevisa.**
 
@@ -235,7 +273,9 @@ Tills dess: **Mellan är produkten. Ung är ett kontrakt att bevisa.**
 | Dokument | Roll |
 |----------|------|
 | `docs/nasta-arsgrupp-12-18-kravstallning.md` | Stängd spec (rev. 3) — OQ, H1–H7, S-10, läckagekanaler |
-| Detta dokument | Godkänd de-risk-plan |
+| `docs/nasta-arsgrupp-12-18-ux-hypoteskarta.md` | Fryst hypoteskarta — inte build-spec |
+| `docs/nasta-arsgrupp-12-18-ux-hypoteskarta.html` | Visuell hypoteskarta — inte appar att koda |
+| Detta dokument | Godkänd de-risk-plan · hur osäkerhet tas bort |
 | `docs/nasta-arsgrupp-12-18-mellan-innehall.md` | Spår A — Mellan innehållsspec |
 | `docs/nasta-arsgrupp-12-18-h1-audit.md` | Spår B — H1 produktion först, *varför* bara vid behov |
 | `docs/adr/` | Kommande D — skriv inte förrän C gett ramar |
