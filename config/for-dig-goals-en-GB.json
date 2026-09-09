@@ -76,5 +76,31 @@
       "Stay motivated over time",
       "Celebrate small wins"
     ]
+  },
+  "skarmtid-avtal": {
+    "title": "Screen time as a routine",
+    "headline": "Make screen time a clear routine",
+    "tagline": "Agreed screen time after homework — not nagging, not pocket money.",
+    "activateLabel": "Activate screen time as a routine",
+    "starsHint": "10–20 stars per week",
+    "outcomes": [
+      "Know that homework comes first",
+      "Have a clear time for screens",
+      "Stop negotiating every evening",
+      "Be able to change the agreement later"
+    ]
+  },
+  "fritid-traning": {
+    "title": "Training and free time",
+    "headline": "Get training and free time into the day",
+    "tagline": "Training and own time show up in the day — not only school.",
+    "activateLabel": "Activate training and free time",
+    "starsHint": "10–20 stars per week",
+    "outcomes": [
+      "See training in today's plan",
+      "Remember to pack for training",
+      "Have time that is theirs",
+      "Stop free time being forgotten"
+    ]
   }
 }

@@ -37,6 +37,10 @@ const FOR_DIG_LEGACY_ACTIVITY_TO_CANONICAL = Object.freeze({
   'packa väska': 'pack_school_bag',
   'packa skolväskan': 'pack_school_bag',
   'läxor': 'homework',
+  'läxa': 'homework',
+  'ledig tid': 'free_time',
+  'leka utomhus': 'outdoor_play',
+  'kvällsaktivitet': 'evening_activity',
 });
 
 function resolveLegacyScheduleNameCanonical(scheduleName) {

@@ -29,9 +29,9 @@ Ingen intervju-runda som primär metod. Ingen ledande TONE-vs-CONTRACT-fråga so
 | Observation | Varför |
 |-------------|--------|
 | `Skola vardag` kväll = Pyjamas + Sagostund | Skolstart-gate: 11–13 får lågstadiecopy |
-| Onboarding-preview skola slutar på Sagostund | `onboarding-sv-SE.json` |
-| För dig 9–12 ≈ Motivation + “Extra saga” | `for-dig-config.js` `ageMax` |
-| Skolansvar / samarbete hemma slutar vid 9 | Samma fil |
+| Onboarding-preview skola slutade på Sagostund *(P0: nu Läsa)* | `onboarding-sv-SE.json` · `docs/nasta-arsgrupp-12-18-mellan-p0.md` |
+| För dig 9–12 *före P0* ≈ Motivation + “Extra saga” *(P0: skolansvar till 12 + skärmtid/träning)* | `for-dig-config.js` · `docs/nasta-arsgrupp-12-18-mellan-p0.md` |
+| Samarbete hemma slutar vid 9 | Samma fil |
 | Startpaket 9–12 = samma som yngre skolbarn | `starter-plan-meta.js` `ageMax: 12` |
 | Förälder-journey: “Visa barnet”, “Låt barnet testa” | `journey-sv-SE.json` |
 

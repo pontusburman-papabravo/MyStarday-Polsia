@@ -9,7 +9,8 @@ import fs from 'fs';
 import path from 'path';
 
 const INCLUDE_WIDGET = process.env.IOS_INCLUDE_WIDGET === '1';
-const pbxPath = path.join(process.cwd(), 'ios', 'App', 'App.xcodeproj', 'project.pbxproj');
+const pbxPath = process.env.IOS_PBXPROJ_PATH
+  || path.join(process.cwd(), 'ios', 'App', 'App.xcodeproj', 'project.pbxproj');
 
 const EMBED_PHASE_LINE = 'R45D01051FED79650016851 /* Embed Foundation Extensions */,';
 const WIDGET_DEP_LINE = 'R45D01061FED79650016851 /* PBXTargetDependency */,';

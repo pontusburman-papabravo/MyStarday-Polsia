@@ -328,10 +328,14 @@ router.post('/complete-action', requireWidgetBinding, async (req, res, next) => 
     const alreadyDone = itemRow.rows[0]?.completed === true;
 
     const nextBefore = await resolveWidgetNextAction(req.widgetChildId);
+    const nextItem = nextBefore.status === 'ready' && nextBefore.activity?.instance_token
+      ? verifyInstanceToken(nextBefore.activity.instance_token, req.widgetChildId)
+      : { ok: false };
+    // Compare activity identity, not the reminted token string (expiry ticks every second).
     if (
       !alreadyDone
       && nextBefore.status === 'ready'
-      && nextBefore.activity?.instance_token !== instanceToken
+      && (!nextItem.ok || nextItem.dailyLogItemId !== verified.dailyLogItemId)
     ) {
       return res.status(409).json({
         status: 'stale_activity',

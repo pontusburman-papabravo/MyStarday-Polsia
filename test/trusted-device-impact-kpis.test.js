@@ -74,6 +74,21 @@ async function parentContext(db, session) {
   return parentRow.rows[0];
 }
 
+/** Instants inside the 30d KPI window, 24h apart → two Stockholm calendar days. */
+function twoRecentSessionDays() {
+  return [
+    new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+  ];
+}
+
+/** Two times on one UTC noon-centered day so they stay one Stockholm calendar day. */
+function twoTimesSameRecentDay() {
+  const noon = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+  noon.setUTCHours(12, 0, 0, 0);
+  return [new Date(noon), new Date(noon.getTime() + 6 * 60 * 60 * 1000)];
+}
+
 async function insertTdSession(db, familyId, parentId, deviceId, createdAt) {
   await db.query(
     `INSERT INTO analytics_events (family_id, event_type, metadata, created_at)
@@ -119,8 +134,9 @@ test('trusted device impact KPI definitions', async (t) => {
     const deviceId = deviceRow.rows[0].id;
 
     await db.query('DELETE FROM analytics_events WHERE family_id = $1', [familyId]);
-    await insertTdSession(db, familyId, parentId, deviceId, '2026-08-10 10:00:00+02');
-    await insertTdSession(db, familyId, parentId, deviceId, '2026-08-11 10:00:00+02');
+    const [dayOne, dayTwo] = twoRecentSessionDays();
+    await insertTdSession(db, familyId, parentId, deviceId, dayOne);
+    await insertTdSession(db, familyId, parentId, deviceId, dayTwo);
 
     const impact = await fetchTrustedDeviceImpactKpis('30d');
     assert.equal(impact.recurring.families_2plus_days, 1);
@@ -139,8 +155,9 @@ test('trusted device impact KPI definitions', async (t) => {
     const deviceId = deviceRow.rows[0].id;
 
     await db.query('DELETE FROM analytics_events WHERE family_id = $1', [familyId]);
-    await insertTdSession(db, familyId, parentId, deviceId, '2026-08-12 08:00:00+02');
-    await insertTdSession(db, familyId, parentId, deviceId, '2026-08-12 18:00:00+02');
+    const [morning, evening] = twoTimesSameRecentDay();
+    await insertTdSession(db, familyId, parentId, deviceId, morning);
+    await insertTdSession(db, familyId, parentId, deviceId, evening);
 
     const impact = await fetchTrustedDeviceImpactKpis('30d');
     const tdFamilies = impact.adoption.td_families;

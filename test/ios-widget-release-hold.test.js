@@ -1,8 +1,9 @@
 'use strict';
 
-const { describe, it, before, after } = require('node:test');
+const { describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawnSync } = require('node:child_process');
 
@@ -16,10 +17,6 @@ describe('ios widget release hold', () => {
 
   before(() => {
     original = fs.readFileSync(PBX, 'utf8');
-  });
-
-  after(() => {
-    fs.writeFileSync(PBX, original);
   });
 
   it('normal release path does not embed WidgetRoutine in App target', () => {
@@ -54,12 +51,23 @@ describe('ios widget release hold', () => {
       'dependencies = (\n\t\t\t);',
       'dependencies = (\n\t\t\t\tR45D01061FED79650016851 /* PBXTargetDependency */,\n\t\t\t);'
     );
-    fs.writeFileSync(PBX, poisoned);
-    const r = spawnSync(process.execPath, [PATCH], { cwd: ROOT, encoding: 'utf8' });
-    assert.equal(r.status, 0, (r.stdout || '') + (r.stderr || ''));
-    const updated = fs.readFileSync(PBX, 'utf8');
-    const appBlock = updated.match(/504EC3031FED79650016851F \/\* App \*\/ = \{[\s\S]*?\n\t\t\};/);
-    assert.ok(appBlock);
-    assert.doesNotMatch(appBlock[0], /Embed Foundation Extensions/);
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'widget-hold-'));
+    const tmpPbx = path.join(tmpDir, 'project.pbxproj');
+    fs.writeFileSync(tmpPbx, poisoned);
+    try {
+      const r = spawnSync(process.execPath, [PATCH], {
+        cwd: ROOT,
+        encoding: 'utf8',
+        env: { ...process.env, IOS_PBXPROJ_PATH: tmpPbx },
+      });
+      assert.equal(r.status, 0, (r.stdout || '') + (r.stderr || ''));
+      const updated = fs.readFileSync(tmpPbx, 'utf8');
+      const appBlock = updated.match(/504EC3031FED79650016851F \/\* App \*\/ = \{[\s\S]*?\n\t\t\};/);
+      assert.ok(appBlock);
+      assert.doesNotMatch(appBlock[0], /Embed Foundation Extensions/);
+      assert.equal(fs.readFileSync(PBX, 'utf8'), original, 'committed pbxproj must stay untouched');
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
   });
 });

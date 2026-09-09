@@ -156,3 +156,78 @@ test('R4.5: widget bind → next-action → complete with idempotency', async (t
     await db.cleanup();
   }
 });
+
+test('R4.5: same-item instance_token still completes after next-action remints expiry', async (t) => {
+  const db = await setupTestDb();
+  if (db.skip) {
+    t.skip('No real DATABASE_URL');
+    return;
+  }
+
+  const { createApp } = require('../app');
+  const { signInstanceToken, TOKEN_TTL_SEC } = require('../src/lib/widget-instance-token');
+  const http = await listenApp(createApp);
+
+  try {
+    await enableFlags(db);
+    const parent = await registerAndLogin(http.baseUrl);
+    const childId = await createChild(http.baseUrl, parent, { name: 'Remint Barn', emoji: '🦊' });
+    const childSession = await childLogin(http.baseUrl, db, childId);
+
+    const fam = await db.query('SELECT family_id FROM child WHERE id = $1', [childId]);
+    const familyId = fam.rows[0].family_id;
+    const { getLocalDateStr } = require('../src/lib/daily-log-generator');
+    const dateStr = getLocalDateStr(new Date(), 'Europe/Stockholm');
+    const tpl = await db.query(
+      `INSERT INTO activity_template (family_id, name, icon, star_value, sort_order, source)
+       VALUES ($1, 'Remint steg', '🪥', 1, 0, 'user') RETURNING id`,
+      [familyId]
+    );
+    await db.query('DELETE FROM daily_log WHERE child_id = $1 AND date = $2', [childId, dateStr]);
+    const logRes = await db.query(
+      'INSERT INTO daily_log (child_id, date) VALUES ($1, $2) RETURNING id',
+      [childId, dateStr]
+    );
+    const item = await db.query(
+      `INSERT INTO daily_log_item (daily_log_id, activity_template_id, name, icon, star_value, sort_order, section)
+       VALUES ($1, $2, 'Remint steg', '🪥', 1, 0, 'morgon') RETURNING id`,
+      [logRes.rows[0].id, tpl.rows[0].id]
+    );
+
+    const bindRes = await fetch(`${http.baseUrl}/api/widget/bindings`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: cookieHeader(childSession.cookies),
+      },
+      body: JSON.stringify({
+        installation_id: 'test-install-remint',
+        platform: 'ios',
+      }),
+    });
+    const bindText = await bindRes.text();
+    assert.equal(bindRes.status, 201, bindText);
+    const { binding_token: bindingToken } = JSON.parse(bindText);
+
+    const olderExp = Math.floor(Date.now() / 1000) + TOKEN_TTL_SEC - 30;
+    const olderToken = signInstanceToken(childId, item.rows[0].id, olderExp);
+
+    const completeRes = await fetch(`${http.baseUrl}/api/widget/complete-action`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${bindingToken}`,
+      },
+      body: JSON.stringify({
+        instance_token: olderToken,
+        idempotency_key: 'idem-remint-001',
+      }),
+    });
+    const completeBody = JSON.parse(await completeRes.text());
+    assert.equal(completeRes.status, 200, JSON.stringify(completeBody));
+    assert.equal(completeBody.status, 'completed');
+  } finally {
+    await http.close();
+    await db.cleanup();
+  }
+});

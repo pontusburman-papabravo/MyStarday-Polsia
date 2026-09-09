@@ -4,10 +4,24 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { FOR_DIG_GOALS, getGoalBySlug, getGoalsForLocale, VALID_INTENT_REASONS } = require('../src/lib/for-dig-config');
 
-test('for-dig config has 6 unique goals', () => {
-  assert.equal(FOR_DIG_GOALS.length, 6);
+test('for-dig config has unique goals including 9–12 content', () => {
+  assert.equal(FOR_DIG_GOALS.length, 8);
   const slugs = FOR_DIG_GOALS.map((g) => g.slug);
-  assert.equal(new Set(slugs).size, 6);
+  assert.equal(new Set(slugs).size, 8);
+  assert.ok(slugs.includes('skarmtid-avtal'));
+  assert.ok(slugs.includes('fritid-traning'));
+});
+
+test('Mellan 9–12 sees school and leisure goals, not only preschool', () => {
+  const forAge = (age) => FOR_DIG_GOALS.filter((g) => age >= g.ageMin && age <= g.ageMax);
+  const ten = forAge(10);
+  assert.ok(ten.some((g) => g.slug === 'skolansvar'));
+  assert.ok(ten.some((g) => g.slug === 'skarmtid-avtal'));
+  assert.ok(ten.some((g) => g.slug === 'fritid-traning'));
+  assert.ok(!ten.some((g) => g.slug === 'trygga-kvallar'));
+  const seven = forAge(7);
+  assert.ok(seven.some((g) => g.slug === 'skolansvar'));
+  assert.ok(!seven.some((g) => g.slug === 'skarmtid-avtal'));
 });
 
 test('for-dig config ageMin <= ageMax for all goals', () => {
@@ -59,8 +73,8 @@ test('each goal has outcome headline for parents', () => {
 test('getGoalsForLocale returns Swedish by default and English overlays for en-GB', () => {
   const sv = getGoalsForLocale('sv-SE');
   const en = getGoalsForLocale('en-GB');
-  assert.equal(sv.length, 6);
-  assert.equal(en.length, 6);
+  assert.equal(sv.length, 8);
+  assert.equal(en.length, 8);
   const svMotivation = sv.find((g) => g.slug === 'motivation');
   const enMotivation = en.find((g) => g.slug === 'motivation');
   assert.match(svMotivation.headline, /motivationen/i);

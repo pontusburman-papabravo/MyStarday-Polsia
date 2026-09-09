@@ -485,7 +485,7 @@
     },
     "previewFallback": {
       "forskola": ["Vakna", "Klä på dig", "Frukost", "Förskola", "Leka", "Middag", "Sagostund"],
-      "skola": ["Vakna", "Frukost", "Packa väska", "Skola", "Läxor", "Middag", "Sagostund"],
+      "skola": ["Vakna", "Frukost", "Packa väska", "Skola", "Läxor", "Middag", "Läsa"],
       "morgon": ["Vakna", "Klä på dig", "Borsta tänderna", "Frukost", "Packa väska"],
       "dag": ["Förskola", "Leka ute", "Mellanmål", "Lunch", "Pyssel"],
       "kvall": ["Middag", "Borsta tänderna", "Pyjamas", "Sagostund", "Sova"],

@@ -16,12 +16,12 @@
 |-----|----------------------|--------|
 | Startpaket | Samma `ageMax` 12 som 6–8. Inget eget 9–12-paket. | `config/starter-plan-meta.js` |
 | “Skola vardag” | En mall för 6–12. Kväll: Pyjamas + Sagostund (`bedtime_reading`). Läxor `is_optional`. | `config/standard-library/v1.1.json` · skolstart-gate |
-| Onboarding-preview | Skola-rad slutar på Sagostund. Kväll = Middag, tänder, Pyjamas, Sagostund, Sova. | `config/i18n/onboarding-sv-SE.json` |
-| För dig | Inget mål med `ageMax` ≥ 10 utom **Motivation** (3–12, “Extra saga”). Skolansvar slutar vid **9**. Samarbete hemma slutar vid **9**. | `src/lib/for-dig-config.js` |
+| Onboarding-preview | **P0 (denna PR):** skola-rad slutar på Läsa. Standard library `Skola vardag` kväll är fortfarande Pyjamas + Sagostund (fryst kontrakt). | `config/i18n/onboarding-sv-SE.json` · `docs/nasta-arsgrupp-12-18-mellan-p0.md` |
+| För dig | **P0 (denna PR):** `skolansvar` ageMax **12**. Nya mål `skarmtid-avtal` och `fritid-traning` (9–12). Samarbete hemma slutar vid **9**. | `src/lib/for-dig-config.js` |
 | Förälder-copy | “barnet”, “Visa barnet”, “Låt barnet logga in själv”. | `config/i18n/journey-sv-SE.json`, onboarding |
 | Store | 3–12 / 3–10 förskoleåldern. | Play/App Store-metadata i repo |
 
-**Slutsats (produkt, inte familjeintervju):** 9–12 får **Liten-innehåll med skolnamn**. Det är tillräckligt för att *börja* Mellan som content. Det bevisar **inte** H1.
+**Slutsats:** P0 tar bort det observerade content-gapet. Standard library-kväll och store-copy är orörda. Det bevisar **inte** H1.
 
 ---
 

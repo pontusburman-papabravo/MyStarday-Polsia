@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stjärndag — UX-hypoteskarta (inte build-spec)</title>
+  <style>
+    :root {
+      --ink: #1c2430;
+      --muted: #5b6573;
+      --paper: #f6f1e7;
+      --card: #fffdf8;
+      --line: #d7cfc2;
+      --gold: #e8b84a;
+      --gold-deep: #c4921c;
+      --warn: #8a3d12;
+      --warn-bg: #f8e4d4;
+      --teal: #2f6f6a;
+      --teal-soft: #dcecea;
+      --rose: #8b4a5a;
+      --rose-soft: #f3e4e8;
+      --ok: #3d6b45;
+      --ok-soft: #e4efe6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.45;
+    }
+    .sheet {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 22px 48px;
+    }
+    header.hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: start;
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 16px;
+      margin-bottom: 18px;
+    }
+    .kicker {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--gold-deep);
+      font-weight: 700;
+    }
+    h1 {
+      font-size: clamp(1.6rem, 3vw, 2.15rem);
+      margin: 4px 0 8px;
+      letter-spacing: -0.02em;
+    }
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+    }
+    .stamp {
+      border: 2px solid var(--warn);
+      color: var(--warn);
+      background: var(--warn-bg);
+      padding: 10px 12px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      max-width: 220px;
+      transform: rotate(-2deg);
+    }
+    .scores {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin: 16px 0 22px;
+    }
+    .score {
+      background: var(--card);
+      border: 1px solid var(--line);
+      padding: 8px 9px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    .score b { display: block; font-size: 1.05rem; }
+    .score span { font-size: 11px; color: var(--muted); }
+    .score.low { border-color: #d9a08a; background: #fff6f1; }
+    h2 {
+      font-size: 1.15rem;
+      margin: 26px 0 10px;
+    }
+    .axes-wrap {
+      background: var(--card);
+      border: 1px solid var(--line);
+      padding: 14px;
+    }
+    .grid-2d {
+      display: grid;
+      grid-template-columns: 150px repeat(3, 1fr);
+      gap: 6px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+    }
+    .cell {
+      background: #fbf7ef;
+      border: 1px solid var(--line);
+      min-height: 92px;
+      padding: 8px;
+    }
+    .cell.head, .cell.axis {
+      background: var(--ink);
+      color: #fff;
+      font-weight: 700;
+      min-height: auto;
+      display: flex;
+      align-items: center;
+    }
+    .cell.axis { justify-content: center; text-align: center; }
+    .cell.corner { background: transparent; border: 0; color: var(--muted); font-size: 11px; }
+    .age {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--gold-deep);
+      font-weight: 700;
+    }
+    .note { margin: 8px 0 0; color: var(--muted); font-size: .95rem; }
+    table.rows {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+    }
+    table.rows th, table.rows td {
+      border: 1px solid var(--line);
+      padding: 8px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    table.rows th {
+      background: var(--ink);
+      color: #fff;
+      font-weight: 650;
+    }
+    .slider {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: var(--teal-soft);
+      border: 1px solid #b7d4d0;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+    }
+    .slider strong { color: var(--teal); }
+    .track {
+      height: 8px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #e8efe8, #7aa3a0 55%, #2f6f6a);
+      margin: 8px 0 4px;
+      position: relative;
+    }
+    .track::after {
+      content: "";
+      position: absolute;
+      left: 62%;
+      top: -4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--gold);
+      border: 2px solid var(--ink);
+    }
+    .bands { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+    .device {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .device div {
+      background: var(--card);
+      border: 1px dashed var(--line);
+      padding: 10px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+    }
+    .cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      padding: 12px 14px;
+    }
+    .card h3 { margin: 0 0 8px; font-size: 1rem; }
+    ol, ul { margin: 0; padding-left: 1.15rem; }
+    li { margin: 4px 0; }
+    .proto {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .proto article {
+      background: var(--card);
+      border: 1px solid var(--line);
+      padding: 10px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+    }
+    .proto .n {
+      font-weight: 800;
+      color: var(--gold-deep);
+      font-size: 11px;
+      letter-spacing: .08em;
+    }
+    .warn-list {
+      background: var(--rose-soft);
+      border: 1px solid #e0c4cb;
+      padding: 12px 14px;
+    }
+    footer {
+      margin-top: 22px;
+      padding-top: 12px;
+      border-top: 2px solid var(--ink);
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    @media (max-width: 820px) {
+      header.hero, .scores, .grid-2d, .cols, .proto, .device, table.rows {
+        display: block;
+      }
+      .cell.head, .cell.axis { margin-top: 10px; }
+      .scores .score { margin-bottom: 6px; }
+      table.rows th { display: none; }
+      table.rows td { display: block; border-bottom: 0; }
+      table.rows tr { display: block; margin-bottom: 12px; border: 1px solid var(--line); }
+      table.rows td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--muted);
+        margin-bottom: 2px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <header class="hero">
+      <div>
+        <div class="kicker">Stjärndag · FRYST 2026-09-09 · STOP på plansch</div>
+        <h1>UX-hypoteskarta — inte hur appen ska se ut</h1>
+        <p class="sub">Göra åt mig → Göra tillsammans → Äga själv. Forskning ger riktning. <strong>Produktdata avgör.</strong> Default: ship-to-learn. Exception: prove-before-ship när felet är irreversibelt, osäkert, juridiskt eller privacy-förstörande.</p>
+      </div>
+      <div class="stamp">Fryst · inte mer UX-plansch<br>Mellan + Ung byggs parallellt<br>Ung G bakom flagg · E efter legal/ADR<br>B2-research-gate borttagen</div>
+    </header>
+
+    <section class="scores" aria-label="Founder-score på planschen v2">
+      <div class="score"><b>9/10</b><span>Strategi- / beslutsplansch</span></div>
+      <div class="score"><b>8/10</b><span>Build-underlag Mellan</span></div>
+      <div class="score"><b>5/10</b><span>UX vi vet fungerar</span></div>
+      <div class="score low"><b>3/10</b><span>Build-underlag Ung — korrekt</span></div>
+      <div class="score low"><b>H7</b><span>Föräldervärde måste bevisas</span></div>
+    </section>
+
+    <h2>1. Två axlar — ålder annoteras, den äger inte cellen</h2>
+    <div class="axes-wrap">
+      <div class="grid-2d" role="table" aria-label="Autonomi mot stödintensitet">
+        <div class="cell corner">Stöd ↑ · Autonomi →</div>
+        <div class="cell head">Göra åt mig</div>
+        <div class="cell head">Göra tillsammans</div>
+        <div class="cell head">Äga själv</div>
+
+        <div class="cell axis">Stark visuellt / exekutivt stöd</div>
+        <div class="cell"><span class="age">typisk default ~3–8</span><br>NU/NÄSTA, pictogram, en sak. Förälder bygger.</div>
+        <div class="cell"><span class="age">kan vara 9–12 eller 14</span><br>Delat skapande + timer / en-i-taget.</div>
+        <div class="cell"><span class="age">Noah 14 + NPF — måste gå</span><br>Privat default <em>och</em> NU/NÄSTA. NPF ≠ yngre barn.</div>
+
+        <div class="cell axis">Strukturerat stöd</div>
+        <div class="cell"><span class="age">~3–8 / 9–12</span><br>Tider, sektioner, bild valfritt.</div>
+        <div class="cell"><span class="age">typisk default ~9–12</span><br>Förslag eller delat skapande. H1 öppen.</div>
+        <div class="cell"><span class="age">~13–17</span><br>Egen dag + familjemarkering. Delning på objektet.</div>
+
+        <div class="cell axis">Lågt stöd</div>
+        <div class="cell"><span class="age">ovanligt default</span><br>Enkel lista, vuxen äger fortfarande.</div>
+        <div class="cell"><span class="age">självständig 11-åring</span><br>Mindre bildstöd. Inte “för ung för text”.</div>
+        <div class="cell"><span class="age">typisk default ~16–18</span><br>Maja 17: text, privat, Family-OS-värde?</div>
+      </div>
+      <p class="note">Ålder ≠ rättigheter. Ålder ≠ stödbehov. En födelsedag får inte tyst byta cell i policy-ledet.</p>
+    </div>
+
+    <div class="slider">
+      <strong>NPF / stöd-slider</strong> — går genom Liten, Mellan, Ung 13–15, Ung 16–18 och Förälder. Inte en fjärde produkt.
+      <div class="track" aria-hidden="true"></div>
+      <div class="bands"><span>Lågt stöd</span><span>Strukturerat</span><span>Mycket starkt visuellt/exekutivt</span></div>
+    </div>
+
+    <h2>2. Fem rader att testa — inte fem appar</h2>
+    <table class="rows">
+      <thead>
+        <tr>
+          <th>Persona</th>
+          <th>Access</th>
+          <th>Daily core</th>
+          <th>Autonomi</th>
+          <th>Viktigaste test</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Persona"><strong>Liten ~3–8</strong></td>
+          <td data-label="Access">Delad enhet + PIN</td>
+          <td data-label="Daily core">NU/NÄSTA → klart → nästa. Skatt sekundär.</td>
+          <td data-label="Autonomi">Göra åt mig</td>
+          <td data-label="Viktigaste test">Kan barnet göra dagen själv?</td>
+        </tr>
+        <tr>
+          <td data-label="Persona"><strong>Mellan ~9–12</strong></td>
+          <td data-label="Access">PIN / ev. egen enhet</td>
+          <td data-label="Daily core">Idag + testa förslag / delat skapande</td>
+          <td data-label="Autonomi">Göra tillsammans (H1)</td>
+          <td data-label="Viktigaste test">Vill barnet äga delar — eller är det mest ton?</td>
+        </tr>
+        <tr>
+          <td data-label="Persona"><strong>Ung 13–15 · Noah 14</strong></td>
+          <td data-label="Access">Privat access — <em>exakt auth OQ</em></td>
+          <td data-label="Daily core">Testa Mitt+Vårt <em>eller</em> en tidslinje</td>
+          <td data-label="Autonomi">Äga själv</td>
+          <td data-label="Viktigaste test">Förstår de privacy/delning?</td>
+        </tr>
+        <tr>
+          <td data-label="Persona"><strong>Ung 16–18 · Maja 17</strong></td>
+          <td data-label="Access">Egen identitet OQ</td>
+          <td data-label="Daily core">Egen dag + familj</td>
+          <td data-label="Autonomi">Nära full autonomi</td>
+          <td data-label="Viktigaste test">Finns Family-OS-värde kvar?</td>
+        </tr>
+        <tr>
+          <td data-label="Persona"><strong>Förälder</strong></td>
+          <td data-label="Access">Eget konto</td>
+          <td data-label="Daily core">Familjens läge, inte surveillance</td>
+          <td data-label="Autonomi">Coach</td>
+          <td data-label="Viktigaste test">Betalningsvärde utan implicit insyn? (H5/H7)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Enhetsaxel — saknades på planschen v1</h2>
+    <div class="device">
+      <div><strong>~3–8</strong><br>Delad iPad/telefon är naturlig.</div>
+      <div><strong>~9–12</strong><br>Blandat. Påverkar login och handoff.</div>
+      <div><strong>~13–18</strong><br>Egen enhet blir viktigare — inte bara annan login-skärm.</div>
+    </div>
+    <p class="note">First use ≠ daily use. Liten: förälder sätter upp, barnet onboardas inte själv. Ung: onboarding <em>är</em> förtroendekontraktet (vad ser jag / vad ser mamma / vad är privat).</p>
+
+    <h2>4. Vad planschen v1 låste för tidigt</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>Mellan — tre proto, inte en grön rad</h3>
+        <ol>
+          <li><strong>A</strong> vuxnare Liten — förälder skapar, Noah utför.</li>
+          <li><strong>B</strong> förslag — Noah föreslår, mamma accepterar.</li>
+          <li><strong>C</strong> delat skapande — båda lägger rader.</li>
+        </ol>
+        <p class="note">Uppgift: “Planera morgondagen.” Inte “vilken design gillar du?”</p>
+      </div>
+      <div class="card warn-list">
+        <h3>Ung — ifrågasätt nästan varje detalj</h3>
+        <ul>
+          <li>Mitt/Vårt kan kännas som familjeterapi. Testa också Min dag/Hemma och en tidslinje.</li>
+          <li>Delat stöd är handling på objektet — inte en primäryta.</li>
+          <li>Face ID = för tidigt. Märk “privat access — auth OQ”.</li>
+          <li>Stjärnor OFF = testhypotes, inte “tonår = inga stjärnor”.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>5. Implementationsskivor — inte proto-gate</h2>
+    <div class="proto">
+      <article><div class="n">SHIP</div><strong>Mellan-P0</strong><br>Content till riktiga 9–12-familjer. H1 mäts, avgörs inte i Figma.</article>
+      <article><div class="n">SHIP / FLAGG</div><strong>M-06 senare</strong><br>Delaktighet bakom flagg. Produktion avgör H1-B.</article>
+      <article><div class="n">UNG G</div><strong>Foundation bakom flagg</strong><br>Ton, shell, stöd, Min dag, instrumentation. Befintlig access.</article>
+      <article><div class="n">PROVE</div><strong>Ung E efter C→D</strong><br>Mitt / Vårt / dela hjälp. Inference + S-10 blockerande.</article>
+      <article><div class="n">KOHORT</div><strong>Noah 14 = primär · Maja 17 = stress</strong><br>Samma kärna. H4/H5/H7/moat från riktig användning.</article>
+      <article><div class="n">PRINCIP</div><strong>Ship-to-learn / prove-before-ship</strong><br>Proto bara om produktion inte kan svara före implementation.</article>
+    </div>
+
+    <h2>6. Vad produktionen ska lära oss — det som får oss att ändra riktning</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>Mellan — nu</h3>
+        <ul>
+          <li>Använder 9–12 appen efter content-fixen?</li>
+          <li>Används M-06 när den finns? (TEST NEXT)</li>
+          <li>Stannar familjen längre?</li>
+          <li>Används stjärnor fortfarande?</li>
+          <li>Vilka nya aktiviteter läggs till?</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Ung — G nu bakom flagg · E + kohort efter gates</h3>
+        <ul>
+          <li>Används Mitt? Används Vårt?</li>
+          <li>Delas saker frivilligt?</li>
+          <li>Tappar föräldern värde? (H7)</li>
+          <li>Fungerar Family OS?</li>
+          <li>Vill 17-åringen ha produkten alls?</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note"><strong>Privat default — REK, legal review kvar.</strong> · Ung = testperson 14 + stress-test 17, inte två produkter. · Mellan: BUILD NOW innehåll, TEST NEXT delaktighet.</p>
+
+    <h2>7. Forskning ger riktning. Produktdata avgör.</h2>
+    <div class="card">
+      <ul>
+        <li>Bradshaw et al. 2025 (238 studier, N = 126 423): autonomistöd kopplat till välbefinnande, psykologisk kontroll till sämre utfall. Princip — inte UI.</li>
+        <li>Stattin &amp; Kerr: föräldrakunskap kommer ofta från ungdomens disclosure. Explicit delning är vettig inriktning — inte bevis för en knapp.</li>
+        <li>Conde-Pumpido et al. 2025 (review-of-reviews): evidenskvalitet för digitala ADHD-interventioner generellt låg. Inget kliniskt löfte.</li>
+      </ul>
+    </div>
+
+    <footer>
+      Canonical text: docs/nasta-arsgrupp-12-18-ux-hypoteskarta.md · Stängd spec orörd · Ingen proto-gate ·
+      EVIDENCE_SOURCE: founder_observation för planschkritiken ·
+      Små steg. Större dagar. — när hypoteserna överlevt riktiga familjer.
+    </footer>
+  </div>
+</body>
+</html>
