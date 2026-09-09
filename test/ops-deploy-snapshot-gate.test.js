@@ -527,6 +527,37 @@ describe('migration-aware snapshot compare', () => {
     assert.deepEqual(missing, []);
   });
 
+  test('parent_apple_refresh_token has schema-only deploy contract (PR #1147 post-merge hotfix)', async () => {
+    const { loadMigrationSnapshotContract, aggregateMigrationContracts } = await import(
+      '../scripts/ops/lib/migration-snapshot-manifest.mjs'
+    );
+    const { compareDbSnapshots } = await import('../scripts/ops/lib/compare-snapshots.mjs');
+    const name = '1810460000000_parent_apple_refresh_token';
+    const contract = loadMigrationSnapshotContract(name, REPO_ROOT);
+    assert.ok(contract, name);
+    assert.equal(contract.backwardCompatible, true);
+    assert.equal(contract.schemaOnly, true);
+    const { missing } = aggregateMigrationContracts([name], REPO_ROOT);
+    assert.deepEqual(missing, []);
+
+    const baseline = fs.readFileSync(path.join(REPO_ROOT, 'db/baseline-schema.sql'), 'utf8');
+    assert.match(baseline, /apple_refresh_token TEXT/);
+    assert.match(baseline, /apple_client_hint VARCHAR\(16\)/);
+
+    const before = {
+      database_identity_hash: 'abc',
+      applied_migration_names: ['1810450000000_contact_message_reply_token'],
+      tables: baseTables(),
+    };
+    const after = structuredClone(before);
+    after.applied_migration_names.push(name);
+    const result = compareDbSnapshots(before, after, {
+      mode: 'post-migration',
+      repoRoot: REPO_ROOT,
+    });
+    assert.equal(result.ok, true, JSON.stringify(result.drift));
+  });
+
   test('payments_v1_entitlements allows declared family fingerprint change', async () => {
     const { compareDbSnapshots } = await import('../scripts/ops/lib/compare-snapshots.mjs');
     const name = '1810400000000_payments_v1_entitlements';

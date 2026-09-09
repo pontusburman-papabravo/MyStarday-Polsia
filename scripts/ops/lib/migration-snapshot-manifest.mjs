@@ -112,6 +112,10 @@ export const MIGRATION_SNAPSHOT_REGISTRY = {
     backwardCompatible: true,
     schemaOnly: true,
   },
+  '1810460000000_parent_apple_refresh_token': {
+    backwardCompatible: true,
+    schemaOnly: true,
+  },
 };
 
 /**

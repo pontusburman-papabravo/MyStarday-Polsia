@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS parent (
   preferred_view_mode VARCHAR(32) DEFAULT 'parent',
   apple_user_id VARCHAR(255),
   apple_email VARCHAR(255),
+  apple_refresh_token TEXT,
+  apple_client_hint VARCHAR(16),
   locked BOOLEAN DEFAULT false,
   pending_deletion BOOLEAN DEFAULT false,
   deletion_requested_at TIMESTAMPTZ,
