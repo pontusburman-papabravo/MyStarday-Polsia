@@ -276,7 +276,7 @@ describe('P1-1 — client contracts block legacy PIN on trusted paths', () => {
 describe('P1-2 — native cold-start authority', () => {
   it('native landing redirects to /home before localStorage login heuristic', () => {
     const src = fs.readFileSync(path.join(ROOT, 'src/middleware/platform-html.js'), 'utf8');
-    assert.match(src, /location\.replace\("\/home"\)/);
+    assert.match(src, /location\.replace\("\/home"\+location\.search\+location\.hash\)/);
     assert.doesNotMatch(src, /stjarndag_user/);
   });
 

@@ -149,7 +149,7 @@ describe('P0 — /home route exists and does not loop to /', () => {
       const root = await fetch(`${http.baseUrl}/`);
       assert.equal(root.status, 200);
       const rootHtml = await root.text();
-      assert.match(rootHtml, /location\.replace\("\/home"\)/);
+      assert.match(rootHtml, /location\.replace\("\/home"\+location\.search\+location\.hash\)/);
 
       const home = await fetch(`${http.baseUrl}/home`, { redirect: 'manual' });
       assert.equal(home.status, 200);
@@ -332,7 +332,7 @@ describe('P0 — PR #1005 hardening preserved', () => {
 
   it('native still redirects to /home (not localStorage authority)', () => {
     const src = fs.readFileSync(path.join(ROOT, 'src/middleware/platform-html.js'), 'utf8');
-    assert.match(src, /location\.replace\("\/home"\)/);
+    assert.match(src, /location\.replace\("\/home"\+location\.search\+location\.hash\)/);
     assert.doesNotMatch(src, /stjarndag_user/);
   });
 
