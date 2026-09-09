@@ -100,7 +100,7 @@ jobs:
 
       - name: Test (PR skipped L3 — classifier determined full gate not required)
         if: github.event_name == 'pull_request' && steps.route.outputs.l3_required != 'true'
-        run: echo "L3 skipped — automatic risk ${steps.route.outputs.final_risk} does not require full gate"
+        run: echo "L3 skipped — automatic risk ${{ steps.route.outputs.final_risk }} does not require full gate"
 
       - name: Migration rollback gate (G3c)
         run: node -r ./test/helpers/apply-test-database-env.js --test test/migration-rollback-gate.test.js

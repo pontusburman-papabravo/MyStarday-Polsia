@@ -2,6 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
@@ -631,6 +632,19 @@ test('Phase -1 PR self-classification is conservative (HIGH)', () => {
   });
   assert.equal(plan.riskClass, 'R3');
   assert.equal(plan.verificationPlan.L3.required, true);
+});
+
+test('CI run scripts interpolate step outputs via GitHub Actions, not bash ${steps.*}', () => {
+  const yaml = fs.readFileSync(path.join(ROOT, '.github/workflows/ci.yml'), 'utf8');
+  const runLines = yaml.split('\n').filter((line) => /^\s+run:/.test(line));
+  assert.ok(runLines.length > 0, 'ci.yml should have run: steps');
+  for (const line of runLines) {
+    assert.doesNotMatch(
+      line,
+      /\$\{(?!\{)steps\./,
+      `run script must use \${{ steps.* }} (or env), not bash \${steps.*}: ${line.trim()}`,
+    );
+  }
 });
 
 test('all configured domains resolve explicit l1Tests', () => {
