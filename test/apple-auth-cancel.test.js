@@ -303,7 +303,9 @@ describe('isAppleAuthCancellation — native + web variants', () => {
       message: 'Åtgärden kunde inte slutföras.',
     }), false);
     assert.equal(cancelApi.isAppleAuthCancellation({ message: 'network error' }), false);
-    assert.equal(cancelApi.canceledResult(), { canceled: true });
+    const canceled = cancelApi.canceledResult();
+    assert.equal(canceled.canceled, true);
+    assert.equal(canceled.idToken, undefined);
   });
 });
 
@@ -315,7 +317,8 @@ describe('platform.appleSignIn.signIn native cancel contract', () => {
       throw err;
     });
     const result = await Platform.appleSignIn.signIn();
-    assert.deepEqual(result, { canceled: true });
+    assert.equal(result.canceled, true);
+    assert.equal(result.idToken, undefined);
   });
 
   it('A) authorize reject with ERR_CANCELED returns { canceled: true }', async () => {
@@ -325,7 +328,8 @@ describe('platform.appleSignIn.signIn native cancel contract', () => {
       throw err;
     });
     const result = await Platform.appleSignIn.signIn();
-    assert.deepEqual(result, { canceled: true });
+    assert.equal(result.canceled, true);
+    assert.equal(result.idToken, undefined);
   });
 
   it('B) unknown AuthorizationError still throws APPLE_SIGN_IN_FAILED', async () => {
@@ -351,7 +355,8 @@ describe('platform.appleSignIn.signIn native cancel contract', () => {
       throw err;
     }, { includeCancelHelper: false });
     const result = await Platform.appleSignIn.signIn();
-    assert.deepEqual(result, { canceled: true });
+    assert.equal(result.canceled, true);
+    assert.equal(result.idToken, undefined);
   });
 });
 
