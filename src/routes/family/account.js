@@ -25,6 +25,7 @@ function clearSessionCookies(res) {
 router.delete('/delete-account', requireParent, requireNotPedagogOnly, async (req, res) => {
   const client = await db.getClient();
   let capturedAvatarKeys = [];
+  let capturedAppleTokens = [];
   let deletionMode = null;
   let committed = false;
   let selfParentId = null;
@@ -51,10 +52,12 @@ router.delete('/delete-account', requireParent, requireNotPedagogOnly, async (re
 
     if (impact.mode === 'family') {
       capturedAvatarKeys = await familyDeletion.collectFamilyAvatarStorageKeys(client, familyId);
+      capturedAppleTokens = await familyDeletion.collectAppleRefreshTokens(client, { familyId });
       await familyDeletion.hardDeleteFamilyData(client, familyId);
     } else {
       const parentKey = await familyDeletion.collectParentAvatarStorageKey(client, parentId);
       capturedAvatarKeys = parentKey ? [parentKey] : [];
+      capturedAppleTokens = await familyDeletion.collectAppleRefreshTokens(client, { parentId });
       await familyDeletion.removeParentFromFamily(client, {
         parentId,
         familyId,
@@ -81,6 +84,7 @@ router.delete('/delete-account', requireParent, requireNotPedagogOnly, async (re
 
   if (committed) {
     await familyDeletion.cleanupAvatarStorageKeysAfterCommit(capturedAvatarKeys);
+    await familyDeletion.revokeCollectedAppleTokens(capturedAppleTokens);
     if (deletionMode === 'self') {
       await familyDeletion.invalidateParentSessions(selfParentId, req.user.familyId);
     }

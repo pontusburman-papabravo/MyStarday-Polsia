@@ -2,11 +2,12 @@
  * Shared SQL literal escaping and INSERT generation for exports.
  */
 
-/** Column names redacted in full-database exports (values → literal '[REDACTED]'). */
+/** Column names redacted in full-database / family exports (values → literal '[REDACTED]'). */
 const REDACTED_COLUMN_NAMES = new Set([
   'password_hash',
   'token_hash',
   'native_token',
+  'apple_refresh_token',
 ]);
 
 function quoteIdent(name) {

@@ -65,7 +65,11 @@
         "test/credential-leak-guard.test.js",
         "test/register-form-gate.test.js",
         "test/register-oauth-country-gate.test.js",
-        "test/register-language-displayed.test.js"
+        "test/register-language-displayed.test.js",
+        "test/apple-auth-siwa-invariants.test.js",
+        "test/apple-auth-token-revoke.test.js",
+        "test/apple-refresh-token-exposure.test.js",
+        "test/apple-login-registration-split.test.js"
       ],
       "testGlobs": [
         "test/*auth*.test.js",

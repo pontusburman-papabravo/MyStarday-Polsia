@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * Apple login vs register contract — App Review 2.1(a) regression guard.
- * Login must not attempt account creation; unknown Apple IDs route to registration.
+ * SUPERSEDED 2026-09-08 split is now a regression guard in the opposite direction.
+ * Login must keep the first Apple credential and must not bounce to /register?method=apple.
  */
 
 const { describe, it } = require('node:test');
@@ -12,31 +12,32 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 
-describe('Apple login/register split (client contract)', () => {
-  it('login Apple handler sends intent login and routes REGISTRATION_REQUIRED to register', () => {
+describe('Apple login keeps the first Authentication Services credential', () => {
+  it('login Apple handler completes or asks for country/terms without a second authorize', () => {
     const login = fs.readFileSync(path.join(ROOT, 'public/login.html'), 'utf8');
     const start = login.indexOf('async function handleAppleLogin');
     assert.ok(start > 0);
-    const fn = login.slice(start, login.indexOf('function openAppleLinkModal', start));
-    assert.match(fn, /intent:\s*'login'/);
-    assert.match(fn, /data\.code === 'REGISTRATION_REQUIRED'/);
-    assert.match(fn, /\/register\?method=apple/);
-    assert.doesNotMatch(fn, /status === 201/);
-    assert.doesNotMatch(fn, /CountryChoice/);
-    assert.doesNotMatch(fn, /RegistrationCountryGate/);
+    const fn = login.slice(start, login.indexOf('document.getElementById(\'appleCompletionSubmitBtn\')', start));
+    assert.match(fn, /AppleAuthSession\.remember/);
+    assert.match(fn, /APPLE_ACCOUNT_COMPLETION_REQUIRED|isCompletionRequired/);
+    assert.doesNotMatch(fn, /REGISTRATION_REQUIRED/);
+    assert.doesNotMatch(fn, /\/register\?method=apple/);
+    assert.match(fn, /appleSignIn\.signIn/);
+    assert.equal((fn.match(/appleSignIn\.signIn/g) || []).length, 1);
   });
 
-  it('register Apple handler sends intent register and keeps country preflight', () => {
+  it('register Apple handler sends intent register and keeps country + terms preflight', () => {
     const html = fs.readFileSync(path.join(ROOT, 'public/register.html'), 'utf8');
     const fn = html.slice(html.indexOf('async function handleAppleRegister'));
     assert.match(fn, /intent:\s*'register'/);
     assert.match(fn, /RegisterAppleAuth\.preflight/);
+    assert.match(fn, /AppleAuthSession\.remember/);
   });
 
-  it('register shows neutral hint when opened from login Apple flow', () => {
+  it('legacy ?method=apple hides email/password identity fields', () => {
     const html = fs.readFileSync(path.join(ROOT, 'public/register.html'), 'utf8');
     assert.match(html, /id="appleRegistrationHint"/);
     assert.match(html, /params\.get\('method'\) === 'apple'/);
-    assert.match(html, /auth\.register\.appleFromLoginHint/);
+    assert.match(html, /hideEmailPasswordIdentityFields/);
   });
 });

@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const { sendEmail } = require('../../lib/email');
 const { maskEmail } = require('../../lib/log-redact');
 const userObservability = require('../../../db/user-observability');
+const parentDb = require('../../../db/parent');
 
 const router = express.Router();
 
@@ -496,10 +497,13 @@ router.delete('/parents/:id/apple-link', async (req, res) => {
       return res.status(400).json({ error: 'Ingen Apple-link att ta bort' });
     }
 
+    const appleTokenRows = await parentDb.listAppleRefreshTokens({ parentId: id });
     await db.query(
-      'UPDATE parent SET apple_user_id = NULL, apple_email = NULL WHERE id = $1',
+      'UPDATE parent SET apple_user_id = NULL, apple_email = NULL, apple_refresh_token = NULL, apple_client_hint = NULL WHERE id = $1',
       [id]
     );
+    const { revokeCollectedAppleTokens } = require('../../lib/family-deletion');
+    await revokeCollectedAppleTokens(appleTokenRows);
 
     await db.query(
       `INSERT INTO admin_audit_log (admin_id, target_family_id, action, metadata)

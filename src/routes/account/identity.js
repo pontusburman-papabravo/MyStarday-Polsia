@@ -8,6 +8,7 @@ const { requireParent } = require('../../middleware/auth');
 const { validate } = require('../../middleware/validate');
 const { SetPasswordSchema } = require('./schemas');
 const { getAccountAuth } = require('./helpers');
+const parentDb = require('../../../db/parent');
 
 const router = express.Router();
 
@@ -95,10 +96,13 @@ router.delete('/unlink-apple', requireParent, async (req, res) => {
       return res.status(401).json({ error: 'Felaktigt lösenord' });
     }
 
+    const appleTokenRows = await parentDb.listAppleRefreshTokens({ parentId });
     await db.query(
-      'UPDATE parent SET apple_user_id = NULL, apple_email = NULL WHERE id = $1',
+      'UPDATE parent SET apple_user_id = NULL, apple_email = NULL, apple_refresh_token = NULL, apple_client_hint = NULL WHERE id = $1',
       [parentId]
     );
+    const { revokeCollectedAppleTokens } = require('../../lib/family-deletion');
+    await revokeCollectedAppleTokens(appleTokenRows);
 
     const accountAuth = await getAccountAuth(parentId);
     res.json({
