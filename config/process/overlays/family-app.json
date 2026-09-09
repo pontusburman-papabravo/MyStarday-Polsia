@@ -68,6 +68,7 @@
         "test/register-language-displayed.test.js",
         "test/apple-auth-siwa-invariants.test.js",
         "test/apple-auth-token-revoke.test.js",
+        "test/apple-refresh-token-exposure.test.js",
         "test/apple-login-registration-split.test.js"
       ],
       "testGlobs": [

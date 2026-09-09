@@ -64,6 +64,8 @@ Settings → Radera mitt konto → `DELETE /api/family/delete-account`.
 
 On delete/unlink, stored `apple_refresh_token` is revoked at `https://appleid.apple.com/auth/revoke` when `APPLE_TEAM_ID` + `APPLE_SIGN_IN_KEY_ID` + `APPLE_SIGN_IN_PRIVATE_KEY` (or `APPLE_SIGN_IN_KEY_PATH`) are configured. The authorization code from the same auth transaction is exchanged for that refresh token.
 
+`apple_refresh_token` is server-side only. Exports, snapshots, `/api/auth/me`, session JSON, and admin family payloads must redact or omit it. It must not be logged.
+
 ---
 
 ## Översikt
