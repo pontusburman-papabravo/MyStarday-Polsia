@@ -77,7 +77,7 @@ function localizeTemplateGroup(group) {
 
 const PREVIEW_FALLBACK_EMOJIS = {
   forskola: ['🛏️', '👕', '🍳', '🏫', '🧩', '🍽️', '📕'],
-  skola:    ['🛏️', '🍳', '🎒', '🏫', '📚', '🍽️', '📕'],
+  skola:    ['🛏️', '🍳', '🎒', '🏫', '📚', '🍽️', '📖'],
   morgon:   ['🛏️', '👕', '🪥', '🍳', '🎒'],
   dag:      ['🏫', '🛝', '🍎', '🏃', '📚'],
   kvall:    ['🍽️', '🪥', '🧸', '📕', '😴'],

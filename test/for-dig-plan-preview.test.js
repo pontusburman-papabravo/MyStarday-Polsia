@@ -16,6 +16,8 @@ test('each goal has parent-facing headline', () => {
     skolansvar: 'Få hela skoldagen att flyta',
     'samarbete-hemma': 'Få hjälp med dukning och städning',
     motivation: 'Hålla motivationen uppe med belöningar',
+    'skarmtid-avtal': 'Få skärmtid att bli en tydlig rutin',
+    'fritid-traning': 'Få träning och fritid in i dagen',
   };
 
   for (const goal of FOR_DIG_GOALS) {

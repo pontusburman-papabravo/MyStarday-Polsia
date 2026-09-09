@@ -485,7 +485,7 @@
     },
     "previewFallback": {
       "forskola": ["Wake up", "Get dressed", "Breakfast", "Nursery", "Play", "Dinner", "Bedtime story"],
-      "skola": ["Wake up", "Breakfast", "Pack bag", "School", "Homework", "Dinner", "Bedtime story"],
+      "skola": ["Wake up", "Breakfast", "Pack bag", "School", "Homework", "Dinner", "Reading"],
       "morgon": ["Wake up", "Get dressed", "Brush teeth", "Breakfast", "Pack bag"],
       "dag": ["Nursery", "Play outside", "Snack", "Lunch", "Crafts"],
       "kvall": ["Dinner", "Brush teeth", "Pyjamas", "Bedtime story", "Sleep"],
