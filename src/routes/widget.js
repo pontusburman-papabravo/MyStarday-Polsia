@@ -16,7 +16,7 @@ const { getFamilyPreferredLocale } = require('../lib/family-locale');
 const { resolveActivityDisplayName } = require('../lib/family-content-display');
 const { isNativeWidgetEnabled, isWidgetCompletionEnabled } = require('../lib/widget-flags');
 const { resolveWidgetNextAction } = require('../lib/widget-next-activity');
-const { verifyInstanceToken } = require('../lib/widget-instance-token');
+const { verifyInstanceToken, isSameWidgetActivity } = require('../lib/widget-instance-token');
 const { completeChildDailyLogItem } = require('../lib/widget-child-complete');
 const idempotencyDb = require('../../db/widget-idempotency');
 const analytics = require('../../db/analytics');
@@ -331,7 +331,11 @@ router.post('/complete-action', requireWidgetBinding, async (req, res, next) => 
     if (
       !alreadyDone
       && nextBefore.status === 'ready'
-      && nextBefore.activity?.instance_token !== instanceToken
+      && !isSameWidgetActivity(
+        instanceToken,
+        nextBefore.activity?.instance_token,
+        req.widgetChildId
+      )
     ) {
       return res.status(409).json({
         status: 'stale_activity',

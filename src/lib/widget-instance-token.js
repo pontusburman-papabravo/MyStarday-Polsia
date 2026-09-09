@@ -47,8 +47,16 @@ function verifyInstanceToken(token, expectedChildId) {
   }
 }
 
+/** Same daily_log_item — ignore expiry so reminted tokens are not treated as stale. */
+function isSameWidgetActivity(leftToken, rightToken, expectedChildId) {
+  const left = verifyInstanceToken(leftToken, expectedChildId);
+  const right = verifyInstanceToken(rightToken, expectedChildId);
+  return Boolean(left.ok && right.ok && left.dailyLogItemId === right.dailyLogItemId);
+}
+
 module.exports = {
   TOKEN_TTL_SEC,
   signInstanceToken,
   verifyInstanceToken,
+  isSameWidgetActivity,
 };
