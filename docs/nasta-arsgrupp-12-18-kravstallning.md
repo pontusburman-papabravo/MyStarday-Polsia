@@ -1,10 +1,10 @@
 # Nästa årsgrupp 12–18 — Spec och kravställning
 
-**Status:** Diskussionsunderlag (ej låst produktbeslut, ej ADR)  
-**Datum:** 2026-09-09  
+**Status:** Diskussionsunderlag (ej låst produktbeslut, ej ADR, ej build-spec)  
+**Revision:** 2 — 2026-09-09  
 **Typ:** Spec + krav · **ingen kod**  
-**Syfte:** Skriva ut dagens användarupplevelse (barn + förälder + övriga), matcha mot vad som faktiskt finns, och kravställa nästa årsgrupp från pre-teen till ung vuxen.  
-**Användning:** Bolla med ChatGPT, Gemini och Cursor. Klistra in hela filen. Be dem attackera rekommendationen, inte parafrasera den.
+**Syfte:** Skriva ut dagens användarupplevelse, matcha mot vad som finns, och kravställa nästa årsgrupp så att underlaget överlever kritisk granskning.  
+**Användning:** Bolla med ChatGPT, Gemini och Cursor. Klistra in hela filen. Be dem attackera rekommendationen.
 
 **Relaterat (auktoritet, inte detta dokument):**
 
@@ -17,64 +17,97 @@
 | `docs/npf-arkitektur-v1.md` | NPF-by-default, 3–12 |
 | `docs/family-journey-system-spec.md` | En Journey-auktoritet |
 | `docs/skolstart-2026-product-gate.md` | Åldersgap i startscheman |
-| `docs/google-play-app-content.md` · `docs/app-store-connect-metadata.md` | Butik: 3–12 / 3–10, förskoleton |
+| `docs/google-play-app-content.md` · `docs/app-store-connect-metadata.md` | Nuvarande butikstexter (3–12 / 3–10) |
 
-**Evidensmarkering i detta dokument**
+**Evidensmarkering**
 
 | Märkning | Betydelse |
 |----------|-----------|
-| **FACT** | Finns i kod, config, butiksmetadata eller godkänd vision |
-| **VISION** | Godkänd produktkompass, men live-UI kan fortfarande skilja sig |
-| **REK** | Rekommendation i detta underlag — inte beslut |
+| **FACT** | Verifierat i kod, config, butiksmetadata, godkänd vision *eller* primärkälla |
+| **VISION** | Godkänd produktkompass; live-UI kan skilja sig |
+| **REK** | Rekommendation här — inte beslut |
 | **OQ** | Open Question — får inte uppfinnas i implementation |
+| **EVIDENCE** | Extern forskning eller officiell policy som *stödjer* ett avgränsat påstående |
+| **NOT_VERIFIED** | Rimlig inferens eller produktantagande utan verifierad evidens |
+| **REJECTED** | Tidigare påstående som inte håller efter granskning |
 
 ---
 
-## 0. Hur du bollar detta med andra modeller
+## 0. Hur du bollar detta
 
-Klistra in dokumentet och ställ **en** av frågorna i taget. Be om oenighet.
+Klistra in dokumentet och ställ **en** fråga i taget. Be om oenighet.
 
-1. Är 12–18 en årsgrupp eller tre olika produkter?
-2. Vilka av dagens konstitutionsregler måste brytas för 13+ — och vilka får aldrig brytas?
-3. Vad är den minsta v1 som är värd att bygga för pre-teen, utan att förstöra 3–8?
-4. Vilken motivation ersätter stjärnor/Skattkammaren för 13–15 utan att bli ett vanligt todo-verktyg?
-5. Hur ser förälderrollen ut när barnet inte längre *ska* styras, men familjen fortfarande behöver struktur?
-6. Vilka juridiska/åldersgränser (GDPR 13, butik 3–12, hälsa, skärm) blockerar vad?
+1. Håller presentation-vs-policy-uppdelningen, eller smyger ålder tillbaka som behörighet?
+2. Är objektgränserna Mitt / Vårt / Delat stöd begripliga nog — eller blir de ACL i förklädnad?
+3. Är Mellan-först + Ung-spike det minsta säkra scopet?
+4. Blir Ung en todo-app om vi tar bort mål och stjärnor?
+5. Vilken information *måste* en vårdnadshavare kunna se trots privat default?
 
-**Detta dokument är inte en build-spec.** Inget här får kodas utan separat beslut + ev. ADR.
+**Inget här får kodas utan separat beslut + ev. ADR.**
+
+---
+
+## 0b. Adversarial review (intern, före revision)
+
+Granskningen försökte **motbevisa** revision 1. Resultat som styr revision 2:
+
+| Påstående i rev. 1 | Utfall | Varför |
+|--------------------|--------|--------|
+| Tre ålderslägen *styr* behörighet | **REJECTED** som behörighetsmodell | Magiska gränser. En 14-åring med NPF behöver Ung-integritet *och* NU/NÄSTA. Ålder får bara föreslå presentation. |
+| “Föräldern ser mindre när barnet blir äldre” | **Försvagat** | För grovt. Riskerar att straffa samarbete. Ersatt: mindre *implicit* insyn, mer *explicit* delning. |
+| Fältvis ACL (Bara jag / Familj / Pedagog) | **REJECTED** för Ung v1 | Mini-Google-Drive. Läckagerisk via metadata. Ersatt: objektägande. |
+| “Mina mål” P0 | **REJECTED** för Ung v1 | Habit tracker. Inför streak, misslyckande, känsliga mål. Flyttas till hypotes. |
+| GDPR 13 = eget konto / vuxenstatus | **REJECTED** | Art. 8 + svensk 13-årsregel gäller *samtycke till ISS*, inte avtal, konto eller isolering från vårdnadshavare. Irland = 16. |
+| “Store rating blockerar 13+” | **REJECTED** som FACT | Play har målgrupper 13–15 och 16–17. Problemet är *deklaration vs faktisk app*, inte att 13+ saknas som kategori. |
+| Stjärnor slutar fungera vid exakt 13 | **NOT_VERIFIED** | Produktantagande. Default OFF för Ung-policy, inte åldersmagi. |
+| Familjer lämnar vid 10–12 p.g.a. ton | **NOT_VERIFIED** | Ingen mätning i detta underlag. Hypotes, inte FACT. |
+| Ny ersättningsvaluta (frihet/XP/veckopeng) | **REJECTED** för v1 | Nytt motivationssystem utan evidens. Scope-creep. |
+| Ung = tre nya ytor inkl. mål | **Försvagat** | P0: Min dag + Vi hemma. Återanvänd Idag/Mina personer om möjligt. |
+
+**Vad som *höll*:** en familje-OS; Liten skyddad; Mellan först kommersiellt; ingen social v1; inga nya hälsodata; stjärnor ej köpbara; C-01 omtolkas via ADR, slopas inte.
+
+**Konflikt flaggad, inte tvingad:** om objektägande + privat default gör Hem värdelöst för föräldern till en 14-åring, då är Ung inte värt att shippa — bara att de-riska. Det är därför Ung är spike, inte release.
 
 ---
 
 ## 1. Slutsats först (REK)
 
-**Bygg inte en tonårsreskin av dagens barnapp.**
+**Bygg inte en tonårsreskin. Bygg inte heller tre behörighetskaster efter födelsedag.**
 
-Dagens produkt är *rätt* för ungefär **3–10**, med en *tänjbar* kärna till **11–12**. Den är *fel verktyg* för 16–18 om man bara byter copy och tar bort sagor.
+Ålder väljer **defaultupplevelse**. Autonomi, ägarskap och delning styr **beteendet**.
 
-**Gör så här i stället:**
+Progressionen som produkten ska möjliggöra:
 
-1. Behåll **en familje-OS** (konto, schema, stjärnor som valfritt bränsle, Hem, Journey, medförälder, pedagog).
-2. Inför **tre barnlägen** på samma barnpost — inte tre appar:
-   - **Liten** (~3–8) — dagens produkt
-   - **Mellan** (~9–12) — samma loop, mer ord, mer skolansvar, mindre sagoton
-   - **Ung** (13–18) — ny yta: autonomi, integritet, mål, föräldern som coach
-3. Dela **Ung** i krav (13–15 vs 16–18) men **inte** i två appar i v1.
-4. **Första värdet** är 9–12-stretch (innehåll + ton) + en smal 13–15-spik (integritet + självplanering). Inte ung vuxen först.
-5. **Expandera inte butikens målgrupp till 13+** förrän Ung v1 är verklig. Annars lovar vi en förskoleapp till tonåringar.
+```
+Göra åt mig  →  Göra tillsammans  →  Äga själv
+```
 
-**Varför:** 12 och 18 är inte samma användare. En 12-åring kan fortfarande behöva NU/NÄSTA och stjärnor. En 17-åring som ser “Sagostund”, PIN-djurikoner och “be en vuxen” tappar förtroendet — och tar med sig yngre syskon ut.
+Liten / Mellan / Ung är **presentations- och innehållspresets**, inte access-modell.
+
+En 14-åring ska kunna ha Ung integritetsmodell *och* NU/NÄSTA, bildstöd, timer, fokusläge, en sak i taget. Stödbehov får inte reducera autonomi.
+
+**Leveransordning (REK):**
+
+1. **Mellan (9–12)** = första kommersiella leverans: ton, startschema, För dig — samma loop som Liten.
+2. **Ung architecture spike** = parallell de-risking, **inte** release. Bevisar Noah-scenariot nedan.
+3. **Inte** ung vuxen-innehåll (16–18) förrän spike håller.
+4. **Marknadsför inte** 13+ förrän Ung-upplevelsen finns och klarar kraven. Det är ett *löftes-* och deklarationskrav — inte att Play/Apple saknar 13+-fack.
+
+**Kritisk arkitekturhypotes (spike, måste kunna falsifieras):**
+
+> Noah, 14, skapar “Matteprov fredag”. Den är privat. Föräldern kan inte läsa eller härleda den via API, Hem, notis, analytics, rapport eller pedagogvy. Samtidigt finns familjeåtagandet “Middag hemma 18:00” som relevant förälder ser. Noah kan själv välja att dela matteprovet för att få hjälp.
+
+Om hypotesen faller (läckage eller förälder-Hem blir tomt och värdelöst) — **stoppa Ung-release**. Mellan får inte blockeras.
 
 ---
 
 ## 2. Vad produkten är idag
 
-### 2.1 Ett meningsskapande (FACT + VISION)
+### 2.1 Mening (FACT + VISION)
 
 Produkten är **inte** ett schemaverktyg. Det är en familjeprodukt som ska göra vardagen lite enklare, lugnare och tydligare.
 
 > First Success = första gången familjen upplever att appen hjälpte dem i vardagen.
-
-Kärnloopen:
 
 ```
 Förälder sätter struktur
@@ -92,12 +125,12 @@ Föräldern ser läget och tar bara vuxenbeslut
 
 **Barnet är huvudpersonen. Föräldern är hjälparen.** (First Success lag 4, P-02)
 
-### 2.2 Fem konstitutionsregler (FACT)
+### 2.2 Konstitution (FACT)
 
-1. Produkten leder — användaren ska inte lista ut nästa steg.
+1. Produkten leder.
 2. Produkten överraskar inte.
 3. Det finns alltid ett nästa steg, eller en tydlig anledning att inget behövs.
-4. Efter varje handling: *jag verkar göra rätt.*
+4. Efter handling: *jag verkar göra rätt.*
 5. Efter registrering ska appen kännas mer färdig än före.
 
 Plus: inga magiska tal i progression.
@@ -106,15 +139,17 @@ Plus: inga magiska tal i progression.
 
 | Källa | Ålder |
 |-------|--------|
-| Google Play målgrupp | vuxna + barn **3–12** |
-| App Store-beskrivning | **3–10**, “förskoleåldern” |
+| Google Play-deklaration i repo | vuxna + barn **3–12** (`docs/google-play-app-content.md`) |
+| App Store-beskrivning i repo | **3–10**, “förskoleåldern” |
 | NPF-principer (`barnmeny-v2`) | låsta för **NPF 3–12** |
 | Startpaket (`starter-plan-meta`) | `ageMin` 3, `ageMax` **12** |
 | Onboarding åldersband | `3-5` · `6-8` · `9-12` · **`13+` finns som input** |
 | För dig-mål | max **12**, de flesta 3–9 |
-| Skolstart-gate | 11–13 får *Skola vardag* med lågstadiecopy (“Sagostund”, “Pyjamas”); **inget teenschema** |
+| Skolstart-gate | 11–13 får *Skola vardag* med lågstadiecopy; **inget teenschema** |
 
 **FACT:** Produkten *accepterar* 13+ i onboarding-input. Den *levererar* inte en 13+-upplevelse.
+
+**REJECTED:** att nuvarande store-*rating* i sig blockerar 13+ som teknisk kategori. Se §22.
 
 ### 2.4 Vad den medvetet inte är (FACT / VISION)
 
@@ -125,94 +160,60 @@ Plus: inga magiska tal i progression.
 - Inte ett Toca Boca / Animal Crossing-spel
 - Inte ett barnformulär / barninställningslabb (C-01)
 - Inte skuld vid bruten streak
-- Inte login-bonusar (G-01: verklighet före firande)
+- Inte login-bonusar (G-01)
 
 ---
 
 ## 3. Alla inblandade idag
 
-| Roll | Vem | Jobb i produkten | Känsla som ska sitta |
-|------|-----|------------------|----------------------|
-| **Barn** | 3–12, ofta NPF | Göra dagen, samla, spara till belöning | *Det här är min värld. Jag vet vad jag ska göra nu.* |
-| **Förälder (primary)** | Skapade familjen | Bygga rutin, se läge, godkänna undantag | *Det här hjälper oss. Jag vet nästa steg.* |
-| **Medförälder (shared)** | Inbjuden vuxen, ev. bara vissa barn | Samma föräldrajobb på sina barn | Samma, utan att se barn hen inte har länk till |
-| **Pedagog / terapeut** | Inbjuden, `role: pedagog` | Observation, översikt, inte familjeadmin | Professionell, avgränsad |
-| **Dual-konto** | Förälder som också är pedagog | Byter helt UI-universum | Inte en sjätte föräldraflik |
-| **Familjen som enhet** | `family` | Timezone, prenumeration, Journey-fas | En resa, ett nästa steg |
-| **Syskon** | Flera `child` i samma family | Egna scheman, egna stjärnor | Ingen jämförelse |
-| **Delad enhet** | En telefon / iPad | Trusted device, byt barn, vuxen-PIN | Tryggt, inte läckande sessioner |
-| **Admin** | Intern | Impersonering, bibliotek, flaggor | Inte användarupplevelse |
+| Roll | Vem | Jobb | Känsla |
+|------|-----|------|--------|
+| **Barn** | 3–12, ofta NPF | Göra dagen, samla, spara | *Min värld. Jag vet vad jag ska göra nu.* |
+| **Förälder (primary)** | Skapade familjen | Bygga, se läge, godkänna undantag | *Det här hjälper oss.* |
+| **Medförälder (shared)** | Inbjuden, ev. vissa barn | Samma jobb på sina barn | Utan barn hen inte har länk till |
+| **Pedagog / terapeut** | `role: pedagog` | Observation, inte familjeadmin | Professionell, avgränsad |
+| **Dual-konto** | Förälder + pedagog | Byter UI-universum | Inte sjätte flik |
+| **Familjen** | `family` | Timezone, IAP, Journey | En resa, ett nästa steg |
+| **Syskon** | Flera `child` | Egna scheman, egna stjärnor | Ingen jämförelse |
+| **Delad enhet** | En iPad | Trusted device, byt barn | Ingen läckande session |
+| **Admin** | Intern | Impersonering, bibliotek | Inte UX |
 
-**OQ för 12–18:** Är den unga personen fortfarande “barn” i datamodellen, eller blir hen en tredje kontotyp (egen e-post, egen GDPR-rätt)?
+**OQ:** Identitet 13+ — fortfarande `child`+PIN, eller tredje kontotyp? Se §17.1. **Inte** avgjort av GDPR-13.
 
 ---
 
 ## 4. Förälderns hela upplevelse (idag)
 
-### 4.1 Förälderns jobb (VISION, låst IA)
-
-Fem flikar. Inget “Mer”. Inställningar i avatar.
+### 4.1 Jobb (VISION, låst IA)
 
 | Flik | Route | Jobb | Inte |
 |------|-------|------|------|
-| **Hem** | `/dashboard` | Läget idag, ett nästa steg, undantag | Schemaeditor, analytics, katalog |
-| **Planering** | `/planning` → schema, bibliotek, kalender | Bygga och ändra | Daglig coach |
-| **Belöningar** | `/rewards` | Godkänna, hantera kista, se stjärnor | Syskonjämförelse, schema |
-| **För dig** | `/for-dig` | Problem → färdig rutin att aktivera | Tom tipslista |
-| **Familj** | `/family` | Människor: barn, vuxna, pedagoger | Push, GDPR, prenumeration |
+| **Hem** | `/dashboard` | Läget, ett nästa steg, undantag | Schemaeditor, analytics |
+| **Planering** | `/planning` | Bygga och ändra | Daglig coach |
+| **Belöningar** | `/rewards` | Godkänna, kista, stjärnor | Syskonjämförelse |
+| **För dig** | `/for-dig` | Problem → färdig rutin | Tom tipslista |
+| **Familj** | `/family` | Människor | Push, GDPR, IAP |
 
-**Beslutsregeln på Hem:** högst en komponent får föreslå nästa handling. Godkännanden och inbjudningar är *blockerare*, inte “nästa steg”.
+**Beslutsregel Hem:** högst en komponent föreslår nästa handling. Godkännanden är *blockerare*.
 
-### 4.2 Dag 0 — från noll till rutin (FACT + VISION)
+### 4.2 Dag 0 (FACT + VISION)
 
-**Målbild (First Success / slim signup):**
+Slim signup: namn, e-post, lösen, barnnamn (+ ev. ålder/rutintyp). Familjen får barn + PIN + rutin + standardbelöningar. Success: *Visa barnet*. Handoff till NU/NÄSTA.
 
-1. Förälderns namn, e-post, lösenord, barnets namn. (I ACT-1 även ålder + rutintyp.)
-2. Inget tomt verktyg. Familjen får barn + PIN + färdig morgon- eller kvällsrutin + standardbelöningar.
-3. Success: *[Barn] är redo* → primär **Visa barnet**, sekundär **Ändra rutinen**.
-4. Handoff: barnet ser NU / NÄSTA / SENARE och kan bocka av direkt.
+**Live:** legacy-wizard och Journey-flaggor default OFF finns kvar. Kravställ mot **målet**.
 
-**Tid på dygnet styr första rutinen:** före 15 → morgon *imorgon*; efter 15 → kväll *ikväll*.
+### 4.3 Morgon 07:15
 
-**Live-verklighet (ärlig):** det finns fortfarande legacy-wizard, mallväljare och feature-flaggade vägar. Journey-systemet (Fas 1) finns i kod men flaggor default OFF. För kravställning: **målet vinner över wizard-arvet.**
+Hem: läge per barn utan jämförelse; undantag; ett nästa steg eller “inget krävs”; handoff; undantagsbockning åt barnet.
 
-### 4.3 En vanlig vardagsmorgon som förälder
+### 4.4 Planering
 
-```
-07:15  Öppnar Hem på telefon, porträtt, en hand
-       Ser per barn: hur går det idag? (utan jämförelse)
-       Ser undantag: väntande inlösen, saknad PIN, inbjudan
-       Ser ett nästa steg från Journey/coach — eller “inget krävs”
-       Kan handoffa: “barnet loggar in” / trusted device
-       Kan i undantag bocka av åt barnet (daily-log) — det är vuxenstöd, inte barnets huvudväg
-```
+Veckoschema, bibliotek, särskilda dagar, delsteg, bildstöd, timer, NU/NÄSTA, en-i-taget. **Föräldern slår på stöd; barnet möter resultatet.**
 
-Hem ska lämna föräldern med:
+### 4.5 För dig
 
-- Jag vet hur dagen ser ut per barn
-- Jag har gjort det enda vuxenbeslutet som krävdes (eller vet att inget krävs)
-- Barnet kan ta över
-
-### 4.4 När vardagen inte fungerar — Planering
-
-Föräldern går inte till Hem för att “bygga”. Hen går till Planering:
-
-- Veckoschema per barn (morgon / dag / kväll)
-- Aktivitetsbibliotek (familjens + admin-seedade)
-- Särskilda dagar (lov, sjuk, avvikelse)
-- Kopiera dag / barn
-- Delsteg på aktiviteter
-- Bildstöd / `icon_key` / foto
-- Timer, NU/NÄSTA, en-i-taget — **föräldern slår på, barnet möter resultatet**
-
-**Mental modell:** Planering = bygg. Hem = kör. För dig = färdigt paket.
-
-### 4.5 För dig — appen gör det svåra
-
-Sex mål, problemorienterade (inte “aktivera mall X”):
-
-| Slug | Headline föräldern ser | Ålder i config |
-|------|------------------------|----------------|
+| Slug | Headline | Ålder i config |
+|------|----------|----------------|
 | trygga-kvallar | Få lugnare läggningar | 3–5 |
 | bra-morgnar | Kom iväg utan morgontjat | 3–6 |
 | sjalvstandighet | Få barnet att klä sig själv | 3–7 |
@@ -220,79 +221,31 @@ Sex mål, problemorienterade (inte “aktivera mall X”):
 | samarbete-hemma | Få hjälp med dukning och städning | 4–9 |
 | motivation | Hålla motivationen uppe med belöningar | 3–12 |
 
-Tre frågor måste vara besvarade *utan* att öppna detaljer:
+**FACT-gap:** inget mål täcker 13–18.
 
-1. Vad löser det?
-2. Vad händer om jag trycker?
-3. Är det säkert? (*du kan ändra senare*)
+### 4.6 Belöningar
 
-Aktivering lägger aktiviteter i *barnets* schema. Barnet får en tydligare dag. Föräldern ska känna: *det svåraste är redan gjort.*
-
-**FACT-gap:** Inget För dig-mål täcker 13–18. “Skolansvar” slutar vid 9. “Klä sig själv” är fel problem för en 15-åring.
-
-### 4.6 Belöningar — föräldern styr, barnet upplever
-
-Föräldern:
-
-1. **Godkänner** väntande inlösen (undantag — PA-06)
-2. **Hanterar** utbud och stjärnkostnad
-3. **Följer** saldo och begäran per barn, utan ranking
-
-Barnet frågar om belöning. Stjärnor dras **först när föräldern godkänt**. Avslag ger ingen skam-UI hos barnet.
-
-Föräldern kan också ge stjärnor manuellt (vuxenberöm) — det är undantag, inte loopen.
+Föräldern godkänner väntande inlösen (PA-06), hanterar utbud och följer saldo utan ranking. Stjärnor dras först vid godkännande. Avslag utan skam-UI. Manuella stjärnor = undantag.
 
 ### 4.7 Familj, barnprofil, inställningar
 
-**Familj = människor.** Barn, vuxna, pedagoger. Inbjudan medförälder (valfritt per barn). Pedagoglänk.
-
-**Barnprofil** (förälder, inte barnet):
-
-- Namn, emoji/foto, födelsedag, PIN, användarnamn
-- Vy: dagssektioner vs NU/NÄSTA/SENARE
-- En-i-taget, sekventiellt, timers, visuell timer, minimal UI
-- Kortstorlek, tema, element att dölja
-- Framsteg / rapporter-länk
-
-**Inställningar (avatar, inte Familj):** push, GDPR-export, radera konto, prenumeration/IAP, byt till pedagogvy.
+Familj = människor. Barnprofil (förälder): namn, foto, födelsedag, PIN, vy, timers, minimal UI, framsteg. Inställningar i avatar: push, GDPR, radera, IAP, pedagogvy.
 
 ### 4.8 Medförälder och två hem
 
-- Varje vuxen har eget konto. Ingen delad vuxeninloggning.
-- Åtkomst via `parent_child` (primary / shared / pedagog).
-- Separerade hushåll stöds tekniskt: pappa kan se Astrid men inte Olle.
-- **Boendeschema** är speckad (FEAT-1): barnet ser *sin* dag, föräldern *sitt* ansvar, hem är neutrala. Vanliga kärnfamiljer ska inte påverkas.
-
-**OQ 12–18:** När den unga personen rör sig mellan två hem *och* vill ha privat yta — vems schema vinner? Vem ser läxstatus?
+Eget vuxenkonto. Åtkomst via `parent_child`. Boendeschema speckad (FEAT-1); inte nödvändigtvis live i full form. Hem är neutrala. **OQ:** två hem + Mitt — vems synlighet? §17.9.
 
 ### 4.9 Pedagog
 
-Eget UI-universum: Översikt · Idag · Historik · Inställningar. Inte en föräldraflik.
-
-- Ser tilldelade barn
-- Kan skriva `pedagog_notes` (humör, sömn, måltider, beteende)
-- Får inte familjeadmin, belöningsgodkännande eller schemaägarskap som förälder
-- Förälder kan dela tidsbegränsad rapportlänk (PIN, fältval, 7 dagar)
-
-**G-07:** ingen barn-facing pedagog-gamification.
+Eget UI: Översikt · Idag · Historik · Inställningar. `pedagog_notes` (humör, sömn, …). Ingen familjeadmin. Rapportlänk tidsbegränsad. G-07: ingen barn-facing pedagog-gamification. På Ung: P-01/P-02.
 
 ### 4.10 Notiser, e-post, betalning
 
-- Push: påminnelser, PIN-varning, belöningsbegäran, framsteg (förälder)
-- E-post: verifiering, välkomst, inbjudan, win-back, veckosammanfattning
-- Betalning: **endast native IAP** (RevenueCat). Ingen webbkassa. Stjärnor köps inte.
-- Lifetime-free-familjer finns historiskt.
+Push till förälder idag (påminnelse, PIN, inlösen). Native IAP only. Stjärnor köps inte. Ung: S-07 + U-13 — ingen kopia av Mitt.
 
-### 4.11 Förälderns känslomässiga kontrakt
+### 4.11 Förälderns kontrakt
 
-Produkten säljer **lättnad klockan 07:15**, inte kontroll.
-
-Misslyckande idag (som 12–18 kommer förstärka):
-
-- För många “nästa steg” på Hem
-- Byggverktyg med intern jargong
-- För dig som inte förklarar vad som händer
-- Känslan att man måste *ställa in klart* innan något fungerar
+Produkten säljer **lättnad 07:15**, inte kontroll. Misslyckande idag: flera nästa steg, jargong, För dig som inte förklarar, “ställ in klart först”.
 
 ---
 
@@ -300,556 +253,619 @@ Misslyckande idag (som 12–18 kommer förstärka):
 
 ### 5.1 Inloggning (FACT)
 
-```
-Appen öppnas
-  → Jag är barn
-  → Välj vem du är (kända profiler / namn första gången)
-  → 4-siffrig PIN
-  → Idag
-```
+Jag är barn → välj profil → 4-siffrig PIN → Idag. Lockout + förälder-notis. C-01: inga formulär utöver PIN. Trusted device. Förälder-exit via vuxen-PIN.
 
-- PIN scrypt-hashad. Lockout: 5 fel → 1 min, sedan 5, sedan 15. Vid 3:e felet notifieras förälder.
-- Ingen barn-onboarding. Inga formulär utöver PIN (C-01).
-- Förälder-exit: vuxenikon → föräldra-PIN → vuxenvy.
-- Trusted / family device: delad telefon, byt barn, vuxenprivilegium — PIN-login finns kvar på otröstade enheter.
-- Offline: ärlig, inte fejkad “funkar ändå”-magi på native.
+### 5.2 Tre världar (VISION)
 
-**Känsla:** det ska gå för ett förskolebarn på en iPad i hallen.
+Idag (~80 %) · Min värld/Skattkammare · Mina personer. Landning alltid Idag. Live har fortfarande classic vs magic nav — kravställ mot **mål-IA**.
 
-### 5.2 Tre världar (VISION, låst)
+### 5.3 Idag
 
-| Värld | Barnets fråga | ~Tid |
-|-------|----------------|------|
-| ☀️ **Idag** | Vad gör jag nu? | ~80 % |
-| 🏰 **Min värld / Skattkammaren** | Varför / vad har jag samlat? | Belöning |
-| ❤️ **Mina personer** | Vem finns här? | Tillhörighet |
+Inom fem sekunder: vad nu, vad får jag, vad är klart, vad sen. En primär handling. Stöd föräldern slår på: NU/NÄSTA, en-i-taget, delsteg, bild, timer, minimal UI. Efter sista: firande → lugn.
 
-Landning är **alltid Idag**. Aldrig världskartan först. Ingen “Mer”-flik i målbilden.
+### 5.4 Bocka av (FACT)
 
-**Live-ärlighet:** klassisk toppnav (Idag / Skattkammare / Familj) och magic bottennav (Hem / Schema / Skattkammare / Mer) lever fortfarande sida vid sida. Kravställ 12–18 mot **mål-IA**, inte mot legacy-flikar.
+Optimistisk animation ≤2 s → server complete → ev. förälder-push/SSE. Saldo = klara + manuella − inlösta. *Du klarade det!* före siffra.
 
-### 5.3 Idag — operativsystemet
+### 5.5–5.7 Skatt, samling, personer
 
-Barnet ska inom fem sekunder, utan scroll, veta:
-
-1. Vad ska jag göra nu?
-2. Vad får jag?
-3. Vad är klart?
-4. Vad händer sen?
-
-**En primär handling:** bocka av NU.
-
-Tillstånd:
-
-| Tillstånd | Handling |
-|-----------|----------|
-| Inga uppgifter | Vänlig tomtext — inte ett tomt formulär |
-| Aktivt | Bocka av NU |
-| Allt klart | Kort firande ≤2 s, sedan lugn. Ingen “gå till trädgården” |
-
-Stöd som föräldern slår på, barnet *möter*:
-
-- NU / NÄSTA / SENARE
-- En-i-taget / fokusläge (en uppgift i stort format)
-- Delsteg
-- Bild + emoji + ev. foto
-- Aktivitetstimer / visuell timer
-- Minimal UI (dölj krom)
-
-**Efter sista aktiviteten:** firande → lugn. Rutinen är spelet. Samlingen är belöningen.
-
-### 5.4 Bocka av — kärnloopen (FACT)
-
-1. Barnet trycker klart.
-2. Optimistisk kort animation (dopamin-burst / milstolpe, hoppbar, ≤2 s).
-3. Server: `daily_log_item` complete, stjärnor enligt `star_value`.
-4. Förälder kan få push. SSE uppdaterar Hem.
-5. Pausad dag (sjuk/lov) → går inte att bocka.
-
-Stjärnsaldo är **beräknat**: klara + manuella − inlösta. Livstidsstjärnor är monotona (R-06).
-
-Copy-ordning: *Du klarade det!* före siffra.
-
-### 5.5 Skattkammaren (VISION)
-
-Barnet ska se:
-
-- Hur många stjärnor som finns (stjärnburken)
-- Vad hen sparar till
-- En primär handling: fråga om inlösen **eller** välj mål **eller** samla mer
-
-Inte: butik, schema, vuxengodkännande-UI, syskonjämförelse, skam vid nej.
-
-Status *väntar på svar* är informativ. Genomförd belöning kan bli minneskort.
-
-### 5.6 Min samling / Min värld (VISION, delvis live)
-
-Riktning efter spelgranskning: **samling, inte open-world-spel.**
-
-- Troféer / medaljer vid livstidsstjärnor
-- Kedja av dagar (ingen skuldkänsla vid brott)
-- Diplom i tid (vecka, månad, år)
-- Samlingshylla som fylls automatiskt — inte köp, inte barnval
-- Årsbok per månad
-- Hus / rum / husdjur / museum finns som motor — ska underordnas “titta vad jag samlat”
-
-**Filter:** hjälper detta barnet *se vad hen åstadkommit*, eller ger det bara en ny uppgift? Ny uppgift hör hemma i Idag.
-
-### 5.7 Mina personer
-
-Familjehall: vilka vuxna och syskon som finns. Hälsningar / tillhörighet. Inte inställningar, inte rapporter.
+Stjärnburk + mål + en handling. Samling inte open-world. Mina personer = tillhörighet, inte inställningar.
 
 ### 5.8 Vad barnet aldrig gör (FACT / POS)
 
-- Redigerar schema
-- Skapar belöningar
-- Ändrar syskons data
-- Ser förälder-API:er (server-enforced)
-- Köper stjärnor
-- Fyller i inställningsformulär
-- Jämförs mot syskon på stjärnor
+Inte redigera schema, skapa belöningar, se förälder-API, köpa stjärnor, fylla inställningslabb, jämföras mot syskon.
 
-### 5.9 En dag som Olle, 7 år
+**Spänning mot Ung:** U-03 (skapa Mitt) kräver C-01-omtolkning via ADR — inte smyg.
 
-```
-Mamma sätter iPad i hallen (trusted device) eller Olle slår PIN
-Idag: NU = Klä på dig. +2 ⭐. 1 av 5 klara. Sedan: Frukost.
-Olle bockar. Kort stjärnbloss. Nästa blir NU.
-Efter sista: “Alla klara!” → lugn.
-Senare, om han vill: Skattkammaren — 14 stjärnor, sparar till filmkväll.
-Han frågar om inlösen. Status: väntar.
-Mamma godkänner på Belöningar. Filmkvällen blir verklig. Inte en loot box.
-```
+### 5.9 Olle, 7 — referensdag som inte får bli sämre
 
-Det är produkten när den är som bäst. Allt 12–18-arbete måste veta vad den *ersätter* hos en 14-åring — inte bara vad den lägger till.
+PIN eller trusted device → NU = klä på dig → bocka → stjärnbloss → Skatt → fråga inlösen → mamma godkänner. Verklig filmkväll, inte loot box.
 
 ---
 
-## 6. Delade system som 12–18 ärver
+## 6. Delade system (familje-OS)
 
-Dessa är familje-OS. De ska **återanvändas**, inte kopieras.
+Återanvänd, kopiera inte.
 
-| System | Vad det är | Återanvänd för Ung? |
-|--------|------------|---------------------|
-| Family + parent_child + roller | Vem ser vem | Ja |
-| Child-rad + födelsedag | En person, en ålder | Ja — *läge* härleds här |
-| Veckoschema + specialdag + exclusion | Vad som gäller vilket datum | Ja, annat språk och tätare |
-| Daily log + completion | Sanning om dagen | Ja |
-| Stjärnor + rewards + pending | Valfri motivation | **Valfri** från 13, inte default-identitet |
-| Journey context | Ett nästa steg för familjen | Ja — nya experiences, inte ny motor |
-| För dig-aktivering | Problem → schema | Ja — nya mål |
-| Handoff / trusted device | En iPad i köket | Delvis — 16+ vill ha egen telefon |
-| PIN-gate vuxen | Skydda förälder-ytor | Ja, men Ung behöver eget konto-OQ |
-| IAP / paywall | Familjeprenumeration | Ja — inte “teen IAP för stjärnor” |
-| Pedagog + rapportlänk | Skola/stöd | Ja, med mer ungdomsägd delning |
-| Boendeschema | Två hem | Ja, viktigare i tonåren |
-| `child_view_config` | Adaptiv rendering | Ja — läge styr preset, inte ny tabell först |
+| System | Återanvänd? | Anmärkning |
+|--------|-------------|------------|
+| Family + parent_child | Ja | Synlighet per länk, inte “alla vuxna” |
+| Child-rad + födelsedag | Ja | Föreslår **presentation**, inte access |
+| Schema + specialdag | Ja | Internationellt: undvik hårdkodad skolform |
+| Daily log | Ja | Completion ≠ läcka av privata objekt |
+| Stjärnor + rewards | Valfritt | Styrs av `reward_model`, inte ålder ensam |
+| Journey | Ja | Samma motor, nya experiences |
+| För dig | Ja | Nya mål; filtrera på presentation + policy |
+| Trusted device / PIN-gate | Ja | Ung-identitet är OQ |
+| IAP | Ja | Familjen betalar |
+| Pedagog + rapport | Ja | Får inte se Mitt default |
+| Boendeschema | Ja | Viktigare när autonomi ökar |
+| `child_view_config` | Ja | Presentation/stöd — inte privacy |
 
 ---
 
-## 7. Nuläge mot krav — gapmatris
-
-Hur väl dagens produkt uppfyller det en familj med äldre barn faktiskt behöver.
+## 7. Gapmatris (behov vs idag)
 
 | Behov | 3–8 | 9–12 | 13–15 | 16–18 |
 |-------|-----|------|-------|-------|
-| Bildstöd, NU/NÄSTA, en-i-taget | **Starkt** | Bra, ska kunna skruvas ner | För barnsligt som default | Fel |
-| Förälder bygger, barn utför | **Starkt** | Börjar skava | Fel default | Fel |
-| Stjärnor + Skattkammare + saga-copy | **Starkt** | Ok om tonen mognar | Riskerar förlöjligande | Nej |
-| C-01 inga barnformulär | Rätt | Rätt | **Konflikt** — 13+ behöver egna val | Konflikt |
-| PIN 4 siffror, “jag är barn” | Rätt | Ok | Svagt (kompisar, skärmdump) | Otillräckligt |
-| Föräldern ser allt i realtid | Trygghet | Börja dämpa | Känns som övervakning | Oacceptabelt utan samtycke |
-| Godkänna varje inlösen | Rätt | Ok | För mycket vuxenmakt | Fel |
-| Förskola/lågstadiescheman | Finns | Mellanstadie svagt | **Saknas** | **Saknas** |
-| Läxor / plugg / skärm / träning | Svagt | Delvis (skolansvar 6–9) | Saknas | Saknas |
-| Integritet, chatt, egen e-post | Ej aktuellt | Ej | **Krävs juridiskt/känslomässigt** | Krävs |
-| NPF-stöd (fokus, timer, ingen skam) | **Kärna** | Kärna | Fortfarande kärna — annan yta | Fortfarande kärna |
-| Två hem / medförälder | Spec + modell | Samma | Högre konflikt | Högre |
-| Pedagoganteckningar om humör/sömn | Ok med förälder | Ok | Känsligt | Mycket känsligt |
-| Store 3–12 | Match | Match | **Blockerar löfte** | Blockerar |
+| NU/NÄSTA, bild, en-i-taget | Starkt | Finns; ska kunna skruvas | **Ska kunna kombineras med Ung-policy** | Samma |
+| Förälder bygger, barn utför | Starkt | Börjar skava | Fel *default-policy* | Fel |
+| Stjärnor + saga-copy | Starkt | Tonmognad | Default OFF (**NOT_VERIFIED**) | Nej som identitet |
+| C-01 inga barnformulär | Rätt | Rätt | Konflikt — få självval via ADR | Konflikt |
+| Implicit full förälderinsyn | Trygghet | Börja dämpa | Känns som övervakning | Oacceptabelt som default |
+| Startinnehåll | Finns | Mellanstadie svagt | Saknas | Saknas |
+| NPF-stöd | Kärna | Kärna | Kärna, **orthogonal** | Kärna |
+| Store-deklaration vs löfte | Match | Match | Får inte lovas förrän Ung finns | Samma |
 
-**Läsning:** 9–12 är en *innehålls- och tonskuld*. 13+ är en *kontraktsskuld* (vem äger dagen, vem ser vad).
+**Läsning:** 9–12 = innehåll/ton (**hypotes** om churn). 13+ = kontrakt (ägande/delning), inte “svårare schema”.
 
 ---
 
-## 8. Varför 12–18 inte är “samma app med svårare scheman”
+## 8. Varför inte “samma app med svårare scheman”
 
-### 8.1 Psykologiskt skifte
+### 8.1 Skifte (produktinferens + evidens)
 
-| 3–10 | 12–18 |
-|------|--------|
+| Yngre default | Äldre default |
+|---------------|---------------|
 | Struktur *ges* | Struktur *förhandlas* |
-| Vuxen minskar osäkerhet | Övervakning *ökar* osäkerhet |
-| Stolthet = “jag klarade momentet” | Stolthet = “det här är mitt” |
-| Belöning = konkret, nära, fysisk | Belöning = frihet, tid, förtroende |
-| Bild före ord | Ord, men låg kognitiv last för NPF |
-| Familjen är hela världen | Kompisar, skola, identitet, kropp |
+| Vuxen minskar osäkerhet | *Implicit* övervakning kan *öka* osäkerhet |
+| Stolthet = klarade momentet | Stolthet = det här är mitt |
+| Belöning nära och konkret | Frihet, tid, förtroende — **utan ny valuta i v1** |
 
-Self-determination: **autonomi, kompetens, tillhörighet**. Dagens app är stark på kompetens (klara rutan) och tillhörighet (familj). Autonomi är medvetet låg hos barnet. Från ~12 *måste* autonomi öka, annars blir appen motstånd.
+**EVIDENCE (teori, inte UI-bevis):** Self-Determination Theory beskriver autonomi, kompetens och tillhörighet som grundbehov (Ryan & Deci 2000). Dagens app är stark på kompetens och tillhörighet; autonomi är medvetet låg. Det är **designstöd**, inte bevis att en viss skärm fungerar.
 
-### 8.2 Språkskifte
+**EVIDENCE (parental monitoring ≠ kunskap):** Stattin & Kerr (2000) och longitudinell uppföljning (Kerr, Stattin & Burk 2010): det föräldrar *vet* kommer främst från ungdomens *egna avslöjande*, inte från övervakning. Övervakningsåtgärder predicerade inte kunskap över tid i den studien. **Detta är inte kausal evidens för vår UI.** Inferens: implicit full insyn är fel default när personen ska äga mer.
 
-Dagens copy som **inte** överlever 13+:
+### 8.2 Språk
 
-- Sagostund, pyjamas, extra saga, glassutflykt som primär belöning
-- “Barnet”, “be en vuxen”, “stjärnburken” som enda ekonomi
-- Förskole-PIN-väljare som enda identitet
-- “Titta vad jag samlat!” som enda samlingskänsla
+Överlever inte som Ung-default: sagostund, “barnet”, “be en vuxen”, stjärnburken som enda ekonomi.  
+Överlever: vad nu/sen, du klarade det, ändra senare, ingen skam, en sak i taget.
 
-Språk som **överlever** om det mognar:
+### 8.3 Konstitution
 
-- Vad händer nu / sen
-- Du klarade det
-- Du kan ändra senare
-- Ingen skam efter en dålig dag
-- En sak i taget
-
-### 8.3 Konstitutionell spänning (måste lösas, inte sopas)
-
-| Regel | 3–12 | 13–18 |
-|-------|------|-------|
-| C-01 inga barnformulär | Håll | **OQ:** tillåt *få* egna val (mål, synlighet, notiser) — inte ett inställningslabb |
-| P-02 barnet är protagonist | Håll | Håll — men kalla personen *ung*, inte barn i UI |
-| Förälder är hjälpare | Håll | Håll — hjälpare ≠ operatör |
-| PA-06 godkännande = undantag | Håll | Skärp: default ska vara *själv* för vardag, förälder bara vid överenskommet |
-| G-01 verklighet före firande | Håll **hårdare** | Inget XP för att öppna appen |
-| R-02 stjärnor ej köpbara | Håll | Håll — ev. annan “valuta” är privilegium IRL, inte IAP |
-| Ingen syskonjämförelse | Håll | Håll hårdare (tonårsskam) |
-| En Journey | Håll | Nya experiences, samma motor |
-| Inget Hem-dashboard | Håll | Förälder får *ännu mindre* grafer över den unga |
-
-**REK:** Bryt inte konstitutionen. **Omtolka C-01** via ADR: “inga *vuxenadmin*-formulär i Ung-läge; begränsade självval är tillåtna.”
+| Regel | Håll | Spänning |
+|-------|------|----------|
+| C-01 | Håll | **OQ/ADR:** få självval är inte vuxenadmin-labb |
+| P-02 | Håll | UI: *du*, inte “barnet”, när presentation=ung |
+| PA-06 | Håll | Godkännande = undantag, inte vardagslås |
+| G-01, R-02 | Håll hårdare | Ingen XP, inga köpta stjärnor |
+| En Journey | Håll | Inte en coach per läge |
+| Inget Hem-dashboard | Håll | Inga teen-grafer |
 
 ---
 
-## 9. Rekommenderad årsgruppsmodell
+## 9. Huvudmodell: presentation skilt från policy
 
-Inte “3–12” vs “12–18”. Fyra band, tre lägen.
+### 9.1 Två lager (REK, koncept — inte DB-fält)
 
 ```
-Ålder     Läge      Default-yta              Förälderroll
-3–8       Liten     Idag + Skatt             Operatör / byggare
-9–12      Mellan    Idag + Skatt (mogen ton) Med-planerare
-13–15     Ung       Min dag + Mina mål       Coach / säkerhetsnät
-16–18     Ung       Samma yta, mer privat    Backup / överenskommelse
+presentation_mode ∈ { liten, mellan, ung }
+        styr: copy, densitet, visuell ton, nav-default, defaultstöd
+
+policies / capabilities (exempel, inte schema):
+        self_planning
+        private_items
+        family_commitments
+        parent_visibility
+        pedagogue_visibility
+        reward_model
+        support_profile   ← orthogonal (NU/NÄSTA, timer, pictogram, …)
 ```
 
-**Varför tre lägen, inte fyra appar:** samma familj har ofta 7-åring + 14-åring. Två appar dödar Hem. Ett läge per barnrad, synligt för föräldern som “Astrid: Liten” / “Noah: Ung”.
+**Progression av policy, inte av ålder:**
 
-**Hur läge väljs (REK):**
+```
+Göra åt mig        parent-owned schedule, låg self_planning
+Göra tillsammans   family_commitments + ev. förslag från den unga
+Äga själv          self_planning + private_items + explicit delning
+```
 
-1. Default från `birthday` (eller onboarding `ageBand`).
-2. Förälder kan flytta ett steg (Liten↔Mellan, Mellan↔Ung) med tydlig preview.
-3. **Inte** hoppa Liten → Ung utan varning.
-4. Den unga (13+) ska *se* och kunna *begära* läge — förälder bekräftar i v1.
-5. 16+ **OQ:** kan hen sätta Ung själv?
+Födelsedag / `ageBand` **får föreslå** `presentation_mode`.  
+De **får inte ensamt** styra access, privacy eller dataägande.
 
-**13+ i onboarding idag:** behåll bandet, sluta mappa tyst till lågstadieschema. Antingen Ung-starter eller ärlig copy: *Vi är bäst för 3–12 idag — här är vad du kan använda.*
+### 9.2 Kombinationsregeln (P0-krav på modellen)
+
+| | Låg support_profile | Hög support_profile |
+|--|---------------------|---------------------|
+| Policy: Göra åt mig | Olle 7 default | Olle 7 med extra timer |
+| Policy: Äga själv | Noah 14, textlista | **Noah 14 + NU/NÄSTA + pictogram + fokus** |
+
+Cellen nere till höger är **icke-förhandlingsbar** i modellen. Annars blir NPF = “yngre barn”.
+
+### 9.3 Default-förslag (REK, inte access)
+
+| Ålder (förslag) | Default presentation | Default policy-riktning |
+|-----------------|----------------------|-------------------------|
+| ~3–8 | liten | Göra åt mig |
+| ~9–12 | mellan | Göra åt mig, mer med-planering P1 |
+| ~13–15 | ung | Äga själv + Vårt synligt |
+| ~16–18 | ung | Samma yta, hårdare privat default |
+
+Förälder kan flytta presentation ett steg med preview. Hopp liten→ung kräver varning. **Policy-byte är separat OQ** (vem godkänner `private_items`?).
+
+### 9.4 Internationellt
+
+Hårdkoda inte svensk skolform, “mellanstadium”, vårdnadsmodell eller 13 som policy-tröskel. Landsskillnader = senare policy/config. **LEGAL REVIEW** per marknad.
 
 ---
 
-## 10. Krav per läge
+## 10. Objektägande — inte fältvis ACL
 
-Krav-ID: `L` Liten · `M` Mellan · `U` Ung · `F` Förälder · `P` Pedagog · `S` System.  
-Prioritet: **P0** måste för v1 av läget · **P1** samma år · **P2** senare.
+### 10.1 Tre begripliga gränser (REK, Ung v1 / spike)
 
-### 10.1 Liten (~3–8) — bevara, inte urvattna
+**Mitt**  
+Den unga äger objektet. Privat default. Exempel: *Matteprov fredag*, *Plugga 25 min*, *Fotboll*.
 
-Detta är produkten ni *har*. Nästa årsgrupp får **inte** göra Liten sämre.
+**Vårt / Familjeåtagande**  
+Överenskommen sak som *relevanta* familjemedlemmar får se (via `parent_child` + ev. boende, inte “alla vuxna”). Exempel: *Middag 18*, *Hämta syskon*, *Ta ut hunden*.
+
+**Delat stöd**  
+Den unga *aktivt* delar ett Mitt-objekt för hjälp. Exempel: *Visa mamma matteprovet* · *Påminn mig torsdag* · *Jag vill ha hjälp att komma igång*. Delning med pedagog där tillåtet.
+
+Ingen generell per-fält-matris Bara jag / Familj / Pedagog i v1.
+
+### 10.2 Läckageförbud (P0 för spike)
+
+Privat information får **inte** läcka via:
+
+| Kanal | Förbjudet exempel |
+|-------|-------------------|
+| API | Parent-endpoint returnerar titel/antal på Mitt |
+| Hem | “Noah har 3 privata saker” / tom rad som röjer namn |
+| Notis | “Noah klarade Matteprov” till förälder utan delning |
+| Analytics | Event med titel, eller `private_item_count` per barn |
+| Rapport | Aggregering som röjer Mitt |
+| Pedagogvy | Lista eller badge på osedda Mitt-objekt |
+
+**Acceptans:** en testare med förälder-JWT ska inte kunna *härleda* att objektet heter Matteprov eller ens att det finns, utöver det som explicit delats.
+
+### 10.3 Vårdnadshavares obligatoriska insyn
+
+**OQ 12 / LEGAL REVIEW:** vilken information en vårdnadshavare *juridiskt eller produktmässigt måste* kunna se trots privat default är **NOT_VERIFIED**. Uppfinn inte “föräldern ser aldrig något”. Uppfinn inte heller full spegling.
+
+---
+
+## 11. Krav
+
+Krav-ID: `L` Liten · `M` Mellan · `U` Ung · `F` Förälder · `P` Pedagog · `S` System · `K` Kvalitet.  
+P0 = måste för *den* leveransen · P1 = samma år · P2 = senare.
+
+### 11.1 Liten — bevara
 
 | ID | Krav | P |
 |----|------|---|
 | L-01 | Idag default: bild, NU/NÄSTA, en primär handling | P0 |
 | L-02 | Inga barnformulär, ingen schemaedit | P0 |
 | L-03 | Firande ≤2 s, hoppbart, ingen skam | P0 |
-| L-04 | Skattkammare + stjärnor som default-motivation | P0 |
+| L-04 | Skatt + stjärnor default | P0 |
 | L-05 | PIN + ev. trusted device | P0 |
-| L-06 | Förälder äger schema, belöningar, vy-stöd | P0 |
-| L-07 | NPF-by-default (fokus, timer, delsteg) | P0 |
-| L-08 | Syskon syns inte som tävling | P0 |
+| L-06 | Förälder äger schema, belöningar, stöd-toggles | P0 |
+| L-07 | NPF-stöd förstklassigt | P0 |
+| L-08 | Ingen syskontävling | P0 |
 
-**Acceptans:** Olle-testet på Idag och Skattkammaren oförändrat efter att Mellan/Ung shippas.
+**Acceptans:** Olle-test oförändrat efter Mellan/spike.
 
-### 10.2 Mellan (~9–12) — första steget värt att bygga
+### 11.2 Mellan — första kommersiella leverans
 
-Samma kontrakt som Liten, annan *yta*.
+Samma kontrakt som Liten. Annan *presentation*. **Blockeras inte av Ung.**
 
 | ID | Krav | P |
 |----|------|---|
 | M-01 | Samma tre världar, samma loop | P0 |
-| M-02 | Copy utan sagodominans: läxor, väska, träning, skärmtid, eget rum | P0 |
-| M-03 | Startschema “Mellanstadium vardag” (inte Pyjamas-first) | P0 |
-| M-04 | För dig-mål: läxor, skärmtid, träning, veckopeng-koppling IRL | P0 |
-| M-05 | Valfri texttyngre Idag (mindre pictogram-first, bild kvar som stöd) | P0 |
-| M-06 | Barnet kan *föreslå* aktivitet/belöning; förälder godkänner | P1 |
-| M-07 | Stjärnor kvar men copy: *bränsle till det du sparar till*, inte “stjärnburk-barn” | P1 |
-| M-08 | Min samling mer “diplom/årbok” än nallehylla | P1 |
-| M-09 | Hem: föräldern ser läxor/kväll, inte en baby-readiness-rad | P1 |
-| M-10 | NPF-stöd kvar och förstklassigt — 9–12 med ADHD är kärna, inte edge | P0 |
+| M-02 | Copy utan sagodominans: läxor, väska, träning, skärm, eget rum | P0 |
+| M-03 | Startschema för skolålder 9–12 (land-lokaliserbart namn; inte Pyjamas-first) | P0 |
+| M-04 | För dig-mål för 9–12: läxor, skärmtid-avtal *som rutin*, träning — **inte** veckopeng | P0 |
+| M-05 | Texttyngre Idag valfritt; bildstöd kvar | P0 |
+| M-06 | Föreslå aktivitet/belöning; förälder godkänner | P1 |
+| M-07 | Stjärnor kvar; copy mognar | P1 |
+| M-08 | Samling mer diplom/årbok än nalle | P1 |
+| M-09 | Hem-copy utan baby-ton | P1 |
+| M-10 | NPF-stöd förstklassigt | P0 |
 
-**Acceptans (Jenny + Noah 11):**
+**Acceptans (Jenny + Noah 11):** 5 s på Idag utan förskolekänsla; minst ett För dig-mål som inte är förskola; Liten-syskon oförändrat.
 
-- Inom 5 s på Idag: vad nu, vad sen, utan att skämmas om någon tittar över axeln.
-- För dig har minst ett mål som inte låter som förskola.
-- Liten-syskonet oförändrat.
+M-04 veckopeng från rev. 1 **stryks** (scope + OQ 5).
 
-**Detta är den kommersiellt rätta v1.** Familjer växer ur er vid ~10–11 p.g.a. *ton och innehåll*, inte p.g.a. saknad social app.
+### 11.3 Ung — kontrakt, inte habit tracker
 
-### 10.3 Ung 13–15 — nytt kontrakt
+**Känsla:** *Det här är mitt. Vuxna ser det vi kommit överens om, eller det jag delar.*
 
-Ny barnyta. Inte en fjärde värld i sagohuset.
-
-**Känsla:** *Det här är mitt. Vuxna ser det vi kommit överens om.*
+P0-yta: **Min dag** + **Vi hemma**. Inte Skatt first. **Inte Mina mål.**
 
 | ID | Krav | P |
 |----|------|---|
-| U-01 | Egen yta: **Min dag · Mina mål · Vi hemma**. Inte Skattkammare-first | P0 |
-| U-02 | Default-copy: du/jag, aldrig “barnet” i hen:s UI | P0 |
-| U-03 | Hen kan lägga egna uppgifter på *sin* dag (läxa, träning, plugg, jobb) | P0 |
-| U-04 | Förälder-schema blir *förslag / familjeåtaganden* (middag, hämtning), inte hela dagen | P0 |
-| U-05 | Synlighet: tre lägen per fält — Bara jag / Familj / Pedagog. Default: familj ser *klart/inte*, inte klockslag för allt | P0 |
-| U-06 | Inlösen: vardagsprivilegium kan vara auto eller veckovis, inte tap-godkänn varje gång | P0 |
-| U-07 | Stjärnor **av** som default; kan slås på. Alternativ: avklarat, streak-utan-skam, avtalad frihet | P0 |
-| U-08 | Inloggning: PIN *eller* eget lösen / biometri. Inte “välj djuremoji” som enda identitet | P1 |
-| U-09 | Inga pedagoganteckningar om humör/sömn synliga som “spelstatus”. Delning = aktiv | P0 |
-| U-10 | NPF: fokusläge, en sak, timer, ingen skam — kvar men vuxen visuell ton | P0 |
-| U-11 | För dig för *föräldern*: skärmtid-avtal, läxstruktur, sömn, två hem — inte “klä på dig” | P1 |
-| U-12 | För dig för *den unga* (valfritt): egna paket. **OQ** om det bryter en-coach | P2 |
-| U-13 | Notiser till den unga på *hen:s* enhet. Förälder får inte kopia på allt | P0 |
-| U-14 | Hem för förälder: “Noah har 2 familjeåtaganden kvar” — inte live-karta över pluggminuter | P0 |
-| U-15 | Chatt/social/feed: **förbjudet i v1** | P0 |
-| U-16 | Hälsojournal, mens, vikt, terapianteckningar: **förbjudet** | P0 |
+| U-01 | Min dag + Vi hemma. Inget mål-P0 | P0 |
+| U-02 | Copy du/jag i ung presentation | P0 |
+| U-03 | `self_planning`: skapa Mitt-objekt utan godkännande (**REK: ja**, OQ 3) | P0 |
+| U-04 | Förälderschema → Vårt, inte hela dagen | P0 |
+| U-05 | Objektgränser Mitt / Vårt / Delat stöd — **ingen fält-ACL** | P0 |
+| U-06 | Inlösen: inte P0. Privilegieavtal = P2/OQ | P2 |
+| U-07 | `reward_model` default OFF vid ung-policy; kan slås på. **Ingen ny valuta** | P0 |
+| U-08 | Identitet: PIN *eller* annat — OQ 1. Inte djuremoji som enda identitet | P1 |
+| U-09 | Pedagog/humör inte som spelstatus. Delning aktiv | P0 |
+| U-10 | Hög `support_profile` + ung-policy ska kunna samexistera | P0 |
+| U-11 | För dig till förälder: skärmtid-avtal, struktur, två hem — P1 | P1 |
+| U-12 | För dig till den unga | P2 / OQ (en-coach) |
+| U-13 | Notis till den unga om hens objekt. Förälder får inte kopia på Mitt | P0 |
+| U-14 | Hem: Vårt-status, inte live-karta över Mitt | P0 |
+| U-15 | Chatt/social/feed förbjudet v1 | P0 |
+| U-16 | Hälsa, mens, vikt, terapi, GPS förbjudet | P0 |
+| U-17 | Explicit delning: visa / påminn mig / jag vill ha hjälp | P0 |
+| U-18 | Mina mål = hypotes, inte P0 | — |
 
-**Acceptans (Noah 14 + Jenny):**
+**U-06 från rev. 1** (auto-inlösen) **nedprioriterad** — nytt motivations-/avtalssystem.
 
-- Noah kan använda Min dag utan att klasskompis skrattar åt UI.
-- Jenny vet om *familjeåtaganden* är klara, inte hur många minuter Noah pluggade i hemlighet.
-- En dålig dag nollställer inte veckan och ger ingen röd skam.
+### 11.4 Ung 16–18
 
-### 10.4 Ung 16–18 — samma yta, hårdare integritet
-
-Inte ny app. Samma Ung-yta med andra default.
+Samma yta. Hårdare privat default. Inget nytt innehållspaket (körkort, CSN) i v1.
 
 | ID | Krav | P |
 |----|------|---|
-| Y-01 | Default-synlighet: Bara jag för plugg/jobb; Familj för överenskomna åtaganden | P0 |
-| Y-02 | **OQ:** eget konto (e-post) vs barn-PIN. Juridik + radera-mina-data | P0 beslut |
-| Y-03 | Körkort, jobb, CSN, plugg — innehåll senare. Struktur först | P2 |
-| Y-04 | Förälder kan inte tvinga tillbaka till Liten utan den ungas vetskap | P0 |
-| Y-05 | Exit: vid 18 (eller utflytt) — exportera / koppla loss från family | P1 |
-| Y-06 | Ingen “barnövervakning”-marknadsföring mot denna grupp | P0 |
+| Y-01 | Default Mitt för egna; Vårt för åtaganden | P0 (när Ung finns) |
+| Y-02 | Konto/e-post = OQ 1 + LEGAL | P0 beslut |
+| Y-03 | Innehåll senare | P2 |
+| Y-04 | Presentation/policy-sänkning inte tyst | P0 |
+| Y-05 | Lämna familj / export | P1 / OQ 11 |
+| Y-06 | Ingen barnövervaknings-marknadsföring | P0 |
 
-**REK:** Bygg inte Y-innehåll förrän U-01–U-10 sitter. Annars bygger ni en dålig Notion för gymnasieelever.
-
----
-
-## 11. Krav för alla vuxna när Ung finns
-
-### 11.1 Förälder
+### 11.5 Förälder när blandade policies finns
 
 | ID | Krav | P |
 |----|------|---|
-| F-01 | Hem visar blandade lägen i samma familj utan att blanda UI-metaforer | P0 |
-| F-02 | Ett nästa steg per *familj*, inte en coach per barnläge | P0 |
-| F-03 | Planering: “Familjeåtaganden” vs “Noahs egna” — två hyllor, inte en hög | P0 |
-| F-04 | Belöningar: för Ung default *avtal* (skärm, tid, pengar IRL), inte bara skattkista | P1 |
-| F-05 | För dig-katalog filtreras hårt på ålder. Inga sagomål på 14-åring | P0 |
-| F-06 | Familj-hub: läge synligt, byt läge med preview av vad som ändras | P0 |
-| F-07 | Ingen ny analytics-flik “tonårsdashboard” | P0 |
-| F-08 | Medförälder ärver synlighetsregler — pappa ser inte mer än avtalet | P0 |
-| F-09 | Onboarding: om ålder ≥13, lova inte förskole-handoff som enda success | P0 |
-| F-10 | Morning-stress-test gäller: 07:15, en hand, inget förhandlande i appen | P0 |
+| F-01 | Ett Hem, blandade barn, utan blandade metaforer som krockar | P0 |
+| F-02 | Ett Journey-steg för *familjen* | P0 |
+| F-03 | Planering: Vårt vs (synliga) egna — inte en hög | P0 när Ung finns |
+| F-04 | Ingen ny teen-valuta på Belöningar | P0 |
+| F-05 | För dig filtreras på presentation + åldersförslag, inte sagomål på ung-policy | P0 |
+| F-06 | Familj visar presentation *och* att policy är separat | P0 när båda finns |
+| F-07 | Ingen teen-analytics-flik | P0 |
+| F-08 | Medförälder ärver inte mer än länk + Vårt + delat | P0 |
+| F-09 | Onboarding ≥13: lova inte förskole-handoff som enda success | P0 |
+| F-10 | 07:15-testet | P0 |
+| F-11 | Insyn = explicit delning + Vårt; inte “ser mindre för att hen fyllt år” | P0 |
 
-### 11.2 Pedagog
-
-| ID | Krav | P |
-|----|------|---|
-| P-01 | Ser bara det den unga/föräldern delat | P0 |
-| P-02 | Inga humör-skalor som default på 13+ | P0 |
-| P-03 | Rapportlänk: den unga (13+) ska veta att den skapats | P1 |
-
-### 11.3 System / legal / butik
+### 11.6 Pedagog
 
 | ID | Krav | P |
 |----|------|---|
-| S-01 | Ingen butikstext “förskoleåldern” samtidigt som 13+ säljs | P0 |
-| S-02 | GDPR: under 13 förälder-konto; från 13 **OQ** om eget samtycke | P0 beslut |
-| S-03 | Play/App Store målgrupp och IARC uppdateras först när Ung finns | P0 |
-| S-04 | Inga nya barn-data-klasser (hälsa, plats, meddelanden) utan ADR | P0 |
-| S-05 | Child JWT får inte nå förälder-API — oförändrat | P0 |
-| S-06 | Åldersläge server-sanning, inte bara CSS | P0 |
-| S-07 | Analytics utan PII; ingen “teen risk score” | P0 |
-| S-08 | IAP oförändrad princip: familj betalar, stjärnor köps inte | P0 |
+| P-01 | Bara Delat stöd / explicit till pedagog | P0 |
+| P-02 | Inga humörskalor som Ung-default | P0 |
+| P-03 | Rapport: den unga ska veta att den skapats när policy = äga själv | P1 |
+
+### 11.7 System
+
+| ID | Krav | P |
+|----|------|---|
+| S-01 | Ingen butikstext “förskoleåldern” samtidigt som 13+ *säljs som lämplig* | P0 |
+| S-02 | Legal grund, samtyckesålder, avtalspart per marknad — **LEGAL REVIEW**, inte hårdkodad 13 | P0 beslut |
+| S-03 | Deklarerad store-målgrupp ska matcha faktisk upplevelse (Play Families + Apple) | P0 |
+| S-04 | Inga nya dataklasser (hälsa, plats, meddelanden) utan ADR | P0 |
+| S-05 | Child JWT når inte förälder-API | P0 |
+| S-06 | **Servern är auktoritet för policies och rättigheter.** Presentation/CSS/åldersläge får inte ensamt avgöra access, privacy eller ägande | P0 |
+| S-07 | Analytics utan PII; inga teen scores; inga privata räkneverk | P0 |
+| S-08 | IAP: familj betalar, stjärnor köps inte | P0 |
+| S-09 | Spike måste visa nolläckage i Noah-scenariot innan Ung-release | P0 |
 
 ---
 
-## 12. Förslag till Ung-upplevelse (diskussion, inte wireframe)
+## 12. Ung-upplevelse (diskussion, inte wireframe)
 
-Tre ytor. Samma beslutregel som idag: **en primär handling**.
+**P0:** Min dag · Vi hemma.  
+**Inte P0:** Mina mål.
 
-### Min dag
+**Min dag** kan vara *samma värld som Idag* med annan presentation — föredra återanvändning framför ny flik (**REK**, motverka nav-inflation).
 
-- Familjeåtaganden (förälder satte / ni kom överens): *Middag hemma 18:00*, *Hämta Elsa*
-- Mina (hen skapade): *Matteprov fredag*, *Fotboll 17*, *Plugga 25 min*
-- Fokusläge finns. Default kan vara lista, inte pictogram-hero.
-- Klart = verklighet. Eventuellt tyst kvitto, inte konfetti.
+- Vårt: middag, hämtning
+- Mitt: matteprov, fotboll (osynligt för förälder)
+- Delat stöd: efter aktiv handling
+- Fokus/NU/NÄSTA om `support_profile` säger så
+- Klart = verklighet. Appen går ur vägen. Ingen konfetti-default.
 
-### Mina mål
+**Vi hemma** ≈ Mina personer: vilka som är med, vad som är Vårt denna vecka. Inte feed. Inte “mamma tittar”.
 
-- 1–3 mål i taget (skärmtid, sömn, plugg, träning, sparande IRL)
-- Progress mot *avtal*, inte XP-bar som skämt
-- Om stjärnor är på: de är bränsle till avtalet, gömda under fold
-
-### Vi hemma
-
-- Vilka som är i familjen
-- Vad som är delat den här veckan
-- Inte en feed. Inte “mamma tittar på dig”
-
-**Förälder Hem mot samma data:**
-
-- Noah: 1 familjeåtagande kvar
-- Elsa (7): 3 av 5 morgon klara
-- Undantag: Noah begärde dubbel skärmtid lördag → godkänn
+**Hem (förälder):** Elsa 3/5 morgon · Noah 1 Vårt kvar · inget Mitt-läckage.
 
 ---
 
-## 13. Motivation — vad som ersätter stjärnor
+## 13. Motivation
 
-**REK lager, inte antingen/eller:**
+**Ung v1-loop:** jag bestämde/accepterade → jag gjorde → jag ser att det är gjort → appen går ur vägen.
 
-| Lager | 3–8 | 9–12 | 13–15 | 16–18 |
-|-------|-----|------|-------|-------|
-| 1 Verklighet (klart i livet) | Ja | Ja | **Primär** | **Primär** |
-| 2 Synlig progress | Stjärnor | Stjärnor + mål | Avtal / delmål | Egna mål |
-| 3 Identitet | Samling, hus | Diplom, årsbok | “Jag sköter mitt” | Vuxenkompetens |
-| 4 Upptäckt (värld) | Skatt / rum | Valfritt | Av | Av |
+Stjärnor: OFF som default när `reward_model` = off (kopplat till ung-policy, **inte** till dagen man fyller 13). Kan slås på som familjestöd.
 
-**Förbjudet i alla band:** login-bonus, loot box, leaderboard, köpta stjärnor, streak-skam, 5 s blockerande firande.
+**Ingen ersättningsvaluta i v1:** inte frihetspoäng, skärmtidsvaluta, veckopengspoäng, trust score, XP, teen currency.
 
-**OQ:** Får Ung ha “veckopeng-kvitto” kopplat till avklarat? (IRL-pengar, inte IAP.) Risk: appen blir barnarbete-tracker. Default **nej** tills grundare säger ja.
+**Förbjudet i alla band:** login-bonus, loot box, leaderboard, köpta stjärnor, streak-skam, blockerande firande.
+
+**SDT som designstöd, inte bevis:** loopen ovan siktar på autonomi (jag valde), kompetens (jag gjorde), tillhörighet (Vårt). Att *denna* UI ökar SDT-behov är **NOT_VERIFIED**.
 
 ---
 
-## 14. Innehåll vi saknar (startbibliotek)
+## 14. Innehåll
 
-Idag: Förskola vardag, Skola vardag, Morgon, Kväll, Helg, Lov, sommar/jul. Copy lågstadium.
+**Mellan P0:** skolvardag 9–12 (lokaliserbart); kväll utan sagostund som kärna.
 
-**Mellan behöver (P0):**
+**Ung spike/P0:** familjeåtaganden-mall; den unga äger egna rader. Skärmtid som *avtalad rutin* kan vänta till P1. Två-hem kopplas när FEAT-1 + spike samexisterar.
 
-- Mellanstadium vardag (skola, väska, läxa, skärm, träning)
-- Kväll utan sagostund som kärna (egen tid, morgondagens väska, sömn)
-
-**Ung behöver (P0 för Ung v1):**
-
-- Familjeåtaganden-mall (middag, disk, syskonhämtning, hund)
-- Skolvecka 13–15 (väska, inlämning, pluggpass — *hen äger raderna*)
-- Skärmtid-avtal (förälder + ung, inte hemlig parental control)
-- Två-hem-vecka (redan speccad boendeschema — koppla)
-
-**Inte i v1:** körlektioner, fest, dating, alkohol, terapiplaner.
+**Inte v1:** körkort, fest, dating, alkohol, terapi, veckopeng-motor.
 
 ---
 
-## 15. Vad som medvetet är utanför scope
+## 15. Utanför scope
 
-- Ny app / nytt bundle-id
-- Socialt nätverk, klassrum, chat
-- Skolplattforms-integration (Vklass/InfoMentor) i v1
-- GPS / “var är Noah”
-- Hälsomätning, wearable
-- Fjärde coach eller Activation-expansion
-- Star IAP, teen battle-pass
-- Att döda Liten-produkten
-- Att POS-ändras utan ADR
+- Ny app / bundle-id
+- Socialt, klassrum, chat, skolplattform
+- GPS, hälsa, wearable
+- Fjärde coach, star IAP, habit tracker
+- Döda Liten
+- POS-ändring utan ADR
 - Kod i detta uppdrag
+- Fältvis ACL
+- Ny valuta
+- Marknadsföra 13+ innan Ung finns
 
 ---
 
-## 16. Kommersiellt och varumärke (REK)
+## 16. Kommersiellt filter (REK)
 
-**Största vinst per vecka:** sluta tappa familjer vid 10–12. Det är samma betalande förälder, samma syskon, samma NPF-behov. Ton + mellanstadieschema + För dig-mål är billigare än en tonårsapp.
+Designa **inte** efter “dyr app” eller hypotetisk exit.
 
-**Näst största:** 13–15 i familjer som redan betalar, där ett barn *växer in*. Inte förvärv via TikTok-tonårsvarumärke.
+Designa efter: faktisk familjenytta, tillit, vardagseffekt, låg friktion, kontinuitet över år, flera barn, svårighet att bytas ut mot en todo-app.
 
-**Risk:** sälja “3–18” i butik innan Ung finns → recensioner från tonårsföräldrar som möter Sagostund. Skadar 3–8-förvärv.
+Pris/packaging = separat beslut.
 
-**Domän/varumärke:** namnet kan leva för Liten/Mellan. Ung-läget ska **inte** heta “stjärnburken” i UI. Externt: *samma app, olika lägen* — inte ett separat teen-varumärke.
+### 16.1 Frågor varje ny capability måste klara
 
-**OQ:** Engelska marknader (3–12 redan svårt). Rekommendera: **inte** lansera Ung internationellt först.
+**International**
+
+- Begripligt utanför Sverige?
+- Bundet till svensk skola/familj?
+- Copy, kalender, legal, policy utan fork?
+- Olika samtyckesåldrar (13 vs 16) utan ny kärna?
+
+**Moat**
+
+- Löser kärnproblemet bättre än Todoist + kalender?
+- Förstärker familje-OS?
+- Egen domän (ägande + stöd + Journey) eller feature-hög?
+- Retention när personen växer?
+- Värde av att *hela* familjen är kvar?
+
+**Acquisition-hygien** (lång sikt, inte sprintskäl)
+
+Tydlig domän, dokumenterade policies, config för land, verifierbar säkerhet, mätbar nytta, låg skuld. Inga specialvägar som kräver grundaren.
+
+### 16.2 Kommersiella risker (hittade)
+
+| Risk | Allvar |
+|------|--------|
+| Ung blir generic todo → inget WTP, ingen moat | Hög om Mina mål/XP smygs in |
+| Mellan uteblir medan Ung byggs → 9–12 churn fortsätter | Hög — därför Mellan först |
+| Lovar 3–18 i butik innan Ung finns → recension + deklarationsbrott | Hög |
+| Två appar → dödar Hem | Hög |
+| Familjer lämnar p.g.a. ton (**NOT_VERIFIED**) — vi kan ha fel problem | Medium |
+| Internationell fork på “mellanstadium” / 13-konto | Medium |
+
+**REK kvar:** största *troliga* vinst per vecka är Mellan (samma betalande förälder). Det är en **hypotes**, inte FACT.
 
 ---
 
 ## 17. Open Questions (grundare)
 
-Dessa får inte en agent gissa.
+Agent får inte gissa.
 
-1. **Kontomodell 13+:** fortsätta som `child` + PIN, eller eget `parent`-löst ungdomskonto med e-post?
-2. **Synlighet default 13–15:** ser föräldern avklarat i realtid, eller bara familjeåtaganden?
-3. **Får den unga skapa fria uppgifter utan förälder?** (REK: ja, syns inte default.)
-4. **Stjärnor på 13+ default av eller valfritt på?** (REK: av.)
-5. **Veckopeng / IRL-pengar i appen?** (REK: nej v1.)
-6. **Butik 13+ när?** (REK: efter Ung v1, inte i samma PR som copy.)
-7. **Namn i UI:** “Ung” / “Du” / något annat — inte “barnläge 3”.
-8. **NPF 13–18:** samma produkt eller separat extra-stöd-yta? (REK: samma, annan ton.)
-9. **Ska 11–12 defaultas Mellan även utan födelsedag?**
-10. **Pedagog på gymnasiet:** in eller ut tills P-krav sitter?
+1. **Identitet/konto 13+.** `child`+PIN vs ungdomskonto med e-post. GDPR-13 avgör **inte** detta.
+2. **Default privacy Mitt vs Vårt.** REK: Mitt privat; Vårt synligt för relevant vuxen.
+3. **Får Ung skapa Mitt utan godkännande?** REK: ja.
+4. **Stjärnor OFF default vid ung-policy?** REK: ja. Produktantagande — ska valideras.
+5. **Veckopeng / IRL-pengar?** REK: nej v1.
+6. **Exakt store-gate** för att *marknadsföra* 13+ (upplevelse + deklaration + ev. Families/Kids).
+7. **Vilka capabilities följer autonomi/policy vs presentation?**
+8. **Ung privacy + hög NPF-support** — vem slår på stöd? REK: förälder *eller* den unga, utan att sänka privacy.
+9. **Regler för explicit delning** till vuxen/pedagog (återkalla, tid, två hem).
+10. **Legal/security per marknad** för ungdomsidentitet (verifiering, avtalspart, rättslig grund).
+11. **Lämna familjen / export** senare.
+12. **Vad vårdnadshavare måste kunna se** trots privat default — **NOT_VERIFIED** tills legal review.
+13. **Namn i UI** för presentation (inte “barnläge 3”).
+14. **Presentation-default utan födelsedag.**
+15. **Pedagog på gymnasiet** — in eller ut tills P-krav sitter.
 
 ---
 
-## 18. Diskussionsprotokoll för ChatGPT / Gemini / Cursor
-
-Be modellen svara i detta format:
+## 18. Diskussionsprotokoll
 
 ```
-OENIG OM: [påstående i dokumentet]
-VARFÖR: [användar- eller juridisk risk]
-ALTERNATIV: [ett konkret, inte fem]
-VAD SOM MÅSTE LÅSAS AV GRUNDARE: [OQ-nummer]
+OENIG OM:
+VARFÖR:
+ALTERNATIV: [ett]
+VAD GRUNDARE MÅSTE LÅSA: [OQ n]
 VAD SOM KAN LÅSAS NU: [krav-ID]
 ```
 
-**Påståenden att attackera:**
+Attackera särskilt: presentation≠policy; objektgränser; Mellan-först; stjärnor OFF; ingen social; explicit delning; samma Journey.
 
-1. Tre lägen på en barnrad slår två appar.
-2. 9–12 är rätt v1, inte 16–18.
-3. C-01 ska omtolkas via ADR, inte slopas.
-4. Stjärnor av som default från 13.
-5. Ingen social v1.
-6. Förälder ser mindre, inte mer, när barnet blir äldre.
-7. Samma Journey-motor, nya experiences.
-
-**Kvalitetstest på motförslag:** Skulle en 7-åring med autism få en sämre morgon? Om ja — underkänn.
+**Motförslag-test:** blir Olle 7:s morgon sämre? Om ja — underkänn.
 
 ---
 
-## 19. Definition of Done för *denna* spec-runda
+## 19. Produkthypoteser (inte krav)
 
-Spec-rundan är klar när grundaren kan säga:
+Ingen framgångssiffra hittas på.
 
-1. Jag känner igen dagens barn- och föräldraupplevelse — inklusive var vision och live skiljer sig.
-2. Jag vet vilka krav som är bevarande (Liten) vs nya (Ung).
-3. Jag har valt eller strukit OQ 1–6 tillräckligt för en ev. ADR.
-4. Ingen kod har skrivits mot detta dokument.
+| ID | Hypotes | Om falsk |
+|----|---------|----------|
+| H1 | Familjer lämnar ~10–12 primärt p.g.a. ton/copy | Mellan-innehåll räcker inte; annat problem |
+| H2 | Mellan ökar retention 9–12 | Stoppa vidare Mellan-yta; mät annat |
+| H3 | 13–15 värderar Mitt + Vårt | Ung-release stopp |
+| H4 | Stjärnor OFF ökar Ung-acceptans | Tillåt ON default i testarm |
+| H5 | Explicit delning räcker för föräldernytta | Hem blir värdelöst → omdesign eller inget Ung |
+| H6 | NPF-stöd går att återanvända med vuxnare presentation | Annars risk att NPF = liten |
 
-**Nästa dokument (inte nu):** ADR “Age mode on child” + ev. POS-tillägg för C-01-omtolkning + innehållsspec Mellan-startschema.
+Framtida build-spec ska ange: baseline, mätetal, stop/go, guardrails, segment per presentation/policy — **inga känsliga teen scores**.
 
 ---
 
-## 20. Självgranskning av underlaget
+## 20. Kvalitetstester (dokumentet måste klara)
+
+**Olle 7:** ingen försämring av Idag, NU/NÄSTA, stjärnor, Skatt, handoff.
+
+**Noah 11:** ingen förskolekänsla; bild/stjärnor kvar om de hjälper.
+
+**Noah 14:** Mitt privat + Vårt synligt + Delat stöd samtidigt; nolläckage.
+
+**Noah 14 + hög NPF-support:** samma rätt till privacy; NU/NÄSTA, timer, pictogram, delsteg, en sak, reducerad stimuli, förutsägbarhet.
+
+**Blandad familj 7+11+14:** ett family, ett Hem, en Journey, ett nästa familjesteg; olika presentation/stöd/ägande.
+
+**Två hem:** vuxna får inte samma insyn bara för att båda är vuxna.
+
+**International:** samma kärndomän i t.ex. Sverige, Finland, Irland utan fork. Policy/config bär ålders- och samtyckesskillnad.
+
+---
+
+## 21. Legal (LEGAL REVIEW — inte produkt-FACT)
+
+### 21.1 Vad 13 år *är* och *inte* är
+
+**FACT (primärkälla):** GDPR art. 8 — när rättslig grund är *samtycke* (art. 6.1 a) för informationssamhällets tjänster direkt till barn är default 16 år; medlemsstater får sänka till lägst 13. Art. 8.3: påverkar **inte** allmän avtalsrätt.
+
+**FACT:** Sverige, lag (2018:218) 2 kap. 4 § — barn som *bor i Sverige* kan själva samtycka till ISS från 13 år; under 13 krävs den med föräldraansvar. [riksdagen.se SFS 2018:218]
+
+**FACT:** IMY — kommersiella ISS till barn som fyllt 13 och bor i Sverige får behandla med *barnets* samtycke; samtycke är ofta *olämplig* grund; ojämlikt maktförhållande undergräver giltighet. [imy.se, uppdaterad 2026-06-15]
+
+**FACT:** Irland, Data Protection Act 2018 s. 31 — ålder för art. 8 är **16**. [irishstatutebook.ie]
+
+**FACT:** Finland, Tietosuojalaki 1050/2018 5 § — ISS direkt till barn, samtycke, barnet minst **13**. [Finlex / valtioneuvosto]
+
+**REJECTED:** 13 = eget konto, avtalsförmåga, betalning, rätt att isolera data från vårdnadshavare, automatisk vuxenstatus.
+
+### 21.2 Per marknad (senare, checklista)
+
+Rättslig grund per behandling · samtyckesålder · verifiering · avtalspart · barnets/ungdomens rättigheter · vårdnadshavares roll · retention/delete/export · om pedagogdelning ändrar grund/ansvar.
+
+Familjeapp med förälder-konto använder ofta **avtal / berättigat intresse** — inte barnets ISS-samtycke. **NOT_VERIFIED** för denna produkt tills legal review. Hårdkoda inte svensk modell.
+
+### 21.3 Internationell produktprincip
+
+Undvik arkitektur som hårdkodar svensk ålder, familjemodell, skolterminologi eller legalmodell.
+
+---
+
+## 22. App Store / Google Play
+
+Skilj: (1) produktmålgrupp (2) deklarerad target audience (3) content/age rating (4) Kids/Families-program.
+
+**FACT (Play):** deklarera målgrupp; appar som inkluderar barn ska följa Families Policy; välj bara grupper appen *faktiskt* är designad för. Grupper inkluderar 5 and under, 6–8, 9–12, **13–15**, **16–17**, 18+. 13–15/16–17 *kan* räknas som barn i vissa länder. Google granskar att deklarationen stämmer. [support.google.com, answer/9867159]
+
+**FACT (Apple):** Kids-kategori = appar för **11 år och yngre**; band 5 and under / 6–8 / 9–11; separat från vanlig age rating; Made for Kids kan inte ändras efter godkännande. [developer.apple.com/app-store/categories]
+
+**REK:** marknadsför inte 13+ förrän Ung finns och klarar kraven.  
+**REJECTED som FACT:** “store rating blockerar 13+”.
+
+---
+
+## 23. Evidensregister
+
+| Hypotes | Status | Källa/typ | Produktkonsekvens |
+|---------|--------|-----------|-------------------|
+| Autonomi blir mer salient i adolescens | **EVIDENCE** (teori) | SDT, Ryan & Deci 2000 | Mindre implicit kontroll; inte bevis för en skärm |
+| “Parental monitoring” är inte ett fenomen | **EVIDENCE** | Stattin & Kerr 2000; Kerr et al. 2010 | Särskilj kunskap via avslöjande från övervakning |
+| NU/NÄSTA hjälper *alla* NPF-ungdomar | **NOT_VERIFIED** som generell effekt | Etablerad design/praktik | Behåll som stöd; inget medicinskt löfte |
+| Visuellt schema/timer hjälper exekutiv funktion | **EVIDENCE** (praktik + delvis forskning) | Etablerad NPF/TEACCH-nära design; **inga effektpåståenden här** | Orthogonal support_profile |
+| 13 = eget konto enligt GDPR | **REJECTED** | GDPR art. 8; SFS 2018:218 2:4; IE DPA s.31 | Separat OQ 1 + 10 |
+| Store saknar 13+-fack | **REJECTED** | Play 13–15 / 16–17 | Deklaration ska matcha app |
+| Stjärnor fungerar dåligt från exakt 13 | **NOT_VERIFIED** | Produktantagande | Default OFF vid ung-policy; validera |
+| Churn 10–12 p.g.a. ton | **NOT_VERIFIED** | Ingen mätning här | H1 |
+| Explicit delning räcker för förälder | **NOT_VERIFIED** | H5 | Spike + mätning |
+| Objektgränser är begripliga för familjer | **NOT_VERIFIED** | — | Testa språk Mitt/Vårt/Delat |
+
+Vetenskap ska **falsifiera och informera**, inte dekorera beslut.
+
+---
+
+## 24. DoD för denna spec-runda
+
+Grundaren kan säga:
+
+1. Jag ser presentation ≠ policy.
+2. Jag ser Mitt / Vårt / Delat — inte fält-ACL.
+3. Mellan kan shippas utan Ung-release.
+4. Ung-spike har ett falsifierbart Noah-scenario.
+5. Legal/store är inte maskerade som produktfakta.
+6. Liten är skyddad.
+7. Inga OQ är antagna som beslut.
+8. Ingen kod, ingen ADR.
+
+**Nästa (inte nu):** Mellan-innehållsspec · ev. ADR för C-01-omtolkning + server-policies · legal memo per marknad · spike-kontrakt.
+
+---
+
+## 25. Kvarvarande motsägelser (ärliga)
+
+1. **Hem vs privacy.** Om allt hos 14-åringen är Mitt blir Hem tomt → H5. Inte löst; därför spike före release.
+2. **C-01 vs self_planning.** Skapa Mitt-objekt är ett slags “formulär”. Kräver ADR-omtolkning — inte smygbeslut.
+3. **En Journey vs ung-coach.** U-12 medvetet P2.
+4. **Förälder slår på NPF-stöd vs ung äger upplevelsen.** OQ 8.
+5. **Vad vårdnadshavare måste se.** OQ 12. Produkten får inte låtsas att svaret är noll eller allt.
+6. **Moat.** Utan mål och stjärnor *kan* Ung bli en dagslista. Motdrag: Vårt + stöd + samma OS som Liten — **NOT_VERIFIED** att det räcker.
+
+---
+
+## 26. Sista motbevisning (innan “redo”)
+
+**Motargument:** “Skippa Ung helt. Bara Mellan-copy. Privacy är för dyrt.”  
+**Svar:** Då växer 14-åringen ur er *och* ni har ingen arkitektur när ni behöver den. Spike är billigare än fel release. Mellan blockeras inte.
+
+**Motargument:** “Ge föräldern spegling — annars betalar de inte.”  
+**Svar:** Då är ni en övervakningsapp. Stattin/Kerr talar emot att mer tracking ger mer kunskap. H5 måste mätas, inte antas åt båda håll.
+
+**Motargument:** “Ett läge per ålder är enklare att bygga.”  
+**Svar:** Enklare och fel för NPF-14-åringen. Det är den kombinationen som differentierar mot todo-appar.
+
+**Motargument:** “Börja i Sverige med 13 hårdkodat.”  
+**Svar:** Irland 16 gör det till en fork. Config från dag ett på *regeln*, inte på hela produkten.
+
+Dokumentet är redo för nästa fas i den mening §24 kräver — **inte** för att alla håller med.
+
+---
+
+## 27. Självgranskning
 
 | Hatt | Resultat |
 |------|----------|
-| CPO | Rekommenderar 9–12 först; vägrar 3–18-löfte i butik |
-| UX | Bevarar 07:15-testet; Ung = mindre övervakning |
-| Game | Verklighet primär från 13; stjärnor valfria |
-| Security | Inga nya dataklasser; JWT-gräns kvar; OQ på ungdomskonto |
-| Legal | Butik + GDPR 13 flaggade, inte “lösta” |
-| QA | Krav är testbara per läge; Liten-regression är P0 |
-| AISA | POS citerad; detta dokument är inte ny sanning över POS |
+| CPO | Mellan först; Ung spike; inget 3–18-löfte |
+| UX | Explicit delning; 07:15; Liten skyddad |
+| Game | Ingen ny valuta; mål ute ur P0 |
+| Security | S-06 policies på server; läckageförbud |
+| Legal | 13 avgränsat; LEGAL REVIEW flaggad |
+| QA | Tester i §20; spike falsifierbar |
+| International | SE/FI 13, IE 16 som exempel |
+| AISA | Inte över POS; ingen ADR |
 
-**POS / kompass styrda av:** Constitution 1–5, First Success lag 0–7, P-02, C-01/C-03/C-04, PA-01/PA-06, G-01, R-02, Hem/Planering/Belöningar/För dig/Familj-visioner, NPF 3–12, barnmeny v2.
+**POS:** Constitution 1–5, First Success, P-02, C-01/C-03/C-04, PA-01/06, G-01, R-02, hub-/barnvisioner, NPF 3–12.
+
+**Bekräftelse:** ingen produktkod · ingen ADR · inga OQ antagna som beslut.
 
 ---
 
-*Slut på diskussionsunderlag. Inte implementationskontrakt.*
+*Diskussionsunderlag. Inte implementationskontrakt.*
