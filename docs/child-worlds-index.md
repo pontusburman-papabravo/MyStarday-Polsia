@@ -3,7 +3,8 @@
 **Status:** Operativ produktkonstitution (2026-07)  
 **Referens (föräldrar):** [parent-hubs-index.md](parent-hubs-index.md)  
 **Arkitektur:** [informationsarkitektur-barnapp.md](informationsarkitektur-barnapp.md) · [barnmeny-v2.md](barnmeny-v2.md)  
-**Bilder (register):** [child-image-assets.md](child-image-assets.md)
+**Bilder (register):** [child-image-assets.md](child-image-assets.md)  
+**Nästa årsgrupp (diskussion, ej låst):** [nasta-arsgrupp-12-18-kravstallning.md](nasta-arsgrupp-12-18-kravstallning.md)
 
 ---
 

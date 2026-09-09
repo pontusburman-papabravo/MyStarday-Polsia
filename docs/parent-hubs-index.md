@@ -22,6 +22,8 @@
 - [for-dig-agent-prompt.md](for-dig-agent-prompt.md)
 - [for-dig-spec.md](for-dig-spec.md)
 
+**Nästa årsgrupp (diskussion, ej låst):** [nasta-arsgrupp-12-18-kravstallning.md](nasta-arsgrupp-12-18-kravstallning.md) — förälderns roll när barnet är 9–18.
+
 ---
 
 ## Gemensam konstitutionsstruktur
