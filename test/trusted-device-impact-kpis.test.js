@@ -74,6 +74,19 @@ async function parentContext(db, session) {
   return parentRow.rows[0];
 }
 
+/** Stockholm wall-clock timestamp, `days` days before today, still inside a 30d window. */
+async function stockholmDayAgo(db, days, hour = 10) {
+  const result = await db.query(
+    `SELECT (
+       date_trunc('day', timezone('Europe/Stockholm', now()))
+       - ($1::int * interval '1 day')
+       + ($2::int * interval '1 hour')
+     ) AT TIME ZONE 'Europe/Stockholm' AS ts`,
+    [days, hour]
+  );
+  return result.rows[0].ts;
+}
+
 async function insertTdSession(db, familyId, parentId, deviceId, createdAt) {
   await db.query(
     `INSERT INTO analytics_events (family_id, event_type, metadata, created_at)
@@ -119,8 +132,8 @@ test('trusted device impact KPI definitions', async (t) => {
     const deviceId = deviceRow.rows[0].id;
 
     await db.query('DELETE FROM analytics_events WHERE family_id = $1', [familyId]);
-    await insertTdSession(db, familyId, parentId, deviceId, '2026-08-10 10:00:00+02');
-    await insertTdSession(db, familyId, parentId, deviceId, '2026-08-11 10:00:00+02');
+    await insertTdSession(db, familyId, parentId, deviceId, await stockholmDayAgo(db, 3));
+    await insertTdSession(db, familyId, parentId, deviceId, await stockholmDayAgo(db, 2));
 
     const impact = await fetchTrustedDeviceImpactKpis('30d');
     assert.equal(impact.recurring.families_2plus_days, 1);
@@ -139,8 +152,8 @@ test('trusted device impact KPI definitions', async (t) => {
     const deviceId = deviceRow.rows[0].id;
 
     await db.query('DELETE FROM analytics_events WHERE family_id = $1', [familyId]);
-    await insertTdSession(db, familyId, parentId, deviceId, '2026-08-12 08:00:00+02');
-    await insertTdSession(db, familyId, parentId, deviceId, '2026-08-12 18:00:00+02');
+    await insertTdSession(db, familyId, parentId, deviceId, await stockholmDayAgo(db, 1, 8));
+    await insertTdSession(db, familyId, parentId, deviceId, await stockholmDayAgo(db, 1, 18));
 
     const impact = await fetchTrustedDeviceImpactKpis('30d');
     const tdFamilies = impact.adoption.td_families;
