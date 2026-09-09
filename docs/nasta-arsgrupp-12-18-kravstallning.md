@@ -1,7 +1,7 @@
 # Nästa årsgrupp 12–18 — Spec och kravställning
 
 **Status:** Diskussionsunderlag (ej låst produktbeslut, ej ADR, ej build-spec)  
-**Revision:** 2 — 2026-09-09  
+**Revision:** 3 — 2026-09-09 (kvalitetsrunda; stänger spec-rundan) 
 **Typ:** Spec + krav · **ingen kod**  
 **Syfte:** Skriva ut dagens användarupplevelse, matcha mot vad som finns, och kravställa nästa årsgrupp så att underlaget överlever kritisk granskning.  
 **Användning:** Bolla med ChatGPT, Gemini och Cursor. Klistra in hela filen. Be dem attackera rekommendationen.
@@ -29,7 +29,9 @@
 | **OQ** | Open Question — får inte uppfinnas i implementation |
 | **EVIDENCE** | Extern forskning eller officiell policy som *stödjer* ett avgränsat påstående |
 | **NOT_VERIFIED** | Rimlig inferens eller produktantagande utan verifierad evidens |
+| **NOT_PROVEN** | Specifik produktlösning är inte visad (relation, retention, klinisk effekt) |
 | **REJECTED** | Tidigare påstående som inte håller efter granskning |
+| **LEGAL REVIEW** | Kräver juridisk genomgång per marknad — inte produktbeslut |
 
 ---
 
@@ -88,14 +90,16 @@ En 14-åring ska kunna ha Ung integritetsmodell *och* NU/NÄSTA, bildstöd, time
 
 **Leveransordning (REK):**
 
-1. **Mellan (9–12)** = första kommersiella leverans: ton, startschema, För dig — samma loop som Liten.
+1. **Mellan (9–12)** = första kommersiella leverans: ton, startschema, För dig. Samma *v1-kontrakt* som Liten, men designad så “Göra tillsammans” kan valideras senare utan ny kärna. Inte bara vuxnare copy.
 2. **Ung architecture spike** = parallell de-risking, **inte** release. Bevisar Noah-scenariot nedan.
 3. **Inte** ung vuxen-innehåll (16–18) förrän spike håller.
 4. **Marknadsför inte** 13+ förrän Ung-upplevelsen finns och klarar kraven. Det är ett *löftes-* och deklarationskrav — inte att Play/Apple saknar 13+-fack.
 
+**P0-princip (alla åldersövergångar):** En födelsedag, ändrat `ageBand` eller rekommenderat `presentation_mode` får **aldrig tyst** ändra ägarskap, privacy, delning, API-access, vuxen-/pedagoginsyn, notiser, `reward_model` eller annan capability med integritets- eller beteendekonsekvens. Ålder får *föreslå* presentation eller en transition — inte genomföra en dold rättighetsförändring. (S-10; konstitution: produkten överraskar inte.)
+
 **Kritisk arkitekturhypotes (spike, måste kunna falsifieras):**
 
-> Noah, 14, skapar “Matteprov fredag”. Den är privat. Föräldern kan inte läsa eller härleda den via API, Hem, notis, analytics, rapport eller pedagogvy. Samtidigt finns familjeåtagandet “Middag hemma 18:00” som relevant förälder ser. Noah kan själv välja att dela matteprovet för att få hjälp.
+> Noah, 14, skapar “Matteprov fredag”. Den är Mitt = privat default, inte implicit delad. Rollen förälder/pedagog ger inte automatisk access. Obehörig ska inte kunna *läsa eller härleda* titel, existens eller status via API, Hem, notis, analytics, rapport, export, sök, cache eller pedagogvy — utöver explicit delning och ev. **LEGAL REVIEW**-undantag (inte uppfunna här). Samtidigt finns “Middag hemma 18:00” som Vårt; relevant förälder ser det. Noah kan välja att dela matteprovet för hjälp.
 
 Om hypotesen faller (läckage eller förälder-Hem blir tomt och värdelöst) — **stoppa Ung-release**. Mellan får inte blockeras.
 
@@ -233,7 +237,7 @@ Familj = människor. Barnprofil (förälder): namn, foto, födelsedag, PIN, vy, 
 
 ### 4.8 Medförälder och två hem
 
-Eget vuxenkonto. Åtkomst via `parent_child`. Boendeschema speckad (FEAT-1); inte nödvändigtvis live i full form. Hem är neutrala. **OQ:** två hem + Mitt — vems synlighet? §17.9.
+Eget vuxenkonto. Åtkomst via `parent_child`. Boendeschema speckad (FEAT-1); inte nödvändigtvis live i full form. Hem är neutrala. **OQ:** två hem + Mitt — vems synlighet? §17.8.
 
 ### 4.9 Pedagog
 
@@ -294,11 +298,11 @@ PIN eller trusted device → NU = klä på dig → bocka → stjärnbloss → Sk
 | Schema + specialdag | Ja | Internationellt: undvik hårdkodad skolform |
 | Daily log | Ja | Completion ≠ läcka av privata objekt |
 | Stjärnor + rewards | Valfritt | Styrs av `reward_model`, inte ålder ensam |
-| Journey | Ja | Samma motor, nya experiences |
+| Journey | Ja (**REK**) | Samma motor, nya experiences — **NOT_VERIFIED** att det räcker för Ung |
 | För dig | Ja | Nya mål; filtrera på presentation + policy |
 | Trusted device / PIN-gate | Ja | Ung-identitet är OQ |
 | IAP | Ja | Familjen betalar |
-| Pedagog + rapport | Ja | Får inte se Mitt default |
+| Pedagog + rapport | Ja | Rollen pedagog ger inte implicit Mitt |
 | Boendeschema | Ja | Viktigare när autonomi ökar |
 | `child_view_config` | Ja | Presentation/stöd — inte privacy |
 
@@ -317,7 +321,7 @@ PIN eller trusted device → NU = klä på dig → bocka → stjärnbloss → Sk
 | NPF-stöd | Kärna | Kärna | Kärna, **orthogonal** | Kärna |
 | Store-deklaration vs löfte | Match | Match | Får inte lovas förrän Ung finns | Samma |
 
-**Läsning:** 9–12 = innehåll/ton (**hypotes** om churn). 13+ = kontrakt (ägande/delning), inte “svårare schema”.
+**Läsning:** 9–12 = innehåll/ton **och/eller** tidig kontraktsskov (**H1, NOT_VERIFIED**). 13+ = kontrakt (ägande/delning), inte “svårare schema”.
 
 ---
 
@@ -328,13 +332,15 @@ PIN eller trusted device → NU = klä på dig → bocka → stjärnbloss → Sk
 | Yngre default | Äldre default |
 |---------------|---------------|
 | Struktur *ges* | Struktur *förhandlas* |
-| Vuxen minskar osäkerhet | *Implicit* övervakning kan *öka* osäkerhet |
+| Vuxen minskar osäkerhet | Implicit full insyn är fel *default* när personen ska äga mer (**REK**, inte kausal sanning) |
 | Stolthet = klarade momentet | Stolthet = det här är mitt |
 | Belöning nära och konkret | Frihet, tid, förtroende — **utan ny valuta i v1** |
 
-**EVIDENCE (teori, inte UI-bevis):** Self-Determination Theory beskriver autonomi, kompetens och tillhörighet som grundbehov (Ryan & Deci 2000). Dagens app är stark på kompetens och tillhörighet; autonomi är medvetet låg. Det är **designstöd**, inte bevis att en viss skärm fungerar.
+**EVIDENCE (teori, inte UI-bevis):** Self-Determination Theory beskriver autonomi, kompetens och tillhörighet som grundbehov (Ryan & Deci 2000). Dagens app är stark på kompetens och tillhörighet; autonomi är medvetet låg. Teorin **stödjer designriktningen** men bevisar **inte** att vår UI- eller permissionsmodell fungerar.
 
-**EVIDENCE (parental monitoring ≠ kunskap):** Stattin & Kerr (2000) och longitudinell uppföljning (Kerr, Stattin & Burk 2010): det föräldrar *vet* kommer främst från ungdomens *egna avslöjande*, inte från övervakning. Övervakningsåtgärder predicerade inte kunskap över tid i den studien. **Detta är inte kausal evidens för vår UI.** Inferens: implicit full insyn är fel default när personen ska äga mer.
+**EVIDENCE (parental monitoring / knowledge):** Stattin & Kerr (2000) och Kerr, Stattin & Burk (2010): “parental monitoring” är inte ett enhetligt konstrukt. Föräldrars kunskap kommer ofta från ungdomens *egen disclosure*, inte bara från kontroll. **Inte** generell kausal sanning att “övervakning skapar konflikt”.  
+**REK:** prioritera transparent och frivillig delning framför dold informationsinhämtning.  
+**NOT_PROVEN:** objektbaserad sharing är inte visad förbättra relation, retention eller välmående.
 
 ### 8.2 Språk
 
@@ -362,15 +368,17 @@ PIN eller trusted device → NU = klä på dig → bocka → stjärnbloss → Sk
 presentation_mode ∈ { liten, mellan, ung }
         styr: copy, densitet, visuell ton, nav-default, defaultstöd
 
-policies / capabilities (exempel, inte schema):
+policies / capabilities (konceptnamn, inte schema):
         self_planning
         private_items
         family_commitments
-        parent_visibility
-        pedagogue_visibility
-        reward_model
+        explicit_sharing
         support_profile   ← orthogonal (NU/NÄSTA, timer, pictogram, …)
+        reward_model
 ```
+
+Åtkomst härleds från: autentiserad identitet + relation + objektägande + objekttyp + explicit delning + ev. legal/market policy.  
+**Inte** generella personnivåer `parent_visibility` / `pedagogue_visibility` (high/medium/low). Rollen `parent` eller `pedagog` ger **inte i sig** generell insyn i ungdomens privata objekt.
 
 **Progression av policy, inte av ålder:**
 
@@ -401,11 +409,11 @@ Cellen nere till höger är **icke-förhandlingsbar** i modellen. Annars blir NP
 | ~13–15 | ung | Äga själv + Vårt synligt |
 | ~16–18 | ung | Samma yta, hårdare privat default |
 
-Förälder kan flytta presentation ett steg med preview. Hopp liten→ung kräver varning. **Policy-byte är separat OQ** (vem godkänner `private_items`?).
+Förälder kan flytta presentation ett steg med preview. Hopp liten→ung kräver varning. Presentation-byte är **förslag**, inte tyst rights-change (S-10). **Policy-byte är separat OQ** (vem godkänner `private_items`?).
 
 ### 9.4 Internationellt
 
-Hårdkoda inte svensk skolform, “mellanstadium”, vårdnadsmodell eller 13 som policy-tröskel. Landsskillnader = senare policy/config. **LEGAL REVIEW** per marknad.
+Hårdkoda inte svensk skolform, “mellanstadium”, vårdnadsmodell eller 13 som policy-tröskel. Landsskillnader = senare policy/config. **LEGAL REVIEW** per marknad. Copy/policy får ändras utan fork av kärndomänen.
 
 ---
 
@@ -414,7 +422,8 @@ Hårdkoda inte svensk skolform, “mellanstadium”, vårdnadsmodell eller 13 so
 ### 10.1 Tre begripliga gränser (REK, Ung v1 / spike)
 
 **Mitt**  
-Den unga äger objektet. Privat default. Exempel: *Matteprov fredag*, *Plugga 25 min*, *Fotboll*.
+Den unga äger objektet. **Privat default — inte implicit delat.** Rollen parent ger inte automatisk access. Exempel: *Matteprov fredag*, *Plugga 25 min*, *Fotboll*.  
+Undantag får bara komma från explicit produktpolicy, legal policy eller säkerhets-/safeguardingkrav där tillämpligt — **aldrig** som dold sidoeffekt. Inget safeguarding-feature uppfinns här. **LEGAL REVIEW** för ev. obligatorisk vårdnadshavarinsyn (§17.12). **Inte** “föräldern har aldrig läsrätt” innan legal/account-modellen är färdig.
 
 **Vårt / Familjeåtagande**  
 Överenskommen sak som *relevanta* familjemedlemmar får se (via `parent_child` + ev. boende, inte “alla vuxna”). Exempel: *Middag 18*, *Hämta syskon*, *Ta ut hunden*.
@@ -424,20 +433,25 @@ Den unga *aktivt* delar ett Mitt-objekt för hjälp. Exempel: *Visa mamma mattep
 
 Ingen generell per-fält-matris Bara jag / Familj / Pedagog i v1.
 
-### 10.2 Läckageförbud (P0 för spike)
+### 10.2 Läckageförbud inkl. inference (P0 — princip, inte implementation)
 
-Privat information får **inte** läcka via:
+Ett privat objekts **existens eller innehåll** ska inte kunna härledas av obehörig via:
 
 | Kanal | Förbjudet exempel |
 |-------|-------------------|
-| API | Parent-endpoint returnerar titel/antal på Mitt |
-| Hem | “Noah har 3 privata saker” / tom rad som röjer namn |
+| API | Parent-endpoint returnerar titel, antal eller timestamps på Mitt |
+| Hem / parent dashboard | “Noah har 3 privata saker” / tom rad som röjer namn |
+| Pedagogvy / pedagogue dashboard | Lista eller badge på osedda Mitt-objekt |
 | Notis | “Noah klarade Matteprov” till förälder utan delning |
+| SSE / event streams | Event som röjer Mitt-titel, existens eller status |
 | Analytics | Event med titel, eller `private_item_count` per barn |
-| Rapport | Aggregering som röjer Mitt |
-| Pedagogvy | Lista eller badge på osedda Mitt-objekt |
+| Activity summary | Sammanfattning som röjer privata objekt |
+| Rapport / export | Aggregering eller fil som röjer Mitt |
+| Sök | Träff på privat titel för obehörig |
+| Cache / offline | Lokal kopia läsbar av annan session/roll |
+| Audit / historik som användare ser | Synlig logg som röjer Mitt för obehörig |
 
-**Acceptans:** en testare med förälder-JWT ska inte kunna *härleda* att objektet heter Matteprov eller ens att det finns, utöver det som explicit delats.
+**Acceptans:** en testare med förälder-JWT ska inte kunna *läsa eller härleda* att objektet heter Matteprov eller ens att det finns, utöver explicit delning och ev. LEGAL REVIEW-undantag (inte uppfunna här). Detta är **P0-krav**, inte FACT.
 
 ### 10.3 Vårdnadshavares obligatoriska insyn
 
@@ -467,7 +481,11 @@ P0 = måste för *den* leveransen · P1 = samma år · P2 = senare.
 
 ### 11.2 Mellan — första kommersiella leverans
 
-Samma kontrakt som Liten. Annan *presentation*. **Blockeras inte av Ung.**
+Mellan v1 behåller **huvudsakligen** Liten-kontraktet (förälder fortfarande huvudbyggare). Annan *presentation*. **Blockeras inte av Ung.**
+
+Designkrav: progressionen mot “Göra tillsammans” ska kunna valideras och införas senare **utan ny kärnmodell**. M-06 (förslag från barnet) är början på autonomiprogressionen — inte extra pynt. Mellan får **inte** bli endast “Liten med mörkare färger och vuxnare copy”.
+
+**HYPOTES / NOT_VERIFIED (H1):** Är churn 9–12 faktiskt ett tonproblem, eller börjar även ägarskapskontraktet skava?
 
 | ID | Krav | P |
 |----|------|---|
@@ -484,7 +502,7 @@ Samma kontrakt som Liten. Annan *presentation*. **Blockeras inte av Ung.**
 
 **Acceptans (Jenny + Noah 11):** 5 s på Idag utan förskolekänsla; minst ett För dig-mål som inte är förskola; Liten-syskon oförändrat.
 
-M-04 veckopeng från rev. 1 **stryks** (scope + OQ 5).
+M-04 veckopeng från rev. 1 **stryks** (scope + OQ 15).
 
 ### 11.3 Ung — kontrakt, inte habit tracker
 
@@ -500,13 +518,13 @@ P0-yta: **Min dag** + **Vi hemma**. Inte Skatt first. **Inte Mina mål.**
 | U-04 | Förälderschema → Vårt, inte hela dagen | P0 |
 | U-05 | Objektgränser Mitt / Vårt / Delat stöd — **ingen fält-ACL** | P0 |
 | U-06 | Inlösen: inte P0. Privilegieavtal = P2/OQ | P2 |
-| U-07 | `reward_model` default OFF vid ung-policy; kan slås på. **Ingen ny valuta** | P0 |
+| U-07 | `reward_model` default OFF *när ung-policy antagits*; kan slås på. **Ingen ny valuta.** Får inte smygas in via födelsedag (S-10). **H4 / NOT_VERIFIED** | P0 |
 | U-08 | Identitet: PIN *eller* annat — OQ 1. Inte djuremoji som enda identitet | P1 |
 | U-09 | Pedagog/humör inte som spelstatus. Delning aktiv | P0 |
 | U-10 | Hög `support_profile` + ung-policy ska kunna samexistera | P0 |
 | U-11 | För dig till förälder: skärmtid-avtal, struktur, två hem — P1 | P1 |
 | U-12 | För dig till den unga | P2 / OQ (en-coach) |
-| U-13 | Notis till den unga om hens objekt. Förälder får inte kopia på Mitt | P0 |
+| U-13 | Notis till den unga om hens objekt. Ingen *implicit* förälder-kopia på Mitt (LEGAL REVIEW-undantag inte uppfunna) | P0 |
 | U-14 | Hem: Vårt-status, inte live-karta över Mitt | P0 |
 | U-15 | Chatt/social/feed förbjudet v1 | P0 |
 | U-16 | Hälsa, mens, vikt, terapi, GPS förbjudet | P0 |
@@ -524,8 +542,8 @@ Samma yta. Hårdare privat default. Inget nytt innehållspaket (körkort, CSN) i
 | Y-01 | Default Mitt för egna; Vårt för åtaganden | P0 (när Ung finns) |
 | Y-02 | Konto/e-post = OQ 1 + LEGAL | P0 beslut |
 | Y-03 | Innehåll senare | P2 |
-| Y-04 | Presentation/policy-sänkning inte tyst | P0 |
-| Y-05 | Lämna familj / export | P1 / OQ 11 |
+| Y-04 | Presentation/policy-sänkning inte tyst — se S-10 | P0 |
+| Y-05 | Lämna familj / export | P1 / OQ 13 |
 | Y-06 | Ingen barnövervaknings-marknadsföring | P0 |
 
 ### 11.5 Förälder när blandade policies finns
@@ -565,6 +583,7 @@ Samma yta. Hårdare privat default. Inget nytt innehållspaket (körkort, CSN) i
 | S-07 | Analytics utan PII; inga teen scores; inga privata räkneverk | P0 |
 | S-08 | IAP: familj betalar, stjärnor köps inte | P0 |
 | S-09 | Spike måste visa nolläckage i Noah-scenariot innan Ung-release | P0 |
+| S-10 | **Explicit transition:** ålders-/livsfasövergångar får inte tyst förändra ägarskap, privacy, delning eller behörighet. Förändringar ska vara explicita, begripliga för berörda användare och reversibla där legal/policy tillåter. Ålder får föreslå presentation eller transition — inte genomföra dold rättighetsändring. (Konstitution: produkten överraskar inte.) | P0 |
 
 ---
 
@@ -576,7 +595,7 @@ Samma yta. Hårdare privat default. Inget nytt innehållspaket (körkort, CSN) i
 **Min dag** kan vara *samma värld som Idag* med annan presentation — föredra återanvändning framför ny flik (**REK**, motverka nav-inflation).
 
 - Vårt: middag, hämtning
-- Mitt: matteprov, fotboll (osynligt för förälder)
+- Mitt: matteprov, fotboll (privat default; inte implicit delat)
 - Delat stöd: efter aktiv handling
 - Fokus/NU/NÄSTA om `support_profile` säger så
 - Klart = verklighet. Appen går ur vägen. Ingen konfetti-default.
@@ -630,9 +649,13 @@ Stjärnor: OFF som default när `reward_model` = off (kopplat till ung-policy, *
 
 Designa **inte** efter “dyr app” eller hypotetisk exit.
 
-Designa efter: faktisk familjenytta, tillit, vardagseffekt, låg friktion, kontinuitet över år, flera barn, svårighet att bytas ut mot en todo-app.
+Designa efter: faktisk familjenytta, tillit, vardagseffekt, låg friktion, kontinuitet över år, flera barn, svårighet att bytas ut mot **gratis reminders + kalender + vanlig kommunikation**.
 
 Pris/packaging = separat beslut.
+
+**Moat-test (varje större Ung-feature):** Varför ska en familj använda den här produkten istället för Apple Reminders, Google Tasks/Keep, Apple/Google Calendar, en familjekalender, vanliga push/SMS och förälderns muntliga samordning?
+
+**Differentiering (HYPOTES / NOT_VERIFIED, inte “vi har privata todos”):** familjeåtaganden + autonomiövergång + NPF-stöd + blandade syskon + ett gemensamt familje-OS. En feature som lika gärna hör hemma i Apple Reminders ska **inte** automatiskt in.
 
 ### 16.1 Frågor varje ny capability måste klara
 
@@ -645,11 +668,11 @@ Pris/packaging = separat beslut.
 
 **Moat**
 
-- Löser kärnproblemet bättre än Todoist + kalender?
-- Förstärker familje-OS?
-- Egen domän (ägande + stöd + Journey) eller feature-hög?
+- Bättre än gratis Reminders + Tasks/Keep + kalender + SMS/muntlig samordning — inte bara “bättre än Todoist”?
+- Förstärker familje-OS (åtaganden, autonomiövergång, NPF-stöd, blandade syskon, Journey)?
+- Egen domän eller feature-hög / privat todo?
 - Retention när personen växer?
-- Värde av att *hela* familjen är kvar?
+- Värde av att *hela* familjen är kvar — inkl. betalande vuxen när implicit insyn försvinner (H7)?
 
 **Acquisition-hygien** (lång sikt, inte sprintskäl)
 
@@ -659,11 +682,12 @@ Tydlig domän, dokumenterade policies, config för land, verifierbar säkerhet, 
 
 | Risk | Allvar |
 |------|--------|
-| Ung blir generic todo → inget WTP, ingen moat | Hög om Mina mål/XP smygs in |
+| Ung blir generic todo / Reminders-kopia → ingen moat | Hög om Mina mål/XP eller “privata todos” smygs in |
+| Betalande vuxen tappar WTP när implicit insyn försvinner (H7) | Hög — **NOT_VERIFIED**; kan kräva annan packaging |
 | Mellan uteblir medan Ung byggs → 9–12 churn fortsätter | Hög — därför Mellan först |
 | Lovar 3–18 i butik innan Ung finns → recension + deklarationsbrott | Hög |
 | Två appar → dödar Hem | Hög |
-| Familjer lämnar p.g.a. ton (**NOT_VERIFIED**) — vi kan ha fel problem | Medium |
+| Familjer lämnar p.g.a. ton — eller p.g.a. ägarskapskontrakt (H1) | Medium — **NOT_VERIFIED** |
 | Internationell fork på “mellanstadium” / 13-konto | Medium |
 
 **REK kvar:** största *troliga* vinst per vecka är Mellan (samma betalande förälder). Det är en **hypotes**, inte FACT.
@@ -672,23 +696,27 @@ Tydlig domän, dokumenterade policies, config för land, verifierbar säkerhet, 
 
 ## 17. Open Questions (grundare)
 
-Agent får inte gissa.
+Agent får inte gissa. Olösta beslut tas **inte** bort för att dokumentet ska se färdigt ut. Inga svar uppfinns här.
 
-1. **Identitet/konto 13+.** `child`+PIN vs ungdomskonto med e-post. GDPR-13 avgör **inte** detta.
-2. **Default privacy Mitt vs Vårt.** REK: Mitt privat; Vårt synligt för relevant vuxen.
-3. **Får Ung skapa Mitt utan godkännande?** REK: ja.
-4. **Stjärnor OFF default vid ung-policy?** REK: ja. Produktantagande — ska valideras.
-5. **Veckopeng / IRL-pengar?** REK: nej v1.
-6. **Exakt store-gate** för att *marknadsföra* 13+ (upplevelse + deklaration + ev. Families/Kids).
-7. **Vilka capabilities följer autonomi/policy vs presentation?**
-8. **Ung privacy + hög NPF-support** — vem slår på stöd? REK: förälder *eller* den unga, utan att sänka privacy.
-9. **Regler för explicit delning** till vuxen/pedagog (återkalla, tid, två hem).
-10. **Legal/security per marknad** för ungdomsidentitet (verifiering, avtalspart, rättslig grund).
-11. **Lämna familjen / export** senare.
-12. **Vad vårdnadshavare måste kunna se** trots privat default — **NOT_VERIFIED** tills legal review.
-13. **Namn i UI** för presentation (inte “barnläge 3”).
-14. **Presentation-default utan födelsedag.**
-15. **Pedagog på gymnasiet** — in eller ut tills P-krav sitter.
+1. **Ungdomsidentitet / kontomodell.** `child`+PIN vs tredje kontotyp / e-post. GDPR-13 avgör **inte** detta. Legal/security (verifiering, avtalspart, rättslig grund) ingår. **LEGAL REVIEW.**
+2. **Privat default 13–15 jämfört med 16–17.** Samma modell, eller hårdare default för 16–17? REK i §9.3 är förslag, inte beslut.
+3. **Vilka objekt får den unga skapa helt själv?** REK: ja för Mitt (U-03). Inte låst.
+4. **Vem får skapa ett familjeåtagande (Vårt)?** Ung, vuxen, båda?
+5. **Måste den unga acceptera ett nytt Vårt**, eller kan vuxen lägga det direkt?
+6. **Kan Delat stöd återkallas?** Vad händer med redan mottagen historik? Vad händer om relationen tas bort? **Ingen auktoritativ policy i detta dokument — lämnas olöst.**
+7. **Vad får pedagog exportera eller bevara** efter Delat stöd / när relationen upphör?
+8. **Vad händer med privata objekt** om familjerelationen ändras (länk tas bort, två hem, ny vårdnadshavare)?
+9. **`presentation_mode`:** automatisk förändring eller endast förslag? (S-10: aldrig tyst rights-change.)
+10. **Hur sker transition 12→13 utan surprise?** Vem ser vad, vem godkänner, vad är reversibelt?
+11. **Vilka policies är produktkonstitutionella** och vilka är marknadsspecifika? Vilka capabilities följer policy vs presentation? Vem slår på NPF-stöd utan att sänka privacy?
+12. **Vilken vårdnadshavarinsyn kan vara juridiskt obligatorisk** i olika marknader? **LEGAL REVIEW.** Uppfinn inte noll eller allt.
+13. **Exit / export / separation vid 18+.**
+14. **Stjärnor OFF default** vid ung-policy — fortsatt produktantagande (**NOT_VERIFIED**, H4).
+15. **Veckopeng / IRL-pengar** — fortsatt utanför v1.
+16. **När får 13+ marknadsföras i butik?** Upplevelse + deklaration + ev. Families/Kids måste matcha.
+17. **Vad krävs för att den betalande vuxna ska uppleva fortsatt premiumvärde** när implicit insyn försvinner? (H7)
+
+**Språk / yta (olöst, inte build-spec):** UI-namn för presentation (inte “barnläge 3”); om “Mitt / Vårt / Delat stöd” fungerar per språk (**NOT_VERIFIED**); pedagog på gymnasiet — in eller ut tills P-krav sitter.
 
 ---
 
@@ -714,12 +742,13 @@ Ingen framgångssiffra hittas på.
 
 | ID | Hypotes | Om falsk |
 |----|---------|----------|
-| H1 | Familjer lämnar ~10–12 primärt p.g.a. ton/copy | Mellan-innehåll räcker inte; annat problem |
+| H1 | Churn ~9–12 är *primärt* ton/copy — **eller** ägarskapskontraktet börjar redan skava | Om kontraktet skaver räcker inte Mellan-copy; då behövs tidig autonomiprogression (inte Ung-release) |
 | H2 | Mellan ökar retention 9–12 | Stoppa vidare Mellan-yta; mät annat |
 | H3 | 13–15 värderar Mitt + Vårt | Ung-release stopp |
 | H4 | Stjärnor OFF ökar Ung-acceptans | Tillåt ON default i testarm |
 | H5 | Explicit delning räcker för föräldernytta | Hem blir värdelöst → omdesign eller inget Ung |
 | H6 | NPF-stöd går att återanvända med vuxnare presentation | Annars risk att NPF = liten |
+| H7 | **Fortsatt premiumvärde för betalande vuxen:** när ungdomens privata aktivitet inte längre är implicit synlig upplever den betalande vuxna fortfarande tillräckligt värde från familje-OS:et — familjeåtaganden, explicit stöd, blandade syskon, Journey och vardagskoordination — för att vilja fortsätta använda och betala | Ung kan behöva annan packaging, annan vuxennytta, eller kanske inte höra till samma kommersiella erbjudande — trots att privacyarkitekturen fungerar |
 
 Framtida build-spec ska ange: baseline, mätetal, stop/go, guardrails, segment per presentation/policy — **inga känsliga teen scores**.
 
@@ -731,9 +760,11 @@ Framtida build-spec ska ange: baseline, mätetal, stop/go, guardrails, segment p
 
 **Noah 11:** ingen förskolekänsla; bild/stjärnor kvar om de hjälper.
 
-**Noah 14:** Mitt privat + Vårt synligt + Delat stöd samtidigt; nolläckage.
+**Noah 14:** Mitt privat default + Vårt synligt + Delat stöd samtidigt; nolläckage inkl. inference.
 
-**Noah 14 + hög NPF-support:** samma rätt till privacy; NU/NÄSTA, timer, pictogram, delsteg, en sak, reducerad stimuli, förutsägbarhet.
+**Noah fyller 13 på natten (S-10):** ingen vuxen eller ungdom vaknar till att tidigare data plötsligt blivit privat/offentlig, eller att API-behörigheter förändrats, utan en uttrycklig transition.
+
+**Noah 14 + hög NPF-support:** samma rätt till privacy; NU/NÄSTA, timer, pictogram, delsteg, en sak, reducerad stimuli, förutsägbarhet. Stöd är **inte** bevisad klinisk effekt (**NOT_VERIFIED**).
 
 **Blandad familj 7+11+14:** ett family, ett Hem, en Journey, ett nästa familjesteg; olika presentation/stöd/ägande.
 
@@ -767,7 +798,11 @@ Familjeapp med förälder-konto använder ofta **avtal / berättigat intresse** 
 
 ### 21.3 Internationell produktprincip
 
-Undvik arkitektur som hårdkodar svensk ålder, familjemodell, skolterminologi eller legalmodell.
+Undvik antaganden om: svensk kärnfamilj, svensk skolmodell, samma vårdnadshavarrätt i alla marknader, samma samtyckesålder, samma definition av pedagog/stödperson, samma rättigheter vid 13 / 16 / 18.
+
+Internationalisering ska kunna ändra **copy/policy utan fork** av kärndomänen.
+
+**NOT_VERIFIED:** terminologin och den kulturella förståelsen av “Mitt / Vårt / Delat stöd” måste valideras per språk/marknad även om den underliggande domänmodellen är generell.
 
 ---
 
@@ -786,18 +821,22 @@ Skilj: (1) produktmålgrupp (2) deklarerad target audience (3) content/age ratin
 
 ## 23. Evidensregister
 
-| Hypotes | Status | Källa/typ | Produktkonsekvens |
-|---------|--------|-----------|-------------------|
-| Autonomi blir mer salient i adolescens | **EVIDENCE** (teori) | SDT, Ryan & Deci 2000 | Mindre implicit kontroll; inte bevis för en skärm |
-| “Parental monitoring” är inte ett fenomen | **EVIDENCE** | Stattin & Kerr 2000; Kerr et al. 2010 | Särskilj kunskap via avslöjande från övervakning |
-| NU/NÄSTA hjälper *alla* NPF-ungdomar | **NOT_VERIFIED** som generell effekt | Etablerad design/praktik | Behåll som stöd; inget medicinskt löfte |
-| Visuellt schema/timer hjälper exekutiv funktion | **EVIDENCE** (praktik + delvis forskning) | Etablerad NPF/TEACCH-nära design; **inga effektpåståenden här** | Orthogonal support_profile |
-| 13 = eget konto enligt GDPR | **REJECTED** | GDPR art. 8; SFS 2018:218 2:4; IE DPA s.31 | Separat OQ 1 + 10 |
+| Påstående | Status | Källa/typ | Produktkonsekvens |
+|-----------|--------|-----------|-------------------|
+| Autonomi/kompetens/tillhörighet är relevanta designbehov | **EVIDENCE** (teori) | SDT, Ryan & Deci 2000 | Stödjer riktning; **bevisar inte** UI eller permissionsmodell |
+| Parental monitoring/knowledge är inte ett enhetligt konstrukt; disclosure är en viktig källa till kunskap | **EVIDENCE** | Stattin & Kerr 2000; Kerr et al. 2010 | **REK:** frivillig delning. **Inte** “övervakning skapar konflikt” som kausal sanning |
+| Objektbaserad sharing förbättrar relation/retention/välmående | **NOT_PROVEN** | — | Spike; mät H3/H5/H7 |
+| Visuell struktur / exekutivt stöd / förutsägbarhet används i vissa populationer och sammanhang | **EVIDENCE** (praktik + delvis forskning) | Etablerad NPF-nära design; **inga universella effektpåståenden** | Orthogonal `support_profile` |
+| Produktens NU/NÄSTA, timer och pictogram ger klinisk effekt | **NOT_VERIFIED** | Ingen effektstudie här | Inget medicinskt löfte |
+| “Bildstöd hjälper ungdomar med NPF” som universell sanning | **REJECTED** som generell kausalitet | — | Erbjud stöd; lova inte effekt |
+| 13 = eget konto enligt GDPR | **REJECTED** | GDPR art. 8; SFS 2018:218 2:4; IE DPA s.31 | OQ 1 + LEGAL REVIEW |
 | Store saknar 13+-fack | **REJECTED** | Play 13–15 / 16–17 | Deklaration ska matcha app |
-| Stjärnor fungerar dåligt från exakt 13 | **NOT_VERIFIED** | Produktantagande | Default OFF vid ung-policy; validera |
-| Churn 10–12 p.g.a. ton | **NOT_VERIFIED** | Ingen mätning här | H1 |
-| Explicit delning räcker för förälder | **NOT_VERIFIED** | H5 | Spike + mätning |
-| Objektgränser är begripliga för familjer | **NOT_VERIFIED** | — | Testa språk Mitt/Vårt/Delat |
+| Stjärnor OFF är rätt default från 13 | **NOT_VERIFIED** | Produktantagande | H4; knutet till ung-policy, inte födelsedag |
+| Churn 9–12 är främst ton | **NOT_VERIFIED** | Ingen mätning här | H1 — kan vara ägarskapskontrakt |
+| Explicit delning räcker för förälder / H7 WTP | **NOT_VERIFIED** | H5, H7 | Spike + mätning; inga framgångssiffror |
+| Mitt / Vårt / Delat stöd är rätt mental modell | **NOT_VERIFIED** | Ej användartestat; ej validerat per marknad | Testa språk och kultur |
+| Ett gemensamt familje-OS räcker till 18 | **NOT_VERIFIED** | Strategisk hypotes | Inte FACT |
+| Samma Journey-motor räcker för Ung | **NOT_VERIFIED** | REK tills Ung-kontraktet testats | Inte FACT |
 
 Vetenskap ska **falsifiera och informera**, inte dekorera beslut.
 
@@ -805,16 +844,22 @@ Vetenskap ska **falsifiera och informera**, inte dekorera beslut.
 
 ## 24. DoD för denna spec-runda
 
-Grundaren kan säga:
+Spec-rundan kan **stängas** (nästa fas = innehåll/ADR/legal/spike — inte mer spec-rewrite) när allt nedan är sant i dokumentet:
 
-1. Jag ser presentation ≠ policy.
-2. Jag ser Mitt / Vårt / Delat — inte fält-ACL.
-3. Mellan kan shippas utan Ung-release.
-4. Ung-spike har ett falsifierbart Noah-scenario.
-5. Legal/store är inte maskerade som produktfakta.
-6. Liten är skyddad.
-7. Inga OQ är antagna som beslut.
-8. Ingen kod, ingen ADR.
+1. Presentation och access är separerade.
+2. Ingen födelsedag / ageBand / recommended presentation kan orsaka tyst rights/privacy-transition (S-10).
+3. Privat objektmodell är sammanhängande; legal exceptions är **inte** uppfunna.
+4. Inference leakage är P0.
+5. Liten-regression är förbjuden.
+6. Mellan är kommersiellt scoped; autonomiprogressionen är erkänd (inte bara ton).
+7. Ung architecture spike har ett falsifierbart Noah-scenario.
+8. Betalande-förälder-värdet är en testbar hypotes (H7), inte VISION/FACT.
+9. Moat är tydligare än “todo-app” / “privata todos”.
+10. Internationella antaganden är märkta; Mitt/Vårt-språk är **NOT_VERIFIED** per marknad.
+11. Vetenskap är evidens för avgränsade påståenden, inte dekoration eller UI-bevis.
+12. Alla olösta beslut är OQ eller LEGAL REVIEW.
+13. Inga framtida system beskrivs som FACT.
+14. Inga OQ är antagna som beslut. Ingen kod, ingen ADR.
 
 **Nästa (inte nu):** Mellan-innehållsspec · ev. ADR för C-01-omtolkning + server-policies · legal memo per marknad · spike-kontrakt.
 
@@ -822,30 +867,51 @@ Grundaren kan säga:
 
 ## 25. Kvarvarande motsägelser (ärliga)
 
-1. **Hem vs privacy.** Om allt hos 14-åringen är Mitt blir Hem tomt → H5. Inte löst; därför spike före release.
+1. **Hem vs privacy.** Om allt hos 14-åringen är Mitt blir Hem tomt → H5/H7. Inte löst; därför spike före release.
 2. **C-01 vs self_planning.** Skapa Mitt-objekt är ett slags “formulär”. Kräver ADR-omtolkning — inte smygbeslut.
-3. **En Journey vs ung-coach.** U-12 medvetet P2.
-4. **Förälder slår på NPF-stöd vs ung äger upplevelsen.** OQ 8.
-5. **Vad vårdnadshavare måste se.** OQ 12. Produkten får inte låtsas att svaret är noll eller allt.
-6. **Moat.** Utan mål och stjärnor *kan* Ung bli en dagslista. Motdrag: Vårt + stöd + samma OS som Liten — **NOT_VERIFIED** att det räcker.
+3. **En Journey vs ung-coach.** U-12 medvetet P2. Samma motor är **REK / NOT_VERIFIED** tills Ung-kontraktet testats.
+4. **Förälder slår på NPF-stöd vs ung äger upplevelsen.** OQ 11.
+5. **Vad vårdnadshavare måste se.** OQ 12. Produkten får inte låtsas att svaret är noll eller allt. Inget “aldrig läsrätt” som legal FACT.
+6. **Moat.** Utan mål och stjärnor *kan* Ung bli Reminders. Motdrag: Vårt + autonomiövergång + NPF-stöd + blandade syskon + samma OS — **NOT_VERIFIED**.
+7. **Mellan-ton vs Mellan-kontrakt.** H1 kan vara falsk: 9–12 kan redan skava på ägarskap, inte bara copy.
+8. **Ett familje-OS till 18.** Strategisk hypotes, inte sanning.
+9. **S-10 vs default ung-policy (U-07).** En kedja födelsedag → proposed ung-presentation → antagen ung-policy → stjärnor OFF / Mitt-default vore en tyst rights-change. Default vid ~13 är *förslag*. Policy-byte (inkl. `reward_model`) kräver explicit transition. Inte löst här (OQ 10).
 
 ---
 
 ## 26. Sista motbevisning (innan “redo”)
 
+**A. “9–12-problemet är främst ton/copy.”**  
+Kan vara falskt. Det kan vara början på autonomiproblemet. **H1 / NOT_VERIFIED.** Mellan v1 behåller Liten-kontrakt men ska kunna validera “Göra tillsammans”.
+
+**B. “Föräldrar kommer fortsätta betala även om de ser mindre.”**  
+Ej bevisat. **H7 / NOT_VERIFIED.** Om falsk: annan packaging, annan vuxennytta, eller Ung utanför samma erbjudande.
+
+**C. “Mitt / Vårt / Delat stöd är rätt mental modell.”**  
+Lovande men inte användartestad och inte validerad internationellt. **NOT_VERIFIED.**
+
+**D. “Stjärnor OFF är rätt default från 13.”**  
+Ej verifierat. **H4.** Default knyts till ung-policy, inte födelsedag.
+
+**E. “Ett gemensamt Family OS räcker hela vägen till 18.”**  
+Strategisk hypotes, inte sanning. **NOT_VERIFIED.**
+
+**F. “Samma Journey-motor räcker.”**  
+Bra REK, fortfarande hypotes tills Ung-kontraktet testats. **NOT_VERIFIED.**
+
 **Motargument:** “Skippa Ung helt. Bara Mellan-copy. Privacy är för dyrt.”  
 **Svar:** Då växer 14-åringen ur er *och* ni har ingen arkitektur när ni behöver den. Spike är billigare än fel release. Mellan blockeras inte.
 
 **Motargument:** “Ge föräldern spegling — annars betalar de inte.”  
-**Svar:** Då är ni en övervakningsapp. Stattin/Kerr talar emot att mer tracking ger mer kunskap. H5 måste mätas, inte antas åt båda håll.
+**Svar:** Spegling som default gör er till en övervakningsapp. Stattin/Kerr *stödjer inte* att mer tracking ger mer kunskap — de bevisar inte vår modell. H5/H7 måste mätas.
 
 **Motargument:** “Ett läge per ålder är enklare att bygga.”  
-**Svar:** Enklare och fel för NPF-14-åringen. Det är den kombinationen som differentierar mot todo-appar.
+**Svar:** Enklare och fel för NPF-14-åringen. Det är den kombinationen som differentierar mot gratis Reminders — **om** H7 och moat-hypotesen håller.
 
 **Motargument:** “Börja i Sverige med 13 hårdkodat.”  
 **Svar:** Irland 16 gör det till en fork. Config från dag ett på *regeln*, inte på hela produkten.
 
-Dokumentet är redo för nästa fas i den mening §24 kräver — **inte** för att alla håller med.
+Dokumentet är redo att **stänga spec-rundan** i den mening §24 kräver — **inte** för att hypoteserna är sanna.
 
 ---
 
@@ -853,14 +919,14 @@ Dokumentet är redo för nästa fas i den mening §24 kräver — **inte** för 
 
 | Hatt | Resultat |
 |------|----------|
-| CPO | Mellan först; Ung spike; inget 3–18-löfte |
-| UX | Explicit delning; 07:15; Liten skyddad |
-| Game | Ingen ny valuta; mål ute ur P0 |
-| Security | S-06 policies på server; läckageförbud |
-| Legal | 13 avgränsat; LEGAL REVIEW flaggad |
-| QA | Tester i §20; spike falsifierbar |
-| International | SE/FI 13, IE 16 som exempel |
-| AISA | Inte över POS; ingen ADR |
+| CPO | Mellan först; Ung spike; H7 öppen; inget 3–18-löfte |
+| UX | Explicit delning; 07:15; Liten skyddad; Mellan ≠ bara copy |
+| Game | Ingen ny valuta; mål ute ur P0; stjärnor OFF = H4 |
+| Security | S-06 + S-10; inference-läckage P0 |
+| Legal | 13 avgränsat; LEGAL REVIEW; inget “aldrig läsrätt” |
+| QA | Tester i §20 inkl. födelsedagsnatt; spike falsifierbar |
+| International | SE/FI 13, IE 16 som exempel; Mitt/Vårt-språk NOT_VERIFIED |
+| AISA | Inte över POS; ingen ADR; vetenskap ≠ UI-bevis |
 
 **POS:** Constitution 1–5, First Success, P-02, C-01/C-03/C-04, PA-01/06, G-01, R-02, hub-/barnvisioner, NPF 3–12.
 
