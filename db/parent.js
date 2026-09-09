@@ -60,6 +60,58 @@ async function linkAppleUserId(parentId, appleUserId, appleEmail) {
   return result.rows[0] || null;
 }
 
+async function saveAppleRefreshToken(parentId, refreshToken, clientHint) {
+  if (!parentId || !refreshToken) return null;
+  const hint = clientHint === 'native' || clientHint === 'web' ? clientHint : null;
+  const result = await db.query(
+    `UPDATE parent
+     SET apple_refresh_token = $2, apple_client_hint = COALESCE($3, apple_client_hint)
+     WHERE id = $1
+     RETURNING id`,
+    [parentId, refreshToken, hint]
+  );
+  return result.rows[0] || null;
+}
+
+async function clearAppleRefreshToken(parentId) {
+  if (!parentId) return null;
+  const result = await db.query(
+    `UPDATE parent
+     SET apple_refresh_token = NULL, apple_client_hint = NULL
+     WHERE id = $1
+     RETURNING id`,
+    [parentId]
+  );
+  return result.rows[0] || null;
+}
+
+/**
+ * @param {{ parentId?: string|null, familyId?: string|null, client?: { query: Function }|null }} opts
+ */
+async function listAppleRefreshTokens(opts = {}) {
+  const { parentId = null, familyId = null, client = null } = opts;
+  const exec = client && typeof client.query === 'function' ? client : db;
+  if (parentId) {
+    const result = await exec.query(
+      `SELECT id, apple_refresh_token, apple_client_hint
+       FROM parent
+       WHERE id = $1 AND apple_refresh_token IS NOT NULL`,
+      [parentId]
+    );
+    return result.rows;
+  }
+  if (familyId) {
+    const result = await exec.query(
+      `SELECT id, apple_refresh_token, apple_client_hint
+       FROM parent
+       WHERE family_id = $1 AND apple_refresh_token IS NOT NULL`,
+      [familyId]
+    );
+    return result.rows;
+  }
+  return [];
+}
+
 /**
  * Link a Google user ID to an existing parent account.
  */
@@ -80,4 +132,7 @@ module.exports = {
   getParentByEmail,
   linkAppleUserId,
   linkGoogleUserId,
+  saveAppleRefreshToken,
+  clearAppleRefreshToken,
+  listAppleRefreshTokens,
 };

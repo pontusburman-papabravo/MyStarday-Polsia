@@ -71,8 +71,10 @@ test('Google auth client uses OAuthRegistrationPayload builder', () => {
 });
 
 test('Apple login client uses OAuthRegistrationPayload builder', () => {
+  const session = fs.readFileSync(path.join(ROOT, 'public/js/apple-auth-session.js'), 'utf8');
   const loginHtml = fs.readFileSync(path.join(ROOT, 'public/login.html'), 'utf8');
-  assert.match(loginHtml, /OAuthRegistrationPayload\.withOAuthRegistrationFields/);
+  assert.match(session, /OAuthRegistrationPayload\.withOAuthRegistrationFields/);
+  assert.match(loginHtml, /apple-auth-session\.js/);
 });
 
 test('Apple register client uses OAuthRegistrationPayload builder', () => {

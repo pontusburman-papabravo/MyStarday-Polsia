@@ -1,8 +1,70 @@
 # Apple Sign In — App Store Review & Architecture Documentation
 
 **Författare:** Engineering agent
-**Datum:** 2026-05-28
-**Version:** 1.0
+**Datum:** 2026-09-09
+**Version:** 2.0
+
+---
+
+## Permanent SIWA invariants (do not regress)
+
+> Never discard a successful Apple Authentication Services credential in order to collect identity fields or require another Apple authorization during the same account creation attempt.
+
+SIWA-INVARIANT-1: One successful Apple credential is enough for the current account-creation attempt. Do not authorize again.
+
+SIWA-INVARIANT-2: After Apple auth, do not require name, email, password, or password confirmation when Apple already provided or manages those values.
+
+Apple `fullName` is available only on the **first** authorization.
+
+---
+
+## SUPERSEDED / WRONG (2026-09-08 → rejected 2026-09-09)
+
+The following flow is **forbidden**. It caused App Review Guideline 4 rejection of version 1.4.3 build 1147 (iPad Air 11-inch M3):
+
+```
+unknown Apple user
+→ 409 REGISTRATION_REQUIRED
+→ /register?method=apple
+→ fresh native Apple authorize
+```
+
+That discarded the first Authentication Services credential and then showed the email/password register form (name, email, password).
+
+---
+
+## Current architecture (2026-09-09)
+
+### New Apple user
+
+1. Collect app-specific gates first when already visible (language, country, terms).
+2. Run Apple authorize **once**.
+3. Use Apple `sub` as stable identity, verified email from the identity token, name from Authentication Services when present.
+4. Fail-closed market/country/terms gates.
+5. Create the account from **that same credential** — no email/password form.
+6. Create the session and go to onboarding.
+
+If country or terms are still missing after the first authorize: `409 APPLE_ACCOUNT_COMPLETION_REQUIRED` with `missing: ['country'|'terms']`. The client keeps the credential in memory (never URL / localStorage) and shows country/terms only. No second authorize.
+
+### Existing Apple user
+
+Apple authorize → verify token → lookup `apple_user_id` → login. Name may be absent on repeat auth.
+
+### Existing password account, same email
+
+`409 email_conflict` → explicit password + `POST /api/auth/apple/link`. No automatic takeover.
+
+### Hide My Email
+
+Relay addresses (`@privaterelay.appleid.com`) are accepted. Lookup is always by Apple `sub`.
+
+### Account deletion + Apple token revocation
+
+Settings → Radera mitt konto → `DELETE /api/family/delete-account`.
+
+On delete/unlink, stored `apple_refresh_token` is revoked at `https://appleid.apple.com/auth/revoke` when `APPLE_TEAM_ID` + `APPLE_SIGN_IN_KEY_ID` + `APPLE_SIGN_IN_PRIVATE_KEY` (or `APPLE_SIGN_IN_KEY_PATH`) are configured. The authorization code from the same auth transaction is exchanged for that refresh token.
+
+`apple_refresh_token` is server-side only. Exports, snapshots, `/api/auth/me`, session JSON, and admin family payloads must redact or omit it. It must not be logged.
 
 ---
 

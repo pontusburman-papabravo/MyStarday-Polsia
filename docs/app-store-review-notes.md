@@ -1,28 +1,60 @@
 # App Store Review Notes — Min Stjärndag
 
 > English — paste this directly into the App Store Connect "Review Notes" field.
-> Last updated: 2026-09-08 | Build 1140+ — Apple login/register split (2.1a) + subtitle metadata (2.3.8)
+> Last updated: 2026-09-09 | Guideline 4 SIWA fix after build 1147 — one authorize, no discarded credential
 
 ---
 
-## Build 1140+ — Apple Sign In login vs registration (2026-09-08, after 2.1(a) rejection build 1139)
+## Build after 1147 — Sign in with Apple Guideline 4 (2026-09-09)
 
-**Rejection (2 Sep 2026, build 1139):** Sign in with Apple showed an error on iPad when reviewer tapped the login button.
+**Rejection (9 Sep 2026, version 1.4.3, build 1147, iPad Air 11-inch M3):** Guideline 4 — Design. The app offered Sign in with Apple but required name and/or email after Authentication Services had already provided that information.
 
-**Root cause (prod-verified):** Native Apple auth succeeded, but `/login` called `POST /api/auth/apple` without `country_code` for a **new** Apple ID. Backend attempted account creation and returned `400 COUNTRY_REQUIRED` → visible error. Not a native iPad plugin regression.
+**Verified root cause:** The 2026-09-08 login/register split discarded the first successful Apple credential.
 
-**Fix:** Login sends `intent: login`. Unknown Apple IDs return `409` + `code: REGISTRATION_REQUIRED` and the client routes to `/register?method=apple` (no token stored). Registration requires explicit country choice, then a fresh native Apple authorize with `intent: register`.
+SUPERSEDED / WRONG flow (do not restore):
 
-**Metadata (2.3.8):** Subtitle changed to parent/family positioning — see `docs/app-store-connect-metadata.md` (no binary required for subtitle-only resubmit, but ship with new build).
-
-**Paste into App Review Information → Notes:**
 ```
-In the previously reviewed build 1139, Sign in with Apple authentication itself completed successfully. The issue occurred afterward because an Apple ID without an existing account was incorrectly handled as account creation from the Login screen and was then blocked by the required country-selection step.
-
-This has been corrected. Existing Apple accounts sign in normally. If an Apple ID does not yet have an account, the app now routes the user to registration, where country is selected before continuing with Sign in with Apple.
-
-Please use the email/password review account below to test the full parent and child flow.
+/login → Apple authorize → unknown Apple user → 409 REGISTRATION_REQUIRED
+→ redirect /register?method=apple → first Apple result discarded
+→ new Apple authorize on register → reviewer saw name/email/password form
 ```
+
+Apple `fullName` is available only on the first authorization.
+
+**Fix:** One Authentication Services credential creates or signs in the account. Country/terms may be collected before authorize or on a same-page completion surface. Name, email, and password are never collected after Apple auth.
+
+**Permanent rule:** Never discard a successful Apple Authentication Services credential in order to collect identity fields or require another Apple authorization during the same account creation attempt.
+
+**Physical device test required before resubmit.** Do not paste the notes below into App Store Connect until iPhone + iPad Air verification is done.
+
+**Paste into App Review Information → Notes (AFTER physical verification):**
+```
+Thank you for the Guideline 4 feedback on Sign in with Apple.
+
+In the previously reviewed build 1147, a new Apple ID on the Login screen was sent to the email/password registration form and asked to authorize with Apple a second time. That discarded the first Authentication Services credential (including name, which Apple provides only on the first authorization).
+
+This is fixed. Sign in with Apple now uses a single authorization:
+
+- An existing Apple account signs in immediately.
+- A new Apple account is created from that same credential. Name comes from Authentication Services and email comes from the verified Apple identity token (including Hide My Email). We do not ask for name, email, or a password after Sign in with Apple.
+- If country or terms are still needed, they are collected on the same screen without a second Apple authorization.
+
+Please test on iPad Air 11-inch:
+
+1. Sign in with Apple as a new Apple ID — no name/email/password form after the Apple sheet.
+2. Sign out and Sign in with Apple again — existing account signs in.
+3. Settings → delete account is available in-app.
+
+Please use the email/password review account below if you want to skip account creation and review the parent/child routine.
+```
+
+---
+
+## SUPERSEDED — Build 1140+ Apple login/register split (2026-09-08)
+
+**Do not use this flow.** It caused the 2026-09-09 Guideline 4 rejection.
+
+Historical only: build 1139 failed because login tried to create an account without country (`400 COUNTRY_REQUIRED`). The then-current fix routed unknown Apple IDs to `/register?method=apple` and required a fresh authorize. That discarded the first Authentication Services credential and is now forbidden.
 
 ---
 

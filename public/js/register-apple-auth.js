@@ -48,6 +48,13 @@
         return { ok: false, reason: 'country', message: t('market.choice.required') };
       }
 
+      const termsOk = window.AppleAuthCompletion && typeof AppleAuthCompletion.termsChecked === 'function'
+        ? AppleAuthCompletion.termsChecked() === true
+        : !!(document.getElementById('termsAccepted') && document.getElementById('termsAccepted').checked);
+      if (!termsOk) {
+        return { ok: false, reason: 'terms', message: t('auth.register.termsRequired') };
+      }
+
       return { ok: true };
     } catch (_) {
       return { ok: false, reason: 'error', message: t('auth.login.apple.signInFailed') };
@@ -73,6 +80,14 @@
         }
         if (window.CountryChoice && typeof CountryChoice.requireSelection === 'function') {
           CountryChoice.requireSelection();
+        }
+        return;
+      }
+      if (pre.reason === 'terms') {
+        const termsEl = document.getElementById('termsAccepted') || document.getElementById('appleTermsAccepted');
+        if (termsEl && typeof termsEl.focus === 'function') termsEl.focus();
+        if (typeof showAppleError === 'function') {
+          showAppleError(pre.message || t('auth.register.termsRequired'));
         }
         return;
       }

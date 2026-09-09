@@ -117,6 +117,6 @@ describe('LanguageChoice treats the displayed locale as selected', () => {
     assert.equal(en.language.choice.title, 'Language');
     assert.equal(sv.language.choice.title, 'Språk');
     assert.equal(en.auth.register.continueWithApple, 'Sign up with Apple');
-    assert.equal(sv.auth.register.continueWithApple, 'Registrera med Apple');
+    assert.equal(sv.auth.register.continueWithApple, 'Fortsätt med Apple');
   });
 });

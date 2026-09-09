@@ -9,10 +9,21 @@ const { sortTablesForExport } = require('../src/lib/full-database-export-sql');
 describe('sql-export-utils', () => {
   it('redacts sensitive columns', () => {
     const row = prepareRowForExport(
-      { id: '1', email: 'a@b.se', password_hash: 'secret', name: 'Ada' },
+      {
+        id: '1',
+        email: 'a@b.se',
+        password_hash: 'secret',
+        token_hash: 'tok',
+        native_token: 'push',
+        apple_refresh_token: 'refresh-secret',
+        name: 'Ada',
+      },
       { redactSensitive: true }
     );
     assert.equal(row.password_hash, '[REDACTED]');
+    assert.equal(row.token_hash, '[REDACTED]');
+    assert.equal(row.native_token, '[REDACTED]');
+    assert.equal(row.apple_refresh_token, '[REDACTED]');
     assert.equal(row.email, 'a@b.se');
   });
 

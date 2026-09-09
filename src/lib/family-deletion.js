@@ -3,6 +3,8 @@
 const avatarStorage = require('./avatar-storage');
 const { revokeAllActiveLinksForParent } = require('../../db/parent-child-links');
 const { revokeAllRefreshTokens } = require('./refresh-tokens');
+const parentDb = require('../../db/parent');
+const { revokeAppleToken, isAppleTokenRevocationConfigured, appleNativeClientId, appleWebClientId } = require('./apple-token');
 const {
   assertAuthorizedMemberDelete,
   lockParentChildRowsForChildren,
@@ -301,6 +303,58 @@ async function invalidateParentSessions(parentId, familyId) {
   await revokeAllRefreshTokens({ userId: parentId, userType: 'parent' });
 }
 
+/**
+ * Read Apple refresh tokens before parent rows are deleted.
+ * @param {{ query: Function }} executor
+ */
+async function collectAppleRefreshTokens(executor, { familyId = null, parentId = null } = {}) {
+  return parentDb.listAppleRefreshTokens({ familyId, parentId, client: executor });
+}
+
+function clientIdsForHint(hint) {
+  const nativeId = appleNativeClientId();
+  const webId = appleWebClientId();
+  if (hint === 'native') return [nativeId, webId].filter(Boolean);
+  return [webId, nativeId].filter(Boolean);
+}
+
+/**
+ * Best-effort Apple token revoke after successful account deletion.
+ * Never throws — local deletion already committed.
+ */
+async function revokeCollectedAppleTokens(rows) {
+  const list = (rows || []).filter((row) => row && row.apple_refresh_token);
+  if (!list.length) {
+    return { attempted: 0, revoked: 0, skipped: 0, reason: 'no_tokens' };
+  }
+  if (!isAppleTokenRevocationConfigured()) {
+    console.error('[APPLE] account deleted but token revocation is not configured');
+    return { attempted: 0, revoked: 0, skipped: list.length, reason: 'not_configured' };
+  }
+  let revoked = 0;
+  let skipped = 0;
+  for (const row of list) {
+    let ok = false;
+    for (const clientId of clientIdsForHint(row.apple_client_hint)) {
+      try {
+        const result = await revokeAppleToken({
+          token: row.apple_refresh_token,
+          clientId,
+        });
+        if (result.ok) {
+          ok = true;
+          break;
+        }
+      } catch (err) {
+        console.warn('[APPLE] revoke attempt failed');
+      }
+    }
+    if (ok) revoked += 1;
+    else skipped += 1;
+  }
+  return { attempted: list.length, revoked, skipped };
+}
+
 module.exports = {
   listAuthorizedAdministrativeAdultIds,
   callerHasAdministrativeAuthority,
@@ -312,4 +366,6 @@ module.exports = {
   collectParentAvatarStorageKey,
   cleanupAvatarStorageKeysAfterCommit,
   invalidateParentSessions,
+  collectAppleRefreshTokens,
+  revokeCollectedAppleTokens,
 };
