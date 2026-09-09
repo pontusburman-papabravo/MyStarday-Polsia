@@ -4,7 +4,7 @@
 **Referens (föräldrar):** [parent-hubs-index.md](parent-hubs-index.md)  
 **Arkitektur:** [informationsarkitektur-barnapp.md](informationsarkitektur-barnapp.md) · [barnmeny-v2.md](barnmeny-v2.md)  
 **Bilder (register):** [child-image-assets.md](child-image-assets.md)  
-**Nästa årsgrupp:** spec **STÄNGD** — [kravställning rev. 3](nasta-arsgrupp-12-18-kravstallning.md) · [de-risk](nasta-arsgrupp-12-18-derisk.md) · [Mellan innehåll](nasta-arsgrupp-12-18-mellan-innehall.md) · [H1-audit](nasta-arsgrupp-12-18-h1-audit.md)
+**Nästa årsgrupp:** spec **STÄNGD** — [kravställning rev. 3](nasta-arsgrupp-12-18-kravstallning.md) · [de-risk](nasta-arsgrupp-12-18-derisk.md) · [Mellan innehåll](nasta-arsgrupp-12-18-mellan-innehall.md) · [H1-audit](nasta-arsgrupp-12-18-h1-audit.md) · [Ung v1 build/release](nasta-arsgrupp-12-18-ung-v1-build-release.md)
 
 ---
 
