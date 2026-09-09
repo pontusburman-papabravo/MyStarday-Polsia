@@ -1,13 +1,13 @@
 # Nästa årsgrupp — UX-hypoteskarta
 
-**Status:** Research-artefakt · **inte** build-spec · **inte** ADR · **ingen kod**  
-**Datum:** 2026-09-09  
+**Status:** **FRYST** 2026-09-09 · research-artefakt · **inte** ADR  
 **Auktoritet:** Stängd spec `docs/nasta-arsgrupp-12-18-kravstallning.md` (rev. 3). Detta dokument **ändrar inte** den specen.  
 **Operativ plan:** `docs/nasta-arsgrupp-12-18-derisk.md`  
+**Fryst plansch v2:** `docs/nasta-arsgrupp-12-18-plansch-v2.png`  
 **Visuell karta:** `docs/nasta-arsgrupp-12-18-ux-hypoteskarta.html`  
-**Evidenskälla för planschkritiken:** `EVIDENCE_SOURCE: founder_observation`
+**Evidenskälla:** `EVIDENCE_SOURCE: founder_observation`
 
-**Syfte:** Stoppa att en övertygande åldersplansch behandlas som beslut. Visa vad som är riktning, vad som är hypotes, och hur vi testar innan mer UI-design.
+**STOP på UX-plansch.** Nästa värde är Mellan-P0 i produktion + H1-mätning — inte fler pixlar.
 
 ---
 
@@ -18,10 +18,10 @@ Forskningen och specen **stödjer riktningen**. De **validerar inte skärmar**.
 ```
 Riktning (håller)     Göra åt mig → Göra tillsammans → Äga själv
 Ålder                 typisk default — inte låda, inte rättighet
-Stödintensitet        orthogonal mot autonomi (NPF-slider genom alla åldrar)
-Planschen v1          ~7/10 som visualisering · 4–5/10 som build-underlag
-Nästa 10/10-steg      4–6 klickbara UX-hypoteser + beteendetest med 9–17 och föräldrar
-                      — inte snyggare UI
+Stödintensitet        orthogonal mot autonomi
+Planschen v2          9/10 strategi · 8/10 Mellan-build · 3/10 Ung-build (korrekt)
+Forskning             ger riktning. Produktdata avgör.
+Nästa värde           shippa Mellan-P0 · mäta H1 · inte iterera planschen
 ```
 
 **Förbjudet att sluta sig till från planschen v1**
@@ -37,24 +37,25 @@ Nästa 10/10-steg      4–6 klickbara UX-hypoteser + beteendetest med 9–17 oc
 
 ---
 
-## 1. Founder-score på planschen v1
+## 1. Founder-score
 
 `EVIDENCE_SOURCE: founder_observation`
 
+### Planschen v1 (ålderslådor)
+
+Kommunikation 8/10 · build-underlag 4/10 · specifika skärmar 2/10.
+
+### Planschen v2 (hypoteser + FACT / BUILD NOW / HYPOTES / OQ) — **fryst**
+
 | Dimension | Score | Läsning |
 |-----------|-------|---------|
-| Strategisk modell | 9/10 | Progressionen håller. Bättre än att skala upp dagens barnapp. |
-| Etisk / privacy-riktning | 9/10 | Explicit delning är rätt *inriktning*. |
-| NPF-princip | 8/10 | Rimlig, orthogonal. |
-| Vetenskap för principerna | 7/10 | Stödjer riktning, inte UI. |
-| Vetenskap för specifika skärmar | 2/10 | Nästan noll. |
-| Användarvalidering 9–12 | låg | H1 öppen. |
-| Användarvalidering 13–18 | ~0/10 | Ingen. |
-| Kommersiell validering | 3/10 | H5/H7 öppna. |
-| Planschen som kommunikation | 8/10 | Övertygande — det är risken. |
-| Planschen som build-underlag | 4/10 | Får inte styra implementation. |
+| Strategi- / beslutsplansch | 9/10 | Rätt typ av artefakt. |
+| Forskningsinformerad riktning | 8/10 | Principerna håller. |
+| UX vi *vet* fungerar | 5/10 | Fortfarande hypotes utanom Liten. |
+| Build-underlag **Mellan** | 8/10 | Innehåll nu. Delaktighet (M-06) testas härnäst. |
+| Build-underlag **Ung** | 3/10 | Korrekt — Ung ska inte bredlanseras än. |
 
-Det är **precis var ni ska vara**: bra hypoteser, inte “så här vill tonåringar ha det”.
+**Bra nog att använda nu.** Iterera inte planschen mer innan produktdata.
 
 ---
 
@@ -357,6 +358,39 @@ Valfritt sjunde: Ung med stjärnor ON som testarm (H4). Inte en tredje produkt.
 
 ---
 
+## 13b. Kvar på v2 — skrivet, inte omritat
+
+Planschen v2 är fryst. Dessa reservationer gäller *när den läses*, inte som skäl att rita om den.
+
+| Reservation | Hur den ska läsas |
+|-------------|-------------------|
+| Mellan ser för färdig ut | **BUILD NOW: innehåll.** **TEST NEXT: delaktighet (M-06 / H1).** M-06 är den mest intressanta Mellan-hypotesen — inte extra pynt. |
+| Ung-skärmar för konkreta | Testa *kontraktet* (Privat / Familj / Dela hjälp), inte pixel-navigation. |
+| 13–15 och 16–18 som kolumner | Samma Ung-domän. **Testperson 14** · **stress-test 17**. Inte två produktlägen. En 17-åring kanske inte behöver produkten alls — det är ett giltigt svar. |
+| “Privat som standard” | **Privat default — REK, legal review kvar.** Inte låst beslut. |
+| Föräldervärde utan Mitt-insyn | **H7 — måste bevisas.** Inte löfte. |
+| “Forskning ger riktning” | Lägg till: **Produktdata avgör.** Forskning säger inte var knappen sitter, om 11-åringar vill ha M-06, eller om föräldern betalar. |
+
+## 13c. Vad produktionen ska lära oss
+
+Det som får oss att *ändra riktning* — inte mer plansch.
+
+**Mellan (nu)**
+
+- Använder 9–12 fortfarande appen efter content-fixen?
+- Används M-06 när den finns (TEST NEXT)?
+- Stannar familjen längre?
+- Används stjärnor fortfarande?
+- Vilka nya aktiviteter läggs till (läxa, träning, skärm — inte sagostund)?
+
+**Ung (senare, flaggad kohort)**
+
+- Används Mitt? Används Vårt?
+- Delas saker frivilligt?
+- Tappar föräldern värde? (**H7**)
+- Fungerar Family OS fortfarande?
+- Vill 17-åringen ha produkten alls?
+
 ## 14. Vad som medvetet *inte* görs här
 
 - Revision 4 av den stängda specen.
@@ -379,10 +413,10 @@ Klart när:
 5. Ung-detaljer (IA, delning, auth, stjärnor) är märkta NOT_VERIFIED / OQ.
 6. Förälder-Hem är märkt H5/H7.
 7. Research-protokoll testar beteende, inte tycke.
-8. Nästa steg är 4–6 klickbara hypoteser — inte mer UI-polish.
+8. Planschen v2 är **fryst**. Nästa värde är Mellan-P0 + H1, inte fler pixlar.
 
-Tills research finns: **detta är inte customer-backed.**
+Tills produktion svarat: **detta är inte customer-backed för Ung.** Mellan-innehåll får shippas och mätas.
 
 ---
 
-*Hypoteskarta. Inte implementationskontrakt. Inte bevis för vad tonåringar vill ha.*
+*Fryst hypoteskarta. Inte implementationskontrakt för Ung. Inte bevis för vad tonåringar vill ha.*

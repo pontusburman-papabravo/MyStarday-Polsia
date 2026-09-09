@@ -17,12 +17,13 @@ Use for **agent** logged-in QA on prod — [`docs/founder-qa-test-account.md`](d
 - **Engineering-spec:** [`docs/for-dig-spec.md`](docs/for-dig-spec.md)
 - **Branch:** `cursor/for-dig-10-10-2c04`
 
-### Nästa årsgrupp 12–18 (research — inte build)
+### Nästa årsgrupp 12–18
 
-- **Stängd spec:** [`docs/nasta-arsgrupp-12-18-kravstallning.md`](docs/nasta-arsgrupp-12-18-kravstallning.md) — ingen rev. 4, inga OQ som beslut
-- **De-risk:** [`docs/nasta-arsgrupp-12-18-derisk.md`](docs/nasta-arsgrupp-12-18-derisk.md)
-- **UX-hypoteskarta:** [`docs/nasta-arsgrupp-12-18-ux-hypoteskarta.md`](docs/nasta-arsgrupp-12-18-ux-hypoteskarta.md) · visuell: [`docs/nasta-arsgrupp-12-18-ux-hypoteskarta.html`](docs/nasta-arsgrupp-12-18-ux-hypoteskarta.html)
-- **Regel:** Åldersplanschen v1 är kommunikation (~7/10), inte build-underlag (4–5/10). Bygg inte skärmar från den. Nästa steg är 4–6 klickbara hypoteser + beteendetest, inte snyggare UI.
+- **Stängd spec:** [`docs/nasta-arsgrupp-12-18-kravstallning.md`](docs/nasta-arsgrupp-12-18-kravstallning.md) — ingen rev. 4
+- **De-risk:** [`docs/nasta-arsgrupp-12-18-derisk.md`](docs/nasta-arsgrupp-12-18-derisk.md) — Mellan i produktion + Ung bakom flagga
+- **Fryst plansch v2:** [`docs/nasta-arsgrupp-12-18-plansch-v2.png`](docs/nasta-arsgrupp-12-18-plansch-v2.png) · karta: [`docs/nasta-arsgrupp-12-18-ux-hypoteskarta.md`](docs/nasta-arsgrupp-12-18-ux-hypoteskarta.md)
+- **Mellan-P0:** [`docs/nasta-arsgrupp-12-18-mellan-p0.md`](docs/nasta-arsgrupp-12-18-mellan-p0.md) — BUILD NOW innehåll, TEST NEXT M-06
+- **Regel:** STOP på UX-plansch. Forskning ger riktning. Produktdata avgör. Bygg inte Ung-skärmar från planschen. Privat default = REK tills legal review. H7 måste bevisas.
 
 ## Cursor Cloud specific instructions
 
