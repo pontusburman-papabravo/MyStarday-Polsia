@@ -22,7 +22,7 @@
       if (window.AppleAuthCompletion.termsChecked()) {
         payload.terms_accepted = true;
       }
-    } else {
+    } else if (typeof document !== 'undefined' && document.getElementById) {
       const termsEl = document.getElementById('appleTermsAccepted')
         || document.getElementById('appleCompletionTermsAccepted')
         || document.getElementById('termsAccepted');
