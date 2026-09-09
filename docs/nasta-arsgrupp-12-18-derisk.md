@@ -194,7 +194,7 @@ Skriv mätplanen **innan** ni drar produkt-slutsats. H1 kan börja på *befintli
 
 | ID | Fråga | Baseline (före slutsats) | Vad ni tittar på | Guardrail / stop | Inte |
 |----|-------|--------------------------|------------------|------------------|-----|
-| **H1** | Ton *eller* ägarskapskontrakt hos 9–12? | Retention/användning per åldersband *nu*; korta exit-/användarskäl | “För barnslig” vs “jag får inte äga” / “förälder styr allt” | Shippa bara copy om skälen är kontrakt | Teen scores; anta ton |
+| **H1** | Ton *eller* ägarskapskontrakt hos 9–12? | Prod-beteende per band *nu* (se h1-audit §2) | Retention, rutiner, barnvy vs vuxen-bock, senare M-06 | Shippa bara copy om *beteende* lutar kontrakt | Teen scores; anta ton; “bara förälder redigerar” = cirkel; ledande intervju |
 | **H2** | Ökar Mellan retention 9–12? | Samma band *före* Mellan-P0 | Kvarvaro / veckoaktivitet efter innehåll | Stoppa mer Mellan-yta om ingen rörelse | Blanda ihop med Ung |
 | **H4** | Är stjärnor OFF rätt *när ung-policy antagits*? | Spike/intervju med båda defaults | Acceptans, inte födelsedagsmagi | ON-default i testarm om OFF sänker användning utan vinst | Auto-OFF på födelsedag |
 | **H5** | Räcker Vårt + explicit delning för föräldernytta? | Förälderns Hem-jobb idag (07:15) | Kan hen fortfarande ta *ett* nästa steg? | Inget Ung-ship om Hem är tomt | Spegling som “fix” |
@@ -237,7 +237,7 @@ Tills dess: **Mellan är produkten. Ung är ett kontrakt att bevisa.**
 | `docs/nasta-arsgrupp-12-18-kravstallning.md` | Stängd spec (rev. 3) — OQ, H1–H7, S-10, läckagekanaler |
 | Detta dokument | Godkänd de-risk-plan |
 | `docs/nasta-arsgrupp-12-18-mellan-innehall.md` | Spår A — Mellan innehållsspec |
-| `docs/nasta-arsgrupp-12-18-h1-audit.md` | Spår B — H1 produktbaseline + familjeinstrument |
+| `docs/nasta-arsgrupp-12-18-h1-audit.md` | Spår B — H1 produktion först, *varför* bara vid behov |
 | `docs/adr/` | Kommande D — skriv inte förrän C gett ramar |
 | `docs/p-ie-launch/track-1-legal-compliance/` | Befintlig IE-lansering 3–12; inte Ung-svar |
 | `docs/adr/ADR-018-family-market-jurisdiction.md` | Land ≠ språk; återanvänd |

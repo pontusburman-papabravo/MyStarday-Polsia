@@ -72,7 +72,9 @@ Default `presentation_mode = mellan` *som förslag* när åldersband är 9–12.
 
 **Dag (kärna):** Skola (block) · Mellanmål · Läxor (**inte** gömd optional som enda läxrad).
 
-**Dag (valfritt, av):** Fritid/träning · Skärm *efter* läxa/avtal · Eget rum/städa.
+**Dag (valfritt, av):** Fritid/träning · Skärm som *avtalad* rad (familjen sätter ordning) · Eget rum/städa.
+
+Produkten låser **inte** “skärm efter läxa” som uppfostringsregel. Avtalad skärmtid kan ligga före, efter eller utan läxa.
 
 **Kväll (kärna, inte saga-identitet):** Middag · Tänder · Skärm av / lugn stund · Sova.
 
@@ -90,11 +92,13 @@ Idag: 9–12 som *bara* träffar **Motivation** (3–12) + ev. utgångna mål om
 
 Tre **nya** mål. Höj inte `skolansvar.ageMax` i tysthet — 6–8 ska inte få 11-årscopy.
 
-| Slug (förslag) | Headline | Ålder | Problem | Aktiverar | Inte |
-|----------------|----------|-------|---------|-----------|-----|
-| `laxor-utan-tjat` | Få läxorna gjorda utan kvällskrig | 9–12 | Läxor skjuts, tjat, osämja | Läxa som synlig dag-rad + kort eftermiddagsrutin | Veckopeng, betyg, “mina mål” |
-| `skarm-som-avtal` | Skärmtid som en överenskommen rutin | 9–12 | Skärm som förhandling varje kväll | Aktivitet “Skärm (avtalad)” *efter* överenskommen sak | App-blockering, parental control-marknadsföring |
-| `komma-ivag-traning` | Komma iväg på träning utan strid | 9–12 | Väska, tider, “jag vill inte” | Packa träningsväska + gå / hämtning | Resultat, lag-chat |
+Headlines är **förslag till lugn kundcopy**, inte låst krigsmetafor. Problem stannar internt.
+
+| Slug (förslag) | Headline (kund) | Ålder | Problem (internt) | Aktiverar | Inte |
+|----------------|-----------------|-------|-------------------|-----------|-----|
+| `laxor-utan-tjat` | Få en lugnare läxrutin | 9–12 | Tjat/osämja kring läxor | Läxa som synlig dag-rad + kort eftermiddagsrutin | Veckopeng, betyg, “mina mål”, “kvällskrig” i UI |
+| `skarm-som-avtal` | Skärmtid som en överenskommen rutin | 9–12 | Skärm som ny förhandling varje dag | Aktivitet “Skärm (avtalad)” — **ordning = familjens avtal** | App-blockering; “läxa måste köpa skärm” |
+| `komma-ivag-traning` | Gör det enklare att komma iväg på träning | 9–12 | Väska, tider, startmotstånd | Packa träningsväska + gå / hämtning | Resultat, lag-chat, “utan strid” i UI |
 
 **Motivation (3–12):** byt *default-exempel* när barnet är 9–12: inte “Extra saga”. Använd filmkväll, extra skärm *enligt avtal*, välja lördag. Samma slug, åldersgrenad exempel-lista. Inte nytt motivationssystem.
 
