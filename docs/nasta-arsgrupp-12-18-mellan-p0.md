@@ -1,7 +1,7 @@
 # Mellan-P0 — innehåll nu, delaktighet sen
 
 **Status:** BUILD NOW (innehåll) · TEST NEXT (M-06 / H1)  
-**Auktoritet:** Stängd spec rev. 3 · de-risk spår A  
+**Auktoritet:** Stängd spec rev. 3 · de-risk spår A · innehållsspec `docs/nasta-arsgrupp-12-18-mellan-innehall.md`  
 **Inte:** Ung-policy · Mitt/Vårt · M-06 i denna leverans · ny plansch
 
 ```

@@ -7,7 +7,7 @@
 **Visuell karta:** `docs/nasta-arsgrupp-12-18-ux-hypoteskarta.html`  
 **Evidenskälla:** `EVIDENCE_SOURCE: founder_observation`
 
-**STOP på UX-plansch.** Nästa värde är Mellan-P0 i produktion + H1-mätning — inte fler pixlar.
+**STOP på UX-plansch.** Kartan styr vad som får shippas för att läras vs provas före exponering. Produktion är primär validering.
 
 ---
 
@@ -21,7 +21,8 @@ Riktning (håller)     Göra åt mig → Göra tillsammans → Äga själv
 Stödintensitet        orthogonal mot autonomi
 Planschen v2          9/10 strategi · 8/10 Mellan-build · 3/10 Ung-build (korrekt)
 Forskning             ger riktning. Produktdata avgör.
-Nästa värde           shippa Mellan-P0 · mäta H1 · inte iterera planschen
+Nästa värde           Mellan-P0 i produktion · Ung G bakom flagg · mäta H1
+Metod                 Default ship-to-learn. Exception: prove-before-ship.
 ```
 
 **Förbjudet att sluta sig till från planschen v1**
@@ -33,7 +34,7 @@ Nästa värde           shippa Mellan-P0 · mäta H1 · inte iterera planschen
 - att förälderns Hem redan har tillräckligt värde utan implicit insyn
 - att något av ovan är customer-backed
 
-**Inget här får kodas som produkt.** Prototyper är research, inte release.
+Hypoteskartan styr vilka delar som ska **implementeras reversibelt och instrumenteras**. Produktion är primär valideringsmiljö. Klickbara prototyper eller mänsklig research används endast där produktionsdata inte säkert kan besvara frågan före implementation. Planschen är inte pixel-spec.
 
 ---
 
@@ -53,7 +54,7 @@ Kommunikation 8/10 · build-underlag 4/10 · specifika skärmar 2/10.
 | Forskningsinformerad riktning | 8/10 | Principerna håller. |
 | UX vi *vet* fungerar | 5/10 | Fortfarande hypotes utanom Liten. |
 | Build-underlag **Mellan** | 8/10 | Innehåll nu. Delaktighet (M-06) testas härnäst. |
-| Build-underlag **Ung** | 3/10 | Korrekt — Ung ska inte bredlanseras än. |
+| Build-underlag **Ung** | 3/10 | Korrekt för *bred* UX — Ung G (shell/ton/instrumentation) får byggas bakom flagg. |
 
 **Bra nog att använda nu.** Iterera inte planschen mer innan produktdata.
 
@@ -146,7 +147,7 @@ Ovanpå alla rader: **NPF/stöd-slider**. Den går genom Liten, Mellan, Ung och 
 
 ## 6. First use ≠ daily use
 
-Planschen v1 visade återkommande **login**, inte första användning. Varje grupp behöver **två** flöden i prototyperna.
+Planschen v1 visade återkommande **login**, inte första användning. Varje grupp behöver **två** flöden (first use ≠ daily use) när ytan byggs eller mäts.
 
 | | First use (förtroendekontrakt) | Daily use (kärnvärde) |
 |--|-------------------------------|------------------------|
@@ -167,7 +168,7 @@ Bygger på produkt som finns. Loop som håller: profil → PIN → Idag → NU/N
 
 Konstitution + Idag-vision: **vardagen är spelet, samlingen är belöningen.** På Idag är Skatt under fold.
 
-**Visa i nästa proto:** Login → Idag → klart / förflyttning till nästa.  
+**I produktion / Liten:** Login → Idag → klart / förflyttning till nästa.  
 **Skatt:** sekundär, inte hero.
 
 ---
@@ -225,13 +226,13 @@ Arkitekturellt bra begrepp. Som IA-label: skeptisk.
 
 En 15-åring tänker sannolikt inte “nu går jag till Delat stöd”. Hen tänker “jag behöver hjälp med den här.”
 
-**REK för proto:** delning är en **handling på objektet**, inte en egen primäryta. Planschen v1 gav Delat stöd för stor informationsarkitektonisk vikt.
+**REK:** delning är en **handling på objektet**, inte en egen primäryta. Planschen v1 gav Delat stöd för stor informationsarkitektonisk vikt.
 
 ### 9.3 Login / Face ID
 
 För tidigt att visa som nästan beslutat. Ungdomsidentitet är **OQ 1**.
 
-Märk i proto och plansch:
+Märk i karta och cirkulerande material:
 
 > **Egen, privat access — exakt auth OQ.**
 
@@ -275,13 +276,13 @@ Ingen spegling av Mitt som “fix”.
 
 ## 11. Stress-tester som saknades på planschen
 
-Inte v1-bygge. **Konceptskärmar / proto-uppgifter** för att avslöja domänfel tidigt.
+Inte v1-bygge. Domänfel ska avslöjas i **instrumentation och kohort** — proto bara om produktion inte kan svara före implementation.
 
 ### 11.1 Pedagog (privacy stress-test för Ung)
 
 - Noah delar en sak med pedagog.
 - Vad ser pedagogen?
-- Vad händer när Noah slutar dela? (OQ 6 — ingen policy uppfinns här; proto får *visa frågan*.)
+- Vad händer när Noah slutar dela? (OQ 6 — ingen policy uppfinns här; ytan får *visa frågan*, inte svara.)
 - Syns tidigare historik? (OQ 6–7)
 
 ### 11.2 Två hem
@@ -294,67 +295,55 @@ Om svaret alltid är “alla föräldrar ser Vårt” har vi redan fel modell. S
 
 ---
 
-## 12. Research-protokoll (kvalitativt först)
+## 12. Validering — produktion först
 
-Inte stora enkäter först. Inte “tycker ni planschen är bra?”.
+Inte stora enkäter först. Inte “tycker ni planschen är bra?”. Inte 4–6 klickbara prototyper som obligatorisk gate.
 
-### 12.1 Rekrytering (ungefär)
+### 12.1 Primär metod
 
-- Familjer med barn 9–10
-- Familjer 11–12
-- Familjer 13–15
-- Familjer 16–17
-- Med och utan uttalat NPF-stödbehov
-- Minst några två-hem-familjer
+| Default | Exception |
+|---------|-----------|
+| **Ship-to-learn** — copy, layout, startscheman, M-06 bakom flagg, navigation, stödgrad, stjärnor-användning | **Prove-before-ship** — vem som får läsa privat info, ungdomsidentitet, vårdnadshavaraccess, export/deletion, pedagogdelning, automatiska transitions, inference leakage |
 
-Intervjua **barn/ungdom och förälder separat först**, sedan tillsammans. En 14-åring ger andra svar om mamma sitter bredvid.
+Se de-risk-planen §0b.
 
-### 12.2 Beteende, inte åsikt
+### 12.2 Vad produktionen ska svara på
 
-Bygg klickbara prototyper. Ge uppgifter.
+| Vem / yta | Fråga i produktion | Hypotes |
+|-----------|-------------------|---------|
+| **9–12** | Använder de appen efter content-fixen? Vilka aktiviteter läggs till? | **H1 / H2** |
+| **M-06 (senare, flaggad)** | Används förslaget? Tar barnet mer ägarskap? | **H1-B** |
+| **Ung G (flaggad, reversibel)** | Används Min dag / shell? Behövs mer stöd? | Presentation, inte access |
+| **Ung E + kohort** | Används Mitt / Vårt? Delas saker frivilligt? | **H3** |
+| **Förälder 07:15** | Finns ett nästa steg när Mitt är dolt? | **H5** |
+| **Betalande vuxen** | Kvarstår värdet utan implicit insyn? | **H7 — måste bevisas** |
+| **Maja 17** | Vill 17-åringen ha produkten alls? | Samma Ung-domän, inte egen app |
 
-| Vem | Uppgift |
-|-----|---------|
-| **9–12** | “Du har fotboll imorgon och behöver komma ihåg skolväskan. Visa hur du skulle vilja lägga in det.” |
-| **14** | “Du har matteprov på fredag. Du vill komma ihåg det men vill inte att pappa ser det.” Sedan: “Nu vill du att pappa hjälper dig plugga torsdag. Vad gör du?” |
-| **Förälder** | “Du vill veta om Noah kommer till middagen men inte läsa hans skolplanering. Visa hur du skulle göra.” |
-| **Blandad familj** | “Du har Olle 7 och Noah 14. Vad behöver du veta klockan 07:15?” |
-| **Mellan A/B/C** | “Planera morgondagen.” — vilken modell förstår de? |
-| **Maja 17** | Samma privacy-uppgifter som Noah 14. Fungerar samma yta? |
+**Fråga inte först:** “Vilken design gillar du?”  
+**Titta först på:** retention, vilka ytor som öppnas, vilka objekt som skapas/delas, om föräldern fortfarande har ett jobb klockan 07:15.
 
-**Fråga inte:** “Vilken design gillar du?”  
-**Titta på:** var de klickar, vad de kallar saker, var de fastnar, om de försöker gömma / dela / be om hjälp på objektet.
+### 12.3 Undantag — proto / mänsklig research
 
-### 12.3 Koppling till stängda hypoteser
+Tillåtet **bara** när produktionsdata inte säkert kan besvara frågan *före* implementation — typiskt prove-before-ship-rader. Inte som skäl att rita om Ung eller blockera Mellan.
 
-| Test | Hypotes |
-|------|---------|
-| Mellan A vs B vs C + “för barnslig” vs “mamma styr allt” | **H1** |
-| Noah 14: privat matteprov → dela till plugg | **H3** + Mitt/Vårt-språk |
-| Stjärnor synliga vs dolda i Ung-proto | **H4** |
-| Förälder 07:15 med Olle + Noah | **H5** |
-| Noah 14 + NU/NÄSTA | **H6** |
-| “Skulle du fortsätta betala om du inte ser Noahs skola?” | **H7** — kvalitativ signal, ingen WTP-% hittas på |
+Om en proto ändå behövs: samma uppgifter som tidigare (matteprov → dela hjälp; förälder vill veta middag inte skolplanering). Barn/ungdom och förälder var för sig. Noah 14 och Maja 17 = samma yta, två testfall.
 
 ---
 
-## 13. Fyra till sex klickbara UX-hypoteser (nästa 10/10-steg)
+## 13. Implementationsskivor (inte proto-gate)
 
-Inte snyggare plansch. Inte produktkod. Lo-fi / mid-fi proto som går att ge uppgifter på.
+Kartan A/B/C synliggör H1. Den är **inte** en Figma-backlog som måste köras innan kod.
 
-| # | Proto | Syfte | Får inte låtsas beslutat |
-|---|-------|-------|-------------------------|
-| **1** | Liten daily: Login → Idag → klart/nästa | Kärnvärde. Skatt inte hero. | — |
-| **2** | Mellan A — vuxnare Liten | Isolera H1-A (ton) | Att A är Mellan-v1 |
-| **3** | Mellan B — förslag | Isolera M-06 | Att förslag är rätt modell |
-| **4** | Mellan C — delat skapande | Isolera H1-B (ägarskap) | Att C är Mellan-v1 |
-| **5** | Ung Noah 14: en tidslinje *eller* Mitt/Vårt + delning på objektet + first-use kontrakt | Privacy begripligt? | Face ID, “Delat stöd”-flik, stjärnor OFF som sanning |
-| **6** | Förälder Hem + två-hem + pedagog-share som *stress* (kan vara scener i proto 5) | H5/H7 + domänfel | Elegant 3/5-karta som färdig UX |
+| # | Skiva | Gate | Får inte låtsas beslutat |
+|---|-------|------|-------------------------|
+| **1** | Liten daily oförändrad | Redan produktion | — |
+| **2** | Mellan content (P0) | Ship-to-learn | Att H1 är “bara ton” |
+| **3** | M-06 bakom flagg | Ship-to-learn efter content | Att förslag är Mellan-v1 |
+| **4** | Ung G: ton / shell / stöd / Min dag / instrumentation | Flagg + befintlig access | Att shell = privacy-klar |
+| **5** | Ung E: Mitt / Vårt / dela hjälp | Prove-before-ship: C + D + inference + S-10 | Face ID, “Delat stöd”-flik, stjärnor OFF |
+| **6** | Förälder Hem med blandade barn | Mäts i kohort (H5/H7) | Elegant 3/5-karta som färdig UX |
 
-Proto 5 bör minst ha first-use-skärmen “vad ser jag / vad ser mamma”.  
-Noah 14 och Maja 17 kör **samma** Ung-proto — två testfall, inte två appar.
-
-Valfritt sjunde: Ung med stjärnor ON som testarm (H4). Inte en tredje produkt.
+Noah 14 och Maja 17 kör **samma** Ung-kärna — två produktionsfall, inte två appar.
 
 ---
 
@@ -383,7 +372,7 @@ Det som får oss att *ändra riktning* — inte mer plansch.
 - Används stjärnor fortfarande?
 - Vilka nya aktiviteter läggs till (läxa, träning, skärm — inte sagostund)?
 
-**Ung (senare, flaggad kohort)**
+**Ung (G nu bakom flagg · E + kohort efter C→D)**
 
 - Används Mitt? Används Vårt?
 - Delas saker frivilligt?
@@ -394,10 +383,10 @@ Det som får oss att *ändra riktning* — inte mer plansch.
 ## 14. Vad som medvetet *inte* görs här
 
 - Revision 4 av den stängda specen.
-- Produktkod, Ung i prod, 13+ i butikstext.
+- Ung-bredd eller 13+ i butikstext.
 - Att låsa auth, Mitt/Vårt-copy, Face ID, stjärnor OFF, eller förälder-Hem.
 - Att fylla föräldra-Hem för att undvika tomhet.
-- Stora enkäter före kvalitativa uppgifter.
+- Obligatorisk proto-runda innan Mellan eller Ung G.
 - Att visa planschen v1 och fråga om den är snygg.
 
 ---
@@ -409,13 +398,13 @@ Klart när:
 1. Planschen v1 är märkt som kommunikation, inte build-underlag.
 2. Kartan är tvådimensionell (autonomi × stöd) med ålder som default.
 3. Fem rader + enhetsaxel + first/daily use finns.
-4. Mellan har tre proto-varianter kopplade till H1.
+4. Mellan A/B/C synliggör H1 utan att kräva Figma-runda.
 5. Ung-detaljer (IA, delning, auth, stjärnor) är märkta NOT_VERIFIED / OQ.
 6. Förälder-Hem är märkt H5/H7.
-7. Research-protokoll testar beteende, inte tycke.
-8. Planschen v2 är **fryst**. Nästa värde är Mellan-P0 + H1, inte fler pixlar.
+7. Validering är produktion först; proto bara som undantag.
+8. Planschen v2 är **fryst**. Styrning: ship-to-learn vs prove-before-ship.
 
-Tills produktion svarat: **detta är inte customer-backed för Ung.** Mellan-innehåll får shippas och mätas.
+Tills produktion svarat: **detta är inte customer-backed för Ung-bredd.** Mellan-innehåll och Ung G får byggas. Privat ungdomsdata exponeras inte före C+D+E.
 
 ---
 

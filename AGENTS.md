@@ -20,10 +20,10 @@ Use for **agent** logged-in QA on prod — [`docs/founder-qa-test-account.md`](d
 ### Nästa årsgrupp 12–18
 
 - **Stängd spec:** [`docs/nasta-arsgrupp-12-18-kravstallning.md`](docs/nasta-arsgrupp-12-18-kravstallning.md) — ingen rev. 4
-- **De-risk:** [`docs/nasta-arsgrupp-12-18-derisk.md`](docs/nasta-arsgrupp-12-18-derisk.md) — Mellan i produktion + Ung bakom flagga
+- **De-risk:** [`docs/nasta-arsgrupp-12-18-derisk.md`](docs/nasta-arsgrupp-12-18-derisk.md) — Mellan + Ung parallellt; olika release-gates
 - **Fryst plansch v2:** [`docs/nasta-arsgrupp-12-18-plansch-v2.png`](docs/nasta-arsgrupp-12-18-plansch-v2.png) · karta: [`docs/nasta-arsgrupp-12-18-ux-hypoteskarta.md`](docs/nasta-arsgrupp-12-18-ux-hypoteskarta.md)
 - **Mellan-P0:** [`docs/nasta-arsgrupp-12-18-mellan-p0.md`](docs/nasta-arsgrupp-12-18-mellan-p0.md) — BUILD NOW innehåll, TEST NEXT M-06
-- **Regel:** STOP på UX-plansch. Forskning ger riktning. Produktdata avgör. Bygg inte Ung-skärmar från planschen. Privat default = REK tills legal review. H7 måste bevisas.
+- **Regel:** STOP på UX-plansch. Default ship-to-learn; prove-before-ship för identity/privacy/legal/inference. B2-proto-gate borttagen. Ung får aldrig blockera Mellan. Privat default = REK tills legal review. H7 måste bevisas.
 
 ## Cursor Cloud specific instructions
 
