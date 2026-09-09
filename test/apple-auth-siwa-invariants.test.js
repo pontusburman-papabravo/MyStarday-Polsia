@@ -10,6 +10,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { loadLocales, t } = require('../src/lib/i18n');
 
 const ROOT = path.join(__dirname, '..');
 const parentDbPath = path.join(ROOT, 'db/parent.js');
@@ -257,6 +258,16 @@ describe('SIWA invariants — backend', () => {
     assert.equal(payload.code, 'APPLE_ACCOUNT_COMPLETION_REQUIRED');
     assert.ok(payload.missing.includes('terms'));
     assert.equal(mockCreateParent, null);
+  });
+
+  it('completion API copy is localized after loadLocales (not a raw key)', () => {
+    loadLocales();
+    const sv = t('sv-SE', 'auth.api.errors.appleAccountCompletionRequired');
+    const en = t('en-GB', 'auth.api.errors.appleAccountCompletionRequired');
+    assert.notEqual(sv, 'auth.api.errors.appleAccountCompletionRequired');
+    assert.notEqual(en, 'auth.api.errors.appleAccountCompletionRequired');
+    assert.match(sv, /Apple/);
+    assert.match(en, /Apple/);
   });
 
   it('login intent unknown Apple ID does not discard the credential via register redirect', async () => {
