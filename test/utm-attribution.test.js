@@ -86,6 +86,7 @@ describe('signup attribution (utm)', () => {
     const { runInNewContext } = require('node:vm');
     const store = Object.create(null);
     const window = {
+      URLSearchParams,
       location: {
         search: '?utm_source=meta&utm_medium=paid_social&utm_campaign=activation_wave_01',
         pathname: '/',
@@ -99,7 +100,7 @@ describe('signup attribution (utm)', () => {
       document: { documentElement: { lang: 'sv-SE' } },
       matchMedia() { return { matches: false }; },
     };
-    const sandbox = { window, document: window.document };
+    const sandbox = { window, document: window.document, URLSearchParams };
     runInNewContext(read('public/js/utm-capture.js'), sandbox);
     window.location.search = '';
     const fields = window.UtmCapture.toRegisterFields();

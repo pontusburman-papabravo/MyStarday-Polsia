@@ -103,13 +103,15 @@ test('email-like UTM source does not persist as campaign source', async (t) => {
   try {
     const { res, text, body } = await registerFamily(http.baseUrl, {
       utm_source: 'parent@example.com',
-      utm_campaign: 'activation_wave_01_test',
+      utm_campaign: '11111111-2222-4333-8555-666666666666',
     });
     assert.equal(res.status, 201, text);
     const row = await attributionForParent(body.parentId);
     assert.ok(row);
+    assert.notEqual(row.source, 'parent@example.com');
     assert.equal(row.source, 'direct');
-    assert.equal(row.campaign, 'activation_wave_01_test');
+    assert.equal(row.medium, 'none');
+    assert.equal(row.campaign, null);
   } finally {
     await http.close();
     await db.cleanup();

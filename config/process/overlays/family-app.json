@@ -62,7 +62,10 @@
         "public/js/oauth-registration-payload.js",
         "src/lib/acquisition-attribution.js",
         "db/family-acquisition-attribution.js",
-        "src/middleware/platform-html.js"
+        "src/middleware/platform-html.js",
+        "test/acquisition-attribution.test.js",
+        "test/utm-attribution.test.js",
+        "test/acquisition-register-attribution.integration.test.js"
       ],
       "l1Tests": [
         "test/auth.test.js",
