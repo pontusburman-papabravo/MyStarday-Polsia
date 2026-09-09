@@ -21,6 +21,7 @@ const CRITICAL_INTEGRATION = [
   'test/parent-session-handoff.integration.test.js',
   'test/adult-privilege.integration.test.js',
   'test/trusted-device-child.integration.test.js',
+  'test/trusted-device-activation-align.test.js',
   'test/r43-shared-device.integration.test.js',
   'test/trusted-device-handoff.integration.test.js',
   'test/r44-adult-child-access.integration.test.js',

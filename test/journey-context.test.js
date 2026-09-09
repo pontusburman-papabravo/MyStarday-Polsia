@@ -49,6 +49,36 @@ describe('journey evaluator — deriveContext', () => {
     assert.ok(ctx.reason.includes(ReasonCode.NO_CHILD_LOGIN));
   });
 
+  it('FIRST_USE with activation child_access overlay skips handoff without child_logged_in', () => {
+    const ctx = deriveContext({
+      phase: 'FIRST_USE',
+      milestones: {
+        routine_ready: 'a',
+        rewards_ready: 'b',
+        _child_access_completed: true,
+      },
+    });
+    assert.equal(ctx.blocking_experience, null);
+    assert.notEqual(ctx.priority, 'handoff');
+    assert.ok(!ctx.recommended_experiences.includes('handoff_to_child'));
+    assert.ok(ctx.reason.includes(ReasonCode.AWAITING_FIRST_COMPLETION));
+    assert.ok(!ctx.reason.includes(ReasonCode.NO_CHILD_LOGIN));
+  });
+
+  it('EXPANDING still requires the pending child login despite family child_access', () => {
+    const { needsHandoff } = require('../src/lib/journey/phases');
+    assert.equal(needsHandoff({
+      _child_access_completed: true,
+      _pending_handoff_child_id: 'child-b',
+      _children_logged_in: ['child-a'],
+    }, 'EXPANDING'), true);
+    assert.equal(needsHandoff({
+      _child_access_completed: true,
+      _pending_handoff_child_id: 'child-b',
+      _children_logged_in: ['child-b'],
+    }, 'EXPANDING'), false);
+  });
+
   it('first_success → celebrate_first_success', () => {
     const ctx = deriveContext({
       phase: 'BUILDING_ROUTINE',

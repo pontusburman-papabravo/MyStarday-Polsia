@@ -1436,6 +1436,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!forcePicker && !resumeAddChild && window.TrustedDeviceBootstrap) {
     const cold = await TrustedDeviceBootstrap.tryColdStart({ skipRedirect: true, source: 'child_login' });
     if (cold && cold.code === 'PICKER_SHOWN') return;
+    if (cold && cold.ok && cold.user && cold.user.type === 'child') {
+      window.location.replace('/child/today');
+      return;
+    }
     if (cold && cold.ok) return;
   }
 

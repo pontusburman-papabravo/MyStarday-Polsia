@@ -18,6 +18,15 @@ async function buildContextForFamily(familyId, { pedagogSkip = false } = {}) {
   const evaluatorOn = await isJourneyFlagEnabledForFamily(FLAG_KEYS.evaluatorEnabled, familyId);
   const phase = await familyMilestones.getJourneyPhase(familyId);
   const milestones = await familyMilestones.getMilestoneMap(familyId);
+  try {
+    const activationDb = require('../../../db/family-activation-state');
+    const activation = await activationDb.getByFamilyId(familyId);
+    if (activation?.child_access_completed_at) {
+      milestones._child_access_completed = true;
+    }
+  } catch (err) {
+    console.error('[JOURNEY] activation child_access overlay failed:', err.message);
+  }
   const registry = await loadRegistry({
     useDb: await isJourneyFlagEnabledForFamily(FLAG_KEYS.registryV2, familyId),
     locale: familyLocale,

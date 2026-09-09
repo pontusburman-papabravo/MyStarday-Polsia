@@ -125,7 +125,7 @@ function deriveContext(input = {}) {
     }
   }
 
-  if (phase === 'FIRST_USE' && milestones.child_logged_in) {
+  if (phase === 'FIRST_USE' && (milestones.child_logged_in || milestones._child_access_completed)) {
     return {
       phase,
       milestones,
@@ -234,14 +234,18 @@ function isInconsistent(milestones) {
 
 function deriveReasonCodes(phase, milestones) {
   const codes = [];
-  if (phase === 'FIRST_USE' && !milestones.child_logged_in) {
+  if (phase === 'FIRST_USE' && !milestones.child_logged_in && !milestones._child_access_completed) {
     codes.push(ReasonCode.NO_CHILD_LOGIN);
     codes.push(ReasonCode.READY_FOR_HANDOFF);
   }
   if (milestones.child_first_completion && !milestones.parent_saw_completion) {
     codes.push(ReasonCode.WAITING_FOR_PARENT_ACK);
   }
-  if (phase === 'FIRST_USE' && milestones.child_logged_in && !milestones.child_first_completion) {
+  if (
+    phase === 'FIRST_USE'
+    && (milestones.child_logged_in || milestones._child_access_completed)
+    && !milestones.child_first_completion
+  ) {
     codes.push(ReasonCode.AWAITING_FIRST_COMPLETION);
   }
   if (milestones.first_success) codes.push(ReasonCode.FIRST_SUCCESS_COMPLETED);

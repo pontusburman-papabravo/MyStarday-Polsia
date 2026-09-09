@@ -295,6 +295,38 @@ async function issueParentSessionForDevice(res, row, rawToken, source) {
   };
 }
 
+/**
+ * Activation side-effects after a child JWT/refresh session already exists.
+ * Failures are non-fatal — same contract as PIN child-login.
+ * Does not write Journey child_logged_in (PIN-login milestone).
+ */
+async function recordTrustedChildSessionActivation(child, source) {
+  try {
+    const { recordActivationMilestone } = require('./activation-p0');
+    await recordActivationMilestone(child.family_id, 'child_access', {
+      metadata: { child_id: child.id, source },
+    });
+  } catch (err) {
+    console.error('[TRUSTED_DEVICE] activation child_access error:', err.message);
+  }
+  try {
+    const { getFamilyPreferredLocale } = require('./family-locale');
+    const { ensureFirstStarStarterActivity } = require('./first-star-starter');
+    const { getLocalDateStr } = require('./daily-log-generator');
+    const tz = child.timezone || 'Europe/Stockholm';
+    const todayStr = getLocalDateStr(undefined, tz);
+    const locale = await getFamilyPreferredLocale(child.family_id);
+    await ensureFirstStarStarterActivity({
+      childId: child.id,
+      familyId: child.family_id,
+      dateStr: todayStr,
+      locale,
+    });
+  } catch (starterErr) {
+    console.error('[TRUSTED_DEVICE] first-star starter ensure failed:', starterErr.message);
+  }
+}
+
 async function issueChildSessionForDevice(req, res, row, rawToken, childId, source, sessionMode = 'resume') {
   if (!childId) {
     return { ok: false, code: 'CHILD_NOT_FOUND' };
@@ -308,7 +340,7 @@ async function issueChildSessionForDevice(req, res, row, rawToken, childId, sour
     return { ok: false, code: 'PARENT_HANDOFF_CREATE_FAILED' };
   }
   const childRes = await db.query(
-    `SELECT id, family_id, username, name FROM child WHERE id = $1 AND family_id = $2`,
+    `SELECT id, family_id, username, name, timezone FROM child WHERE id = $1 AND family_id = $2`,
     [childId, row.family_id]
   );
   const child = childRes.rows[0];
@@ -349,15 +381,18 @@ async function issueChildSessionForDevice(req, res, row, rawToken, childId, sour
   await deviceDb.setLastActiveChild(row.id, child.id);
 
   const { trackSessionStarted } = require('./session-telemetry');
+  const sessionSource = source || 'trusted_device_restore';
   trackSessionStarted(row.family_id, 'child_session_started', {
     actorType: 'child',
     actorId: child.id,
     trustedDeviceId: row.id,
     deviceMode: row.device_mode,
     platform: row.platform,
-    source: source || 'trusted_device_restore',
+    source: sessionSource,
     sessionMode,
   });
+
+  await recordTrustedChildSessionActivation(child, sessionSource);
 
   return {
     ok: true,

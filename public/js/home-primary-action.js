@@ -36,7 +36,7 @@
     const sj = expKey.startsWith('sj_');
     const allowed = sj
       ? ['coach', 'celebration', 'reflection'].includes(ctx.priority)
-      : ctx.priority === 'coach';
+      : (ctx.priority === 'coach' || (ctx.priority === 'handoff' && expKey === 'handoff_to_child'));
     return allowed;
   }
 
