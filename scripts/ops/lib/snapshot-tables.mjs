@@ -117,6 +117,7 @@ export const PII_FIELD_DENYLIST = new Set([
   'native_token',
   'avatar_url',
   'apple_email',
+  'apple_refresh_token',
 ]);
 
 /** Explicit allowlist: every fingerprint column must be listed here. */

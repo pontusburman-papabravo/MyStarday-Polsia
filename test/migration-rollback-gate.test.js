@@ -79,10 +79,56 @@ test('G3c empty DB: wipe, migrate, rollback latest, re-migrate', async (t) => {
       await rollbackLastApplied(pool, 1);
       assert.equal(await appliedMigrationCount(client), countBefore - 1);
 
+      const { captureDbIntegritySnapshot } = await import('../scripts/ops/lib/db-integrity-snapshot-core.mjs');
+      const { compareDbSnapshots } = await import('../scripts/ops/lib/compare-snapshots.mjs');
+      const beforeSnap = await captureDbIntegritySnapshot(testUrl, { label: 'pre-181046' });
+
       runMigrate(testUrl);
       assert.equal(await tableExists(client, CORE_TABLE), true);
       assert.equal(await tableExists(client, 'users'), false, 'legacy users table must not be bootstrapped');
       assert.equal(await appliedMigrationCount(client), countBefore);
+
+      const { rows: appleCols } = await client.query(`
+        SELECT column_name, data_type, is_nullable, column_default, character_maximum_length
+          FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = 'parent'
+           AND column_name IN ('apple_refresh_token', 'apple_client_hint')
+         ORDER BY column_name
+      `);
+      assert.deepEqual(
+        appleCols.map((r) => ({
+          column_name: r.column_name,
+          data_type: r.data_type,
+          is_nullable: r.is_nullable,
+          column_default: r.column_default,
+          character_maximum_length: r.character_maximum_length,
+        })),
+        [
+          {
+            column_name: 'apple_client_hint',
+            data_type: 'character varying',
+            is_nullable: 'YES',
+            column_default: null,
+            character_maximum_length: 16,
+          },
+          {
+            column_name: 'apple_refresh_token',
+            data_type: 'text',
+            is_nullable: 'YES',
+            column_default: null,
+            character_maximum_length: null,
+          },
+        ]
+      );
+
+      const afterSnap = await captureDbIntegritySnapshot(testUrl, { label: 'post-181046' });
+      const compare = compareDbSnapshots(beforeSnap, afterSnap, {
+        mode: 'post-migration',
+        repoRoot: path.join(__dirname, '..'),
+      });
+      assert.equal(compare.ok, true, JSON.stringify(compare.drift));
+      assert.deepEqual(compare.newMigrationNames || [], ['1810460000000_parent_apple_refresh_token']);
     } finally {
       client.release();
     }

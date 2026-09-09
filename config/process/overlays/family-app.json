@@ -76,7 +76,11 @@
         "test/register-language-displayed.test.js",
         "test/acquisition-attribution.test.js",
         "test/utm-attribution.test.js",
-        "test/acquisition-register-attribution.integration.test.js"
+        "test/acquisition-register-attribution.integration.test.js",
+        "test/apple-auth-siwa-invariants.test.js",
+        "test/apple-auth-token-revoke.test.js",
+        "test/apple-refresh-token-exposure.test.js",
+        "test/apple-login-registration-split.test.js"
       ],
       "testGlobs": [
         "test/*auth*.test.js",

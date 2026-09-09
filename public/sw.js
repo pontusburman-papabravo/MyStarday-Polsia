@@ -283,7 +283,11 @@
 // stjarndag-v892: App Store 2.2 fix — remove "Beta" badge/label from English language selection (locale-switcher, language-choice)
 // stjarndag-v893: Phase 4 — Weekly Schedule chrome: advanced view modes + PDF export tucked under a "Visa" disclosure
 // stjarndag-v894: Phase 4 closure — Kalender links to Specialdagar as an explicit secondary bridge
-// stjarndag-v924: Apple login/register split — login intent returns REGISTRATION_REQUIRED, no signup on /login
+// stjarndag-v929: OAuth payload terms lookup is document-safe
+// stjarndag-v928: SIWA client helpers use let/const (lint:public budget)
+// stjarndag-v927: SIWA cancel is a clean abort (no fake error banner)
+// stjarndag-v926: SIWA Guideline 4 — one Apple authorize, no discarded credential, token revoke on delete
+// stjarndag-v924: SUPERSEDED — Apple login/register split discarded first credential (App Review 2026-09-09)
 // stjarndag-v923: Register country — placeholder until explicit choice; suggestion never auto-confirms
 // stjarndag-v922: paid-rollout runtime gate + landing CTA follows signup_allowed
 // stjarndag-v921: IE/FI paid-transition notices + release-gate separation
@@ -312,7 +316,7 @@
 // stjarndag-v898: Apple Review R3 — register CountryChoice gate (never-throw) + IAP review path
 // stjarndag-v897: P0.2 hide child-delete action unless caller role is primary
 // stjarndag-v896: P0.1 settings deletion_impact — leave vs full-family copy from server
-const CACHE_NAME = 'stjarndag-v926';
+const CACHE_NAME = 'stjarndag-v930';
 // stjarndag-v744: fix admin-start.js SyntaxError (restore formatPct)
 // stjarndag-v660: i18n foundation — locale bundles, auth-entry-i18n, locale-switcher
 // stjarndag-v659: calendar day-card text + magic dark tab bar on all parent pages
@@ -679,6 +683,7 @@ const CACHE_NAME = 'stjarndag-v926';
 // stjarndag-v884: Fas 9 — Tailwind build pipeline (CDN → tailwind.build.css)
 // stjarndag-v925: Fas 9 — Tailwind build pipeline (CDN → tailwind.build.css)
 // stjarndag-v926: Fas 9 — Tailwind build pipeline (CDN → tailwind.build.css)
+// stjarndag-v930: Fas 9 — Tailwind build pipeline (CDN → tailwind.build.css)
 // v311: Fas 8 finish — dashboard-dnd/activity-modal + schedule F3a-F3c + child-dashboard-rewards
 // v310: F2d dashboard-views.js — timeline + side-by-side views extracted from dashboard.js
 // v309: F2f dashboard-approvals.js — give-stars modal + request panel extracted from dashboard.js
@@ -939,6 +944,8 @@ const STATIC_ASSETS = [
   '/js/google-auth-ui.js',
   '/js/registration-country-gate.js',
   '/js/register-apple-auth.js',
+  '/js/apple-auth-session.js',
+  '/js/apple-auth-completion.js',
   '/js/country-choice.js',
   '/js/auth-login-platform.js',
   '/css/login-magic.css',

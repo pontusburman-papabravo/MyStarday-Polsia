@@ -3,6 +3,8 @@
  * Used by scripts/export-family-data.js and POST /api/admin/migration-export.
  */
 
+const { prepareRowForExport } = require('./sql-export-utils');
+
 const CHILD_IDS = '(SELECT id FROM child WHERE family_id = $1)';
 const PARENT_IDS = '(SELECT id FROM parent WHERE family_id = $1)';
 const ACTIVITY_IDS = '(SELECT id FROM activity_template WHERE family_id = $1)';
@@ -13,6 +15,7 @@ const WEEKLY_SCHEDULE_IDS = `(
 
 const FAMILY_EXPORT_TABLES = [
   { file: 'family.json', sql: 'SELECT * FROM family WHERE id = $1' },
+  // SELECT * is restore-oriented; serializeRows redacts credential columns.
   { file: 'parent.json', sql: `SELECT * FROM parent WHERE family_id = $1` },
   { file: 'parent_child.json', sql: `
     SELECT * FROM parent_child
@@ -104,7 +107,7 @@ function serializeRows(rows) {
     for (const [key, val] of Object.entries(row)) {
       out[key] = serializeValue(val);
     }
-    return out;
+    return prepareRowForExport(out, { redactSensitive: true });
   });
 }
 

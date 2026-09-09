@@ -18,6 +18,18 @@
         payload.country_code = countryCode;
       }
     }
+    if (window.AppleAuthCompletion && typeof window.AppleAuthCompletion.termsChecked === 'function') {
+      if (window.AppleAuthCompletion.termsChecked()) {
+        payload.terms_accepted = true;
+      }
+    } else if (typeof document !== 'undefined' && document.getElementById) {
+      const termsEl = document.getElementById('appleTermsAccepted')
+        || document.getElementById('appleCompletionTermsAccepted')
+        || document.getElementById('termsAccepted');
+      if (termsEl && termsEl.checked) {
+        payload.terms_accepted = true;
+      }
+    }
     if (window.UtmCapture && typeof window.UtmCapture.applyToPayload === 'function') {
       payload = window.UtmCapture.applyToPayload(payload);
     }

@@ -403,7 +403,7 @@ test('New Apple OAuth register intent without country_code rejected (fail closed
 
   const handler = getAppleHandler();
   const req = {
-    body: { idToken: 'valid-token', intent: 'register' },
+    body: { idToken: 'valid-token', intent: 'register', terms_accepted: true },
     ip: '127.0.0.1',
     headers: {},
   };
@@ -415,12 +415,13 @@ test('New Apple OAuth register intent without country_code rejected (fail closed
   };
 
   await handler(req, res);
-  assert.equal(statusCode, 400);
-  assert.equal(body.code, 'COUNTRY_REQUIRED');
+  assert.equal(statusCode, 409);
+  assert.equal(body.code, 'APPLE_ACCOUNT_COMPLETION_REQUIRED');
+  assert.ok(body.missing.includes('country'));
   assert.equal(mockCreateParent, null);
 });
 
-test('Apple login intent with unknown Apple ID returns REGISTRATION_REQUIRED', async () => {
+test('Apple login intent with unknown Apple ID keeps credential and asks for completion', async () => {
   setupAppleMocks();
   mockParentByApple = null;
 
@@ -439,7 +440,8 @@ test('Apple login intent with unknown Apple ID returns REGISTRATION_REQUIRED', a
 
   await handler(req, res);
   assert.equal(statusCode, 409);
-  assert.equal(body.code, 'REGISTRATION_REQUIRED');
+  assert.equal(body.code, 'APPLE_ACCOUNT_COMPLETION_REQUIRED');
+  assert.notEqual(body.code, 'REGISTRATION_REQUIRED');
   assert.equal(mockCreateParent, null);
 });
 
@@ -459,6 +461,7 @@ test('IE Apple new signup blocked while market_ie_open=false', async () => {
       intent: 'register',
       country_code: 'IE',
       preferred_locale: 'en-GB',
+      terms_accepted: true,
     },
     ip: '127.0.0.1',
     headers: {},
@@ -497,6 +500,7 @@ test('IE Apple new signup passes market context when gate enabled in test', asyn
         preferred_locale: 'en-GB',
         firstName: 'Aoife',
         lastName: 'Murphy',
+        terms_accepted: true,
       },
       ip: '127.0.0.1',
       headers: {},

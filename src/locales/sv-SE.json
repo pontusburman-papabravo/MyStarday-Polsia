@@ -126,7 +126,10 @@
         "rateLimited": "För många försök. Vänta en stund och försök igen.",
         "genericError": "Något gick fel med Apple-inloggningen. Försök igen eller logga in med e-post och lösenord.",
         "failed": "Apple-inloggning misslyckades. Försök igen eller logga in med e-post och lösenord.",
-        "signInFailed": "Apple Sign In misslyckades."
+        "signInFailed": "Apple Sign In misslyckades.",
+        "completionTitle": "Slutför kontot",
+        "completionBody": "Välj land och godkänn villkoren. Apple har redan lämnat namn och e-post — vi frågar inte om dem igen.",
+        "completionSubmit": "Slutför med samma Apple-konto"
       },
       "google": {
         "emailConflictSettings": "Ett konto med denna e-postadress finns redan. Logga in och länka Google under Inställningar, eller använd lösenordsinloggning.",
@@ -227,10 +230,11 @@
       "childLoginLink": "Är du barn? Logga in här",
       "gateHintLanguage": "Välj språk ovan för att fortsätta med registreringen.",
       "gateHintCountry": "Välj land ovan för att fortsätta med registreringen.",
-      "appleFromLoginHint": "Du har inget konto kopplat till detta Apple-ID ännu. Välj land ovan och tryck sedan Fortsätt med Apple.",
+      "appleFromLoginHint": "Inget konto är kopplat till detta Apple-ID ännu. Välj land och godkänn villkoren — namn och e-post hämtas från Apple. Ingen ny Apple-inloggning krävs.",
+      "appleOnlyPath": "Skapa konto med Apple. Namn och e-post hämtas från Apple — fyll inte i formuläret.",
       "tagline": "En lugn dag, en stjärna i taget",
       "orDivider": "eller",
-      "continueWithApple": "Registrera med Apple",
+      "continueWithApple": "Fortsätt med Apple",
       "continueWithGoogle": "Registrera med Google",
       "validatingInvite": "Validerar inbjudan...",
       "inviteInvalid": "Ogiltig eller utgången inbjudningslänk. Kontakta den som bjöd in dig.",
@@ -418,7 +422,8 @@
         "registrationClosed": "Registrering är för närvarande stängd",
         "invalidCountry": "Ogiltigt land",
         "countryRequired": "Välj land innan du skapar konto",
-        "registrationRequired": "Det finns inget konto kopplat till detta Apple-ID ännu. Skapa konto för att fortsätta.",
+        "registrationRequired": "SUPERSEDED — use appleAccountCompletionRequired. Do not redirect to email/password registration.",
+        "appleAccountCompletionRequired": "Välj land och godkänn villkoren för att slutföra kontot. Namn och e-post kommer från Apple.",
         "familyNameRequired": "Namn krävs för att skapa ett familjkonto",
         "marketClosed": {
           "MARKET_SE_CLOSED": "Registrering från Sverige är tillfälligt stängd.",
