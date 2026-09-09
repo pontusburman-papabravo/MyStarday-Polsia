@@ -4,7 +4,7 @@
 **Referens (föräldrar):** [parent-hubs-index.md](parent-hubs-index.md)  
 **Arkitektur:** [informationsarkitektur-barnapp.md](informationsarkitektur-barnapp.md) · [barnmeny-v2.md](barnmeny-v2.md)  
 **Bilder (register):** [child-image-assets.md](child-image-assets.md)  
-**Nästa årsgrupp (diskussion, ej låst):** [nasta-arsgrupp-12-18-kravstallning.md](nasta-arsgrupp-12-18-kravstallning.md)
+**Nästa årsgrupp:** spec **STÄNGD** — [kravställning rev. 3](nasta-arsgrupp-12-18-kravstallning.md) · nästa fas [de-risk](nasta-arsgrupp-12-18-derisk.md)
 
 ---
 
