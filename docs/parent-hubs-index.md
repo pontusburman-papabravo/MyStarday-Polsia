@@ -22,7 +22,7 @@
 - [for-dig-agent-prompt.md](for-dig-agent-prompt.md)
 - [for-dig-spec.md](for-dig-spec.md)
 
-**Nästa årsgrupp:** spec **STÄNGD** — [kravställning rev. 3](nasta-arsgrupp-12-18-kravstallning.md) · nästa fas [de-risk](nasta-arsgrupp-12-18-derisk.md) — förälderns roll när barnet är 9–18.
+**Nästa årsgrupp:** spec **STÄNGD** — [kravställning rev. 3](nasta-arsgrupp-12-18-kravstallning.md) · [de-risk](nasta-arsgrupp-12-18-derisk.md) · [Mellan innehåll](nasta-arsgrupp-12-18-mellan-innehall.md) · [H1-audit](nasta-arsgrupp-12-18-h1-audit.md) — förälderns roll när barnet är 9–18.
 
 ---
 
