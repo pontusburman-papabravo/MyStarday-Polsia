@@ -19,6 +19,8 @@ describe('R1 — Hem primary action orchestration', () => {
     const activationIdx = orch.indexOf('activationHasPrimary()');
     const engineIdx = orch.indexOf('engineHasPrimary()');
     assert.ok(journeyIdx < activationIdx && activationIdx < engineIdx);
+    assert.match(orch, /priority === 'handoff' && expKey === 'handoff_to_child'/);
+    assert.match(orch, /outcome === 'error' \|\| outcome === 'loading' \|\| outcome === 'ok_items'/);
   });
 
   it('dashboard-home-hub applies HomePrimaryAction after coach loads', () => {

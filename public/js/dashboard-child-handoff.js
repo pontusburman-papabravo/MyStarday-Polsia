@@ -13,13 +13,29 @@
     return window.pt ? window.pt(key, params) : key;
   }
 
-  function copyPrefix(postSchema) {
-    return postSchema ? 'home.handoff.postSchema.' : 'home.handoff.';
+  function copyPrefix(postSchema, trustedPath) {
+    if (trustedPath) return postSchema ? 'home.handoff.postSchema.trusted.' : 'home.handoff.trusted.';
+    return postSchema ? 'home.handoff.postSchema.pin.' : 'home.handoff.pin.';
   }
 
-  function applyLegacyHandoffCopy(el, postSchema) {
-    if (!el) return;
-    const prefix = copyPrefix(postSchema);
+  function trustedPathAvailable(trustedPath) {
+    if (typeof trustedPath === 'boolean') return trustedPath;
+    if (trustedPath && typeof trustedPath === 'object') return Boolean(trustedPath.available);
+    return false;
+  }
+
+  function resolveTrustedPathFlag(trustedPath) {
+    if (typeof trustedPath === 'boolean') return Promise.resolve(trustedPath);
+    if (trustedPath && typeof trustedPath === 'object') {
+      return Promise.resolve(Boolean(trustedPath.available));
+    }
+    return probeTrustedChildPath().then(function (path) {
+      return Boolean(path && path.available);
+    });
+  }
+
+  function paintLegacyHandoffCopy(el, postSchema, trustedPath) {
+    const prefix = copyPrefix(postSchema, trustedPathAvailable(trustedPath));
     const titleEl = el.querySelector('.dash-child-handoff-title');
     const subEl = el.querySelector('.dash-child-handoff-sub');
     const childBtn = el.querySelector('#dashboardChildLoginBtn');
@@ -40,9 +56,20 @@
     if (logoutBtn) logoutBtn.classList.toggle('hidden', Boolean(postSchema));
   }
 
-  function applyMagicHandoffCopy(handoffRoot, postSchema) {
-    if (!handoffRoot) return;
-    const prefix = copyPrefix(postSchema);
+  function applyLegacyHandoffCopy(el, postSchema, trustedPath) {
+    if (!el) return;
+    if (typeof trustedPath === 'boolean' || (trustedPath && typeof trustedPath === 'object')) {
+      paintLegacyHandoffCopy(el, postSchema, trustedPath);
+      return;
+    }
+    paintLegacyHandoffCopy(el, postSchema, false);
+    resolveTrustedPathFlag(trustedPath).then(function (available) {
+      paintLegacyHandoffCopy(el, postSchema, available);
+    });
+  }
+
+  function paintMagicHandoffCopy(handoffRoot, postSchema, trustedPath) {
+    const prefix = copyPrefix(postSchema, trustedPathAvailable(trustedPath));
     const titleEl = handoffRoot.querySelector('.parent-handoff-title');
     const subEl = handoffRoot.querySelector('.parent-handoff-sub');
     const childBtn = handoffRoot.querySelector('[data-action="child-login"]');
@@ -60,6 +87,18 @@
       logoutBtn.classList.toggle('hidden', Boolean(postSchema));
     }
     handoffRoot.classList.toggle('parent-handoff-post-schema', Boolean(postSchema));
+  }
+
+  function applyMagicHandoffCopy(handoffRoot, postSchema, trustedPath) {
+    if (!handoffRoot) return;
+    if (typeof trustedPath === 'boolean' || (trustedPath && typeof trustedPath === 'object')) {
+      paintMagicHandoffCopy(handoffRoot, postSchema, trustedPath);
+      return;
+    }
+    paintMagicHandoffCopy(handoffRoot, postSchema, false);
+    resolveTrustedPathFlag(trustedPath).then(function (available) {
+      paintMagicHandoffCopy(handoffRoot, postSchema, available);
+    });
   }
 
   function isNativeShell() {
@@ -149,12 +188,71 @@
     }
   }
 
-  function startChildLogin() {
+  async function probeTrustedChildPath() {
+    try {
+      const res = await fetch('/api/auth/trusted-device/context', { credentials: 'include' });
+      if (!res.ok) return { available: false };
+      const ctx = await res.json();
+      if (!ctx || ctx.ok === false) return { available: false };
+      if (ctx.device_mode === 'parent') return { available: false, deviceMode: 'parent' };
+      if (ctx.device_mode === 'child' || ctx.device_mode === 'shared') {
+        return {
+          available: true,
+          deviceMode: ctx.device_mode,
+          allowedChildren: ctx.allowed_children || [],
+          needsPicker: ctx.device_mode === 'shared' && (ctx.allowed_children || []).length > 1,
+        };
+      }
+      return { available: false };
+    } catch (_) {
+      return { available: false };
+    }
+  }
+
+  function goToSharedChildPicker(allowedChildren) {
+    try {
+      sessionStorage.setItem('shared_device_picker_children', JSON.stringify(allowedChildren || []));
+    } catch (_) { /* ignore */ }
+    if (window.AppEntryOrchestrator && AppEntryOrchestrator.isDailyUxActive
+      && AppEntryOrchestrator.isDailyUxActive()) {
+      window.location.replace('/child/profile-picker');
+      return;
+    }
+    window.location.replace('/child-login?shared_device=1');
+  }
+
+  async function tryOpenTrustedChildView() {
+    const path = await probeTrustedChildPath();
+    if (!path.available) return false;
+    if (path.needsPicker) {
+      goToSharedChildPicker(path.allowedChildren);
+      return true;
+    }
+    if (!window.TrustedDeviceClient || typeof TrustedDeviceClient.tryRestoreSession !== 'function') {
+      return false;
+    }
+    const restored = await TrustedDeviceClient.tryRestoreSession();
+    if (restored && restored.ok && restored.user && restored.user.type === 'child') {
+      window.location.replace(restored.redirect || '/child/today');
+      return true;
+    }
+    if (restored && restored.code === 'SHARED_PICKER_REQUIRED') {
+      goToSharedChildPicker(restored.allowed_children);
+      return true;
+    }
+    return false;
+  }
+
+  async function startChildLogin() {
     const deepLink = wantsChildHandoffDeepLink();
     trackDashboardHandoffAnalytics(deepLink);
     if (window.JourneyContextClient) {
       JourneyContextClient.postEvent('handoff_started').catch(function () {});
     }
+    try {
+      const opened = await tryOpenTrustedChildView();
+      if (opened) return;
+    } catch (_) { /* PIN fallback */ }
     if (window.Auth && typeof Auth.logout === 'function') {
       Auth.logout({ childFlow: true });
     } else {
@@ -230,8 +328,10 @@
       return;
     }
 
+    const trustedPath = await probeTrustedChildPath();
+
     if (activationNeeded || deepLink) {
-      applyLegacyHandoffCopy(el, true);
+      applyLegacyHandoffCopy(el, true, trustedPath);
       el.classList.remove('hidden');
       bindEvents(el, { persistent: true });
       if (deepLink) {
@@ -251,7 +351,7 @@
       return;
     }
 
-    applyLegacyHandoffCopy(el, false);
+    applyLegacyHandoffCopy(el, false, trustedPath);
 
     if (window.JourneyContextClient) {
       try {
@@ -309,5 +409,7 @@
     wantsChildHandoffDeepLink: wantsChildHandoffDeepLink,
     applyLegacyHandoffCopy: applyLegacyHandoffCopy,
     applyMagicHandoffCopy: applyMagicHandoffCopy,
+    probeTrustedChildPath: probeTrustedChildPath,
+    tryOpenTrustedChildView: tryOpenTrustedChildView,
   };
 })();

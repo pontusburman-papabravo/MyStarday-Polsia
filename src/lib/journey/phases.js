@@ -73,7 +73,10 @@ function getPhaseDerivation(milestones, opts = {}) {
 
 function needsHandoff(milestones, phase) {
   const loggedIn = new Set(milestones._children_logged_in || []);
-  if (phase === 'FIRST_USE') return loggedIn.size === 0;
+  if (phase === 'FIRST_USE') {
+    if (milestones._child_access_completed) return false;
+    return loggedIn.size === 0;
+  }
   if (phase === 'EXPANDING' && milestones._pending_handoff_child_id) {
     return !loggedIn.has(milestones._pending_handoff_child_id);
   }
