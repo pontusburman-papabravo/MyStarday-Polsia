@@ -11,6 +11,11 @@ const { cookieHeader, listenApp, getSetCookieHeaders, mergeCookies } = require('
 const { registerAndLogin, createChild } = require('./helpers/auth-session.js');
 const { FLAG_KEY } = require('../src/lib/trusted-device-flags');
 const { FLAG_NATIVE, FLAG_COMPLETION } = require('../src/lib/widget-flags');
+const {
+  signInstanceToken,
+  verifyInstanceToken,
+  isSameWidgetActivity,
+} = require('../src/lib/widget-instance-token');
 
 process.env.REQUIRE_EMAIL_VERIFICATION = 'false';
 process.env.RATE_LIMIT_ENABLED = 'false';
@@ -49,6 +54,18 @@ async function childLogin(baseUrl, db, childId) {
   }
   return { cookies };
 }
+
+test('instance tokens for the same item stay the same activity across expiry remints', () => {
+  const childId = '11111111-1111-4111-8111-111111111111';
+  const itemId = '22222222-2222-4222-8222-222222222222';
+  const now = Math.floor(Date.now() / 1000);
+  const first = signInstanceToken(childId, itemId, now + 900);
+  const reminted = signInstanceToken(childId, itemId, now + 899);
+  assert.notEqual(first, reminted);
+  assert.equal(isSameWidgetActivity(first, reminted, childId), true);
+  const otherItem = signInstanceToken(childId, '33333333-3333-4333-8333-333333333333', now + 900);
+  assert.equal(isSameWidgetActivity(first, otherItem, childId), false);
+});
 
 test('R4.5: widget bind → next-action → complete with idempotency', async (t) => {
   const db = await setupTestDb();
@@ -112,6 +129,15 @@ test('R4.5: widget bind → next-action → complete with idempotency', async (t
     assert.ok(nextBody.activity?.instance_token);
     assert.equal(nextBody.activity.capability, 'direct_complete');
 
+    const verified = verifyInstanceToken(nextBody.activity.instance_token, childId);
+    assert.equal(verified.ok, true);
+    const reminted = signInstanceToken(
+      childId,
+      verified.dailyLogItemId,
+      Math.floor(Date.now() / 1000) + 60
+    );
+    assert.notEqual(reminted, nextBody.activity.instance_token);
+
     const idem = 'idem-key-001';
     const completeRes = await fetch(`${http.baseUrl}/api/widget/complete-action`, {
       method: 'POST',
@@ -120,7 +146,7 @@ test('R4.5: widget bind → next-action → complete with idempotency', async (t
         Authorization: `Bearer ${bindingToken}`,
       },
       body: JSON.stringify({
-        instance_token: nextBody.activity.instance_token,
+        instance_token: reminted,
         idempotency_key: idem,
       }),
     });
@@ -136,7 +162,7 @@ test('R4.5: widget bind → next-action → complete with idempotency', async (t
         Authorization: `Bearer ${bindingToken}`,
       },
       body: JSON.stringify({
-        instance_token: nextBody.activity.instance_token,
+        instance_token: reminted,
         idempotency_key: idem,
       }),
     });

@@ -1,8 +1,8 @@
 # Nästa årsgrupp 12–18 — De-risk och nästa fas
 
-**Status:** **GODKÄND** operativ plan (2026-09-09) · spec STÄNGD · Ung **inte** startad  
-**Typ:** De-risk-plan · **ingen kod** · **ingen ADR** · **ingen spec-revision**  
-**Auktoritet:** Stängd spec `docs/nasta-arsgrupp-12-18-kravstallning.md` (rev. 3, merge `17a7c37e`). Detta dokument **ändrar inte** den specen.
+**Status:** **GODKÄND** operativ plan · uppdaterad 2026-09-09 (grundarbeslut: Ung v1 parallellt bakom grind)  
+**Typ:** Operativ plan · **inte** spec-revision · **inte** ADR  
+**Auktoritet:** Stängd spec `docs/nasta-arsgrupp-12-18-kravstallning.md` (rev. 3). Detta dokument **ändrar inte** den specen och **öppnar inte** OQ.
 
 **Syfte:** Ta bort osäkerhet med artefakter och tester — inte med mer kravtext.
 
@@ -13,13 +13,15 @@
 | Låst | Innebörd |
 |------|----------|
 | Spec-runda **STÄNGD** | Ingen revision 4. OQ lämnas öppna tills rätt spår stänger dem. |
-| Mellan = första kommersiella leverans | Samma v1-kontrakt som Liten + ton/innehåll + grodd till “Göra tillsammans” (M-06). |
-| Ung = architecture spike | Inte release. Inte butikslöfte 13+. |
-| S-10 | Ingen tyst rights/privacy-övergång vid födelsedag / `ageBand` / recommended presentation. |
-| Presentation ≠ access | Ålder föreslår. Policy/ägarskap/delning styr beteende. |
+| Mellan | Byggs för **bred produktion nu**. Blockeras inte av Ung. |
+| Ung | Byggs **parallellt som riktig v1**, bakom feature flag / allowlist, med hårdare release-gates. Inte “byggs inte”. Inte heller bred 13+-store. |
+| S-10 + inference leakage | **P0** för all Ung-kod. |
+| Identity / privacy / access | Styrs av **legal memo + ADR**. Inte av flagg eller födelsedag. |
 | Legal exceptions | Inte uppfunna i spec. Kommer bara från legal memo + explicit policy. |
 
-**Förbjudet nu:** bygga Ung-produkt för att specen är klar. Specen säger att Ung ska *de-riskas*. Mellan är det ni ska kunna få ut och lära er kommersiellt av.
+**Operativt beslut (ersätter “Ung byggs inte”):** Ung byggs parallellt för verklig produktionsvalidering, men releaseomfånget begränsas av legal-, privacy-, security- och architecture-gates. Mellan får inte blockeras av Ung.
+
+Detaljer: `docs/nasta-arsgrupp-12-18-ung-v1-build-release.md`.
 
 ---
 
@@ -38,25 +40,22 @@ Mer spec-prosa är **inte** en femte väg.
 
 ## 2. Rekommenderad körordning
 
-Gör **inte** fem saker i serie om de är oberoende. Gör **inte** Ung-kod för att fylla luckor.
+Gör **inte** fem saker i serie om de är oberoende. Mellan väntar **inte** på Ung. Bred Ung-release väntar på gates.
 
 ```
 NU, parallellt
-  ├─ A. Mellan innehållsspec          → kommersiell leverans
-  ├─ B. Mätplan H1 (ev. H2-upplägg)   → lär av 9–12 som redan finns
-  └─ C. Legal memo SE / FI / IE       → rättslig grund, inte produktfeatures
+  ├─ A. Mellan — bred produktion (innehållsspec finns)
+  ├─ B. H1 — produktion först
+  ├─ C. Legal memo SE / FI / IE
+  └─ G. Ung v1 bakom flag/allowlist
+         (build-kontrakt; inte bred store 13+)
 
-DÄREFTER
-  └─ D. ADR: identity / ownership / sharing / transitions
-         (konsumerar C; uppfinner inte legal)
-
-SEDAN
-  ├─ E. Ung spike-kontrakt (Noah + inference + S-10)
+INNAN BRED UNG-RELEASE (kan löpa parallellt med G)
+  ├─ D. ADR: identity / ownership / sharing / transitions
   └─ F. Mätplan H4, H5, H7, moat (+ H3)
-         måste finnas innan spike får kallas “bevis”
 ```
 
-**REK:** A är det enda som får bli *produkt* i närtid. C blockerar D. D + F blockerar att E tolkas som go-ship. E blockerar Ung-release, inte Mellan.
+**REK:** A shippas till alla. G får *byggas* nu. Bred Ung-yta och 13+-butik blockeras av C+D + S-10 + inference + allowlist-gates. G får inte stjäla Mellan-P0.
 
 ---
 
@@ -67,17 +66,17 @@ SEDAN
 | 9–12 lämnar p.g.a. ton *eller* kontrakt (H1) | A + B | Mellan-copy shippas som om H1 vore avgjord |
 | Mellan uteblir medan Ung diskuteras | A | Ung-arbete stjäl Mellan-P0 |
 | C-01 vs skapa egna objekt | D | Self-planning kodas utan ADR |
-| Tyst övergång 12→13 (S-10 vs U-07) | D + E | Födelsedag ändrar `reward_model` / Mitt-default |
+| Tyst övergång 12→13 (S-10 vs U-07) | D + G | Födelsedag ändrar `reward_model` / Mitt-default |
 | Obligatorisk vårdnadshavarinsyn okänd (OQ 12) | C | “Aldrig läsrätt” eller full spegling kodas |
 | Identitet 13+ / avtalspart (OQ 1) | C sedan D | `child`+PIN eller e-post antas p.g.a. GDPR-13 |
-| Delat stöd: återkalla, historik, export (OQ 6–7) | C + D | Policy uppfinns i spike-kod |
-| Inference leakage | E | Spike “klar” utan metadata-test |
-| Hem tomt för förälder till 14-åring (H5) | E + F | Ung-release utan förälder-värde |
-| Betalande vuxen tappar WTP (H7) | F (förbered), E (signal) | Packaging antas oförändrad |
-| Ung = Reminders (moat) | E + F | P0 blir privata todos / Mina mål / XP |
+| Delat stöd: återkalla, historik, export (OQ 6–7) | C + D | Policy uppfinns i Ung-kod |
+| Inference leakage | G + kontrakt | Ung “klar” utan metadata-test |
+| Hem tomt för förälder till 14-åring (H5) | G + F | Bred Ung-release utan förälder-värde |
+| Betalande vuxen tappar WTP (H7) | F (förbered), G (signal) | Packaging antas oförändrad |
+| Ung = Reminders (moat) | G + F | P0 blir privata todos / Mina mål / XP |
 | Mitt/Vårt/Delat inte begripligt / inte internationellt | A (sv copy 9–12), F (språktest), inte fork | Termer hårdkodas som evig sanning |
-| Store lovar 13+ innan Ung finns | A + butikstext orörd | Deklaration/copy utökas |
-| Familje-OS / samma Journey till 18 | F efter E | Behandlas som FACT |
+| Store lovar 13+ innan gates är gröna | Butikstext orörd | Deklaration/copy utökas |
+| Familje-OS / samma Journey till 18 | F efter G | Behandlas som FACT |
 
 ---
 
@@ -164,25 +163,17 @@ SEDAN
 
 ---
 
-## 7. Spår E — Ung spike-kontrakt
+## 7. Spår G — Ung v1 (build vs release)
 
-**När:** D har låst presentation/policy/S-10/objektgränser tillräckligt för att *testa*. C har sagt vad som inte får antas.
+**När:** nu, parallellt med Mellan. Inte efter att “allt legal är klart” — men **bred yta** väntar på gates.
 
-**Artefakt:** kort kontrakt (acceptanskriterier). Inte release-plan. Inte UI-spec för hela Ung.
+**Artefakt:** `docs/nasta-arsgrupp-12-18-ung-v1-build-release.md`
 
-**Enda P0-scenariot som måste kunna falsifieras**
+Noah-scenariot (Mitt + Vårt + Delat stöd + inference + S-10) är fortfarande det som måste kunna *underkännas*. Det är release-gate, inte skäl att vänta med all kod.
 
-1. Noah 14 skapar “Matteprov fredag” = Mitt, privat default, inte implicit delat.
-2. “Middag 18:00” = Vårt, synligt för *relevant* vuxen via relation — inte “alla vuxna”.
-3. Noah kan dela matteprovet explicit (Delat stöd).
-4. Obehörig kan inte **läsa eller härleda** existens/innehåll via: API, counts, timestamps, summary, SSE, notis, analytics, rapport, export, Hem, pedagogvy, sök, cache/offline, användarsynlig audit.
-5. Noah fyller 13 på natten: ingen tyst change av ägarskap, privacy, API-access, insyn, notiser, `reward_model`.
+Identity / privacy / access **kodas inte som sanning** förrän C+D sagt ramar. Self-planning väntar på C-01-ADR. Flagga och allowlist får byggas före det.
 
-**Stoppa Ung-release (inte Mellan) om:** läckage **eller** förälder-Hem blir tomt/värdelöst (H5).
-
-**Utanför spike:** Mina mål, ny valuta, socialt, hälsa/GPS, 13+-storecopy, pedagog-exportpolicy (OQ 7).
-
-**DoD:** någon kan säga nej med evidens. Spike som “känns bra” räcker inte.
+**Utanför v1 oavsett flagga:** Mina mål, socialt, hälsa/GPS, ny valuta, 13+-butikscopy, pedagog-exportpolicy (OQ 7).
 
 ---
 
@@ -190,19 +181,19 @@ SEDAN
 
 Ingen framgångssiffra hittas på här. Planen ska bara göra hypoteserna **omöjliga att “känna” till sanning**.
 
-Skriv mätplanen **innan** ni drar produkt-slutsats. H1 kan börja på *befintliga* 9–12-familjer innan Mellan shippas. H4/H5/H7/moat väntar på spike eller strukturerad förälder/ung-intervju — inte på en live Ung-release.
+Skriv mätplanen **innan** ni drar produkt-slutsats. H1 körs i produktion på 9–12. H4/H5/H7/moat mäts på **allowlist-Ung**, inte efter bred 13+-store.
 
 | ID | Fråga | Baseline (före slutsats) | Vad ni tittar på | Guardrail / stop | Inte |
 |----|-------|--------------------------|------------------|------------------|-----|
 | **H1** | Ton *eller* ägarskapskontrakt hos 9–12? | Prod-beteende per band *nu* (se h1-audit §2) | Retention, rutiner, barnvy vs vuxen-bock, senare M-06 | Shippa bara copy om *beteende* lutar kontrakt | Teen scores; anta ton; “bara förälder redigerar” = cirkel; ledande intervju |
 | **H2** | Ökar Mellan retention 9–12? | Samma band *före* Mellan-P0 | Kvarvaro / veckoaktivitet efter innehåll | Stoppa mer Mellan-yta om ingen rörelse | Blanda ihop med Ung |
-| **H4** | Är stjärnor OFF rätt *när ung-policy antagits*? | Spike/intervju med båda defaults | Acceptans, inte födelsedagsmagi | ON-default i testarm om OFF sänker användning utan vinst | Auto-OFF på födelsedag |
+| **H4** | Är stjärnor OFF rätt *när ung-policy antagits*? | Allowlist med båda defaults | Acceptans, inte födelsedagsmagi | ON-default i testarm om OFF sänker användning utan vinst | Auto-OFF på födelsedag |
 | **H5** | Räcker Vårt + explicit delning för föräldernytta? | Förälderns Hem-jobb idag (07:15) | Kan hen fortfarande ta *ett* nästa steg? | Inget Ung-ship om Hem är tomt | Spegling som “fix” |
 | **H7** | Fortsätter betalande vuxen se premiumvärde utan implicit insyn? | Varför de betalar *nu* (struktur, blandade barn, Journey, koordinering) | Samma skäl kvar utan Mitt-insyn? | Annan packaging / inte samma erbjudande | Hitta på WTP-% |
 | **Moat** | Varför inte Reminders + kalender + SMS? | Familjens faktiska alternativ | Åtaganden + övergång + NPF + syskon + ett OS | Feature som är en påminnelse-app → ute | “Vi har privata todos” |
-| **H3** | Värderar 13–15 Mitt+Vårt? | Efter begriplig proto/spike, inte före | Använder båda gränserna | Ung-release stopp | Bygg mål-yta för att rädda |
+| **H3** | Värderar 13–15 Mitt+Vårt? | Allowlist, inte före | Använder båda gränserna | Bred Ung-release stopp | Bygg mål-yta för att rädda |
 
-**H6** (NPF + vuxnare presentation) valideras i Mellan (stöd kvar) och i spike (Noah 14 + support_profile). Inte kliniskt löfte.
+**H6** (NPF + vuxnare presentation) valideras i Mellan (stöd kvar) och på Ung-allowlist (Noah 14 + support_profile). Inte kliniskt löfte.
 
 **Segment:** presentation/policy, inte “teen engagement score”. Inga känsliga ungdomsmetriker.
 
@@ -212,21 +203,22 @@ Skriv mätplanen **innan** ni drar produkt-slutsats. H1 kan börja på *befintli
 
 ## 9. Vad som medvetet *inte* görs i denna fas
 
-- Revision 4 av kravställningen.
-- Produktkod, spike-implementation, feature flags för Ung i prod.
-- ADR som påstår legal sanning.
-- Safeguarding-feature.
-- 13+ i butikstext eller Families/Kids-deklaration.
-- Nytt bundle-id, socialt, habit tracker, ersättningsvaluta.
-- Att stänga OQ i chatt.
+- Revision 4 av kravställningen. Inga OQ stängda i chatt.
+- Bred 13+ i butikstext / Families / Kids innan gates är gröna.
+- Ung utan flagga/allowlist. Ung som blockerar Mellan.
+- Mina mål, socialt, hälsa/GPS, habit tracker, ny valuta — även “för att vi ändå bygger”.
+- ADR som påstår legal sanning. Safeguarding-feature.
+- Self-planning / Mitt-access som om legal och C-01 vore klara.
 
 ---
 
 ## 10. DoD för de-risk-fasen (inte för specen)
 
-De-risk-fasen har *börjat* när A, B och C är igång. Den har *lyckats för Mellan* när innehållsspecen är byggbar och H1 inte längre är gissning. Den har *lyckats för Ung* först när C + D + E + F finns och Noah-scenariot kan underkännas.
+Mellan har *lyckats operativt* när P0-innehåll är i bred produktion och H1 körs mot prod-beteende.
 
-Tills dess: **Mellan är produkten. Ung är ett kontrakt att bevisa.**
+Ung får *byggas* nu (G). Ung har *lyckats som bred release* först när C + D + S-10 + inference + allowlist-lärande (F) är gröna. Noah-scenariot måste kunna underkännas.
+
+**Mellan är bred produkt. Ung är v1 bakom grind — inte tyst 13+-lansering.**
 
 ---
 
@@ -235,9 +227,10 @@ Tills dess: **Mellan är produkten. Ung är ett kontrakt att bevisa.**
 | Dokument | Roll |
 |----------|------|
 | `docs/nasta-arsgrupp-12-18-kravstallning.md` | Stängd spec (rev. 3) — OQ, H1–H7, S-10, läckagekanaler |
-| Detta dokument | Godkänd de-risk-plan |
+| Detta dokument | Godkänd operativ plan (Ung parallellt bakom grind) |
 | `docs/nasta-arsgrupp-12-18-mellan-innehall.md` | Spår A — Mellan innehållsspec |
-| `docs/nasta-arsgrupp-12-18-h1-audit.md` | Spår B — H1 produktion först, *varför* bara vid behov |
+| `docs/nasta-arsgrupp-12-18-h1-audit.md` | Spår B — H1 produktion först |
+| `docs/nasta-arsgrupp-12-18-ung-v1-build-release.md` | Spår G — vad som får byggas nu vs vad som blockerar bred release |
 | `docs/adr/` | Kommande D — skriv inte förrän C gett ramar |
 | `docs/p-ie-launch/track-1-legal-compliance/` | Befintlig IE-lansering 3–12; inte Ung-svar |
 | `docs/adr/ADR-018-family-market-jurisdiction.md` | Land ≠ språk; återanvänd |
