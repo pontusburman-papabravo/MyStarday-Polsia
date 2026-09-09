@@ -664,12 +664,12 @@ const Platform = (function () {
     } catch (_) {}
 
     return apple.auth.signIn().then(function (res) {
-      var auth = (res && res.authorization) || {};
-      var user = (res && res.user) || {};
-      var nameObj = user.name || {};
-      var given = nameObj.firstName || '';
-      var family = nameObj.lastName || '';
-      var fullName = (given + ' ' + family).trim();
+      const auth = (res && res.authorization) || {};
+      const user = (res && res.user) || {};
+      const nameObj = user.name || {};
+      const given = nameObj.firstName || '';
+      const family = nameObj.lastName || '';
+      const fullName = (given + ' ' + family).trim();
       return {
         idToken: auth.id_token,
         authorizationCode: auth.code || null,

@@ -14,9 +14,9 @@
   }
 
   function termsChecked() {
-    var ids = ['appleTermsAccepted', 'appleCompletionTermsAccepted', 'termsAccepted'];
-    for (var i = 0; i < ids.length; i += 1) {
-      var el = document.getElementById(ids[i]);
+    const ids = ['appleTermsAccepted', 'appleCompletionTermsAccepted', 'termsAccepted'];
+    for (let i = 0; i < ids.length; i += 1) {
+      const el = document.getElementById(ids[i]);
       if (el && el.checked) return true;
     }
     return false;
@@ -27,29 +27,29 @@
   }
 
   function collectMissing() {
-    var missing = [];
+    const missing = [];
     if (!countryConfirmed()) missing.push('country');
     if (!termsChecked()) missing.push('terms');
     return missing;
   }
 
   function showPanel(missing) {
-    var panel = document.getElementById('appleAccountCompletion');
+    const panel = document.getElementById('appleAccountCompletion');
     if (!panel) return;
     panel.classList.remove('hidden');
     panel.hidden = false;
     panel.style.display = '';
-    var countryBlock = document.getElementById('appleCompletionCountry');
-    var termsBlock = document.getElementById('appleCompletionTerms');
+    const countryBlock = document.getElementById('appleCompletionCountry');
+    const termsBlock = document.getElementById('appleCompletionTerms');
     if (countryBlock) {
       countryBlock.hidden = missing && missing.indexOf('country') === -1 && countryConfirmed();
     }
     if (termsBlock) {
       termsBlock.hidden = missing && missing.indexOf('terms') === -1 && termsChecked();
     }
-    var title = document.getElementById('appleCompletionTitle');
+    const title = document.getElementById('appleCompletionTitle');
     if (title) title.textContent = t('auth.login.apple.completionTitle', 'Slutför kontot');
-    var body = document.getElementById('appleCompletionBody');
+    const body = document.getElementById('appleCompletionBody');
     if (body) {
       body.textContent = t(
         'auth.login.apple.completionBody',
@@ -70,35 +70,35 @@
   }
 
   function hidePanel() {
-    var panel = document.getElementById('appleAccountCompletion');
+    const panel = document.getElementById('appleAccountCompletion');
     if (!panel) return;
     panel.classList.add('hidden');
     panel.hidden = true;
   }
 
   function hideEmailPasswordIdentityFields() {
-    var form = document.getElementById('emailPasswordRegisterFields');
+    const form = document.getElementById('emailPasswordRegisterFields');
     if (form) form.classList.add('hidden');
     ['name', 'email', 'familyName', 'password', 'confirmPassword'].forEach(function (id) {
-      var input = document.getElementById(id);
+      const input = document.getElementById(id);
       if (!input) return;
       input.removeAttribute('required');
-      var wrap = input.closest ? input.closest('.apple-hide-on-siwa') : input.parentElement;
+      const wrap = input.closest ? input.closest('.apple-hide-on-siwa') : input.parentElement;
       if (wrap) wrap.classList.add('hidden');
     });
-    var submit = document.getElementById('submitBtn');
+    const submit = document.getElementById('submitBtn');
     if (submit) submit.classList.add('hidden');
   }
 
   function identityFieldsVisible() {
-    var name = document.getElementById('name');
-    var email = document.getElementById('email');
-    var password = document.getElementById('password');
+    const name = document.getElementById('name');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
     if (!name && !email && !password) return false;
     function visible(el) {
       if (!el) return false;
       if (el.classList && el.classList.contains('hidden')) return false;
-      var wrap = el.closest ? el.closest('.apple-hide-on-siwa') : el.parentElement;
+      const wrap = el.closest ? el.closest('.apple-hide-on-siwa') : el.parentElement;
       if (wrap && wrap.classList && wrap.classList.contains('hidden')) return false;
       return true;
     }

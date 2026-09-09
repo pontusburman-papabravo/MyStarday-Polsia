@@ -6,7 +6,7 @@
 (function appleAuthSessionModule() {
   'use strict';
 
-  var _pending = null;
+  let _pending = null;
 
   function t(key, fallback) {
     try {
@@ -19,9 +19,9 @@
   function readName(result) {
     if (!result || typeof result !== 'object') return null;
     if (typeof result.name === 'string' && result.name.trim()) return result.name.trim();
-    var given = result.givenName || result.firstName || '';
-    var family = result.familyName || result.lastName || '';
-    var combined = (String(given) + ' ' + String(family)).trim();
+    const given = result.givenName || result.firstName || '';
+    const family = result.familyName || result.lastName || '';
+    const combined = (String(given) + ' ' + String(family)).trim();
     return combined || null;
   }
 
@@ -65,7 +65,7 @@
   }
 
   function buildRequestBody(credential, extra) {
-    var body = {
+    let body = {
       idToken: credential.idToken,
       name: credential.name || undefined,
       firstName: credential.givenName || undefined,
