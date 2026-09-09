@@ -10,6 +10,7 @@ const express = require('express');
 const { appleLoginLimiter } = require('../../middleware/rateLimiter');
 const parentDb = require('../../../db/parent');
 const { verifyAppleIdToken } = require('../../lib/apple-auth');
+const { captureAppleRefreshToken } = require('../../lib/apple-token');
 const { createParentFromOAuth } = require('../../lib/create-oauth-parent');
 const {
   resolveNewAccountRegistrationContext,
@@ -20,17 +21,45 @@ const { completeLogin } = require('./session');
 
 const router = express.Router();
 
+function termsAcceptedFromBody(body) {
+  return body && (body.terms_accepted === true || body.termsAccepted === true);
+}
+
+function displayNameFromApple(body, appleEmail) {
+  const firstName = typeof body.firstName === 'string' ? body.firstName.trim() : '';
+  const lastName = typeof body.lastName === 'string' ? body.lastName.trim() : '';
+  if (firstName && lastName) return `${firstName} ${lastName}`;
+  if (firstName) return firstName;
+  if (typeof body.name === 'string' && body.name.trim()) return body.name.trim();
+  if (appleEmail && appleEmail.includes('@')) return appleEmail.split('@')[0];
+  return 'Förälder';
+}
+
+async function persistAppleRefreshToken(parentId, req) {
+  try {
+    await captureAppleRefreshToken({
+      parentId,
+      authorizationCode: typeof req.body.authorizationCode === 'string' ? req.body.authorizationCode : null,
+      clientHint: req.body.apple_client === 'native' ? 'native' : 'web',
+      redirectUri: typeof req.body.apple_redirect_uri === 'string' ? req.body.apple_redirect_uri : null,
+    });
+  } catch (err) {
+    console.warn('[APPLE] refresh token persist failed');
+  }
+}
+
 // ─── POST /api/auth/apple ────────────────────────────────
 // Apple Sign In — verify JWT identity token against Apple's public keys,
 // then create or link the parent account.
 // Scenarios:
 //   1. Existing Apple user (by apple_user_id) → 200 + session
-//   2. New user (intent=register + country) → 201 + session
+//   2. New user with country + terms from THIS credential → 201 + session
 //   3. Existing password account (email found, no Apple link) → 409 + email_conflict
-//   4. Login intent but no linked Apple account → 409 + REGISTRATION_REQUIRED
+//   4. New user missing country/terms → 409 APPLE_ACCOUNT_COMPLETION_REQUIRED
+//      (same idToken must be reused — never a second authorize)
 router.post('/apple', appleLoginLimiter, async (req, res) => {
   try {
-    const { idToken, firstName, lastName, name } = req.body;
+    const { idToken } = req.body;
     if (!idToken || typeof idToken !== 'string') {
       console.warn('[APPLE] auth rejected: missing idToken');
       return res.status(400).json({ error: 'idToken krävs' });
@@ -55,6 +84,7 @@ router.post('/apple', appleLoginLimiter, async (req, res) => {
     const existingByApple = await parentDb.getParentByAppleUserId(appleUserId);
     if (existingByApple) {
       console.log('[APPLE] existing user found', { parentId: existingByApple.id });
+      await persistAppleRefreshToken(existingByApple.id, req);
       return completeLogin(req, res, existingByApple, 'parent', { authSource: 'apple_login' });
     }
 
@@ -73,34 +103,40 @@ router.post('/apple', appleLoginLimiter, async (req, res) => {
           await parentDb.linkAppleUserId(existingByEmail.id, appleUserId, appleEmail);
         }
         console.log('[APPLE] existing user by email', { parentId: existingByEmail.id });
+        await persistAppleRefreshToken(existingByEmail.id, req);
         return completeLogin(req, res, existingByEmail, 'parent', { authSource: 'apple_login' });
       }
     }
 
-    const intent = req.body.intent === 'register' ? 'register' : 'login';
     const preAuthLang = resolveAuthApiLocale(req);
 
-    // SCENARIO 4 — Login screen: Apple ID valid but not linked → route to registration
-    if (intent === 'login') {
-      console.log('[APPLE] login intent: no linked account → registration required');
-      return res.status(409).json({
-        error: authApiMessage(preAuthLang, 'errors.registrationRequired'),
-        code: 'REGISTRATION_REQUIRED',
-      });
-    }
-
-    // SCENARIO 2 — Register intent: create account when country is provided
-    const displayName = (firstName && lastName)
-      ? `${firstName.trim()} ${lastName.trim()}`
-      : (firstName?.trim() || (typeof name === 'string' && name.trim()) || appleEmail?.split('@')[0] || 'Förälder');
-
-    console.log('[APPLE] creating new user');
+    // SCENARIO 4 — Same Apple credential, missing app-specific gates.
+    // Never ask the client to authorize again. Never send them to email/password register.
     const registrationCtx = resolveNewAccountRegistrationContext(req, req.body, {
       requireExplicitCountry: true,
     });
-    if (!registrationCtx.ok) {
+    const missing = [];
+    if (!registrationCtx.ok && registrationCtx.body && registrationCtx.body.code === 'COUNTRY_REQUIRED') {
+      missing.push('country');
+    } else if (!registrationCtx.ok) {
       return res.status(registrationCtx.status).json(registrationCtx.body);
     }
+    if (!termsAcceptedFromBody(req.body)) {
+      missing.push('terms');
+    }
+    if (missing.length) {
+      console.log('[APPLE] account completion required', { missing });
+      return res.status(409).json({
+        error: authApiMessage(preAuthLang, 'errors.appleAccountCompletionRequired'),
+        code: 'APPLE_ACCOUNT_COMPLETION_REQUIRED',
+        missing,
+      });
+    }
+
+    // SCENARIO 2 — Create account from THIS Authentication Services credential
+    const displayName = displayNameFromApple(req.body, appleEmail);
+
+    console.log('[APPLE] creating new user');
     const marketGate = await assertRegistrationMarketOpen(
       registrationCtx.countryResolved.country_code,
       registrationCtx.familyLocale
@@ -135,6 +171,7 @@ router.post('/apple', appleLoginLimiter, async (req, res) => {
       countrySelectionSource: registrationCtx.countryResolved.country_selection_source,
     });
 
+    await persistAppleRefreshToken(newParent.id, req);
     return completeLogin(req, res, newParent, 'parent', { isNewAccount: true, authSource: 'apple_login' });
 
   } catch (err) {
@@ -173,6 +210,7 @@ router.post('/apple/link', appleLoginLimiter, async (req, res) => {
 
     // Link the Apple ID to the current parent account
     await parentDb.linkAppleUserId(req.user.id, appleUserId, appleEmail || null);
+    await persistAppleRefreshToken(req.user.id, req);
 
     res.json({ message: 'Apple-konto länkat!' });
   } catch (err) {

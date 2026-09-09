@@ -546,7 +546,7 @@ const Platform = (function () {
      * Start Apple Sign In and return the identity token.
      * On native: calls the Capacitor plugin via bridge.
      * On web: loads Apple's JS and uses the Sign in with Apple popup flow.
-     * Returns: { idToken, name } or throws on failure/cancel.
+     * Returns: { idToken, name, authorizationCode, givenName, familyName } or throws on failure/cancel.
      */
     async signIn() {
       if (isNative()) {
@@ -568,7 +568,10 @@ const Platform = (function () {
           const fullName = (given + ' ' + family).trim();
           return {
             idToken: resp.identityToken,
+            authorizationCode: resp.authorizationCode || null,
             name: fullName || null,
+            givenName: given || null,
+            familyName: family || null,
           };
         } catch (err) {
           const msg = (err && (err.message || err.errorMessage)) || String(err || '');
@@ -661,7 +664,19 @@ const Platform = (function () {
     } catch (_) {}
 
     return apple.auth.signIn().then(function (res) {
-      return { idToken: res.authorization.id_token, name: null };
+      var auth = (res && res.authorization) || {};
+      var user = (res && res.user) || {};
+      var nameObj = user.name || {};
+      var given = nameObj.firstName || '';
+      var family = nameObj.lastName || '';
+      var fullName = (given + ' ' + family).trim();
+      return {
+        idToken: auth.id_token,
+        authorizationCode: auth.code || null,
+        name: fullName || null,
+        givenName: given || null,
+        familyName: family || null,
+      };
     }).catch(function (err) {
       if (err && (err.error === 'user_cancelled' || err.error === 'popup_closed_by_user')) {
         return null;

@@ -126,7 +126,10 @@
         "rateLimited": "Too many attempts. Wait a moment and try again.",
         "genericError": "Something went wrong with Apple sign-in. Try again or sign in with email and password.",
         "failed": "Apple sign-in failed. Try again or sign in with email and password.",
-        "signInFailed": "Apple Sign In failed."
+        "signInFailed": "Apple Sign In failed.",
+        "completionTitle": "Finish creating your account",
+        "completionBody": "Choose your country and accept the terms. Apple already provided your name and email — we will not ask for them again.",
+        "completionSubmit": "Continue with the same Apple account"
       },
       "google": {
         "emailConflictSettings": "An account with this email address already exists. Sign in and link Google in Settings, or use password sign-in.",
@@ -227,7 +230,8 @@
       "childLoginLink": "Are you a child? Log in here",
       "gateHintLanguage": "Choose a language above to continue registration.",
       "gateHintCountry": "Choose your country above to continue registration.",
-      "appleFromLoginHint": "No account is linked to this Apple ID yet. Choose your country above, then tap Continue with Apple.",
+      "appleFromLoginHint": "No account is linked to this Apple ID yet. Choose your country and accept the terms — name and email come from Apple. Another Apple sign-in is not required.",
+      "appleOnlyPath": "Create your account with Apple. Name and email come from Apple — do not fill in the form.",
       "tagline": "A calm day, one star at a time",
       "orDivider": "or",
       "continueWithApple": "Sign up with Apple",
@@ -418,7 +422,8 @@
         "registrationClosed": "Registration is currently closed",
         "invalidCountry": "Invalid country",
         "countryRequired": "Choose your country before creating an account",
-        "registrationRequired": "No account is linked to this Apple ID yet. Create an account to continue.",
+        "registrationRequired": "SUPERSEDED — use appleAccountCompletionRequired. Do not redirect to email/password registration.",
+        "appleAccountCompletionRequired": "Choose your country and accept the terms to finish creating your account. Name and email come from Apple.",
         "familyNameRequired": "Name is required to create a family account",
         "marketClosed": {
           "MARKET_SE_CLOSED": "Registration from Sweden is temporarily closed.",

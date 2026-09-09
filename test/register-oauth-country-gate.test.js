@@ -50,6 +50,7 @@ function loadRegistrationModules(opts) {
     },
   });
 
+  const termsEl = { checked: opts.termsAccepted !== false, focus() {} };
   const document = {
     documentElement: { lang: opts.lang || 'sv-SE' },
     querySelector(sel) {
@@ -60,7 +61,12 @@ function loadRegistrationModules(opts) {
     },
     querySelectorAll() { return []; },
     addEventListener() {},
-    getElementById() { return null; },
+    getElementById(id) {
+      if (id === 'termsAccepted' || id === 'appleTermsAccepted' || id === 'appleCompletionTermsAccepted') {
+        return termsEl;
+      }
+      return null;
+    },
     head: { appendChild() {} },
     createElement() { return { textContent: '', id: '' }; },
     dispatchEvent() {},
@@ -102,6 +108,7 @@ function loadRegistrationModules(opts) {
     RegistrationCountryGate: context.window.RegistrationCountryGate,
     RegisterAppleAuth: context.window.RegisterAppleAuth,
     errorEl,
+    termsEl,
     document,
     sessionStorage,
     container,
@@ -517,17 +524,15 @@ describe('Apple register language-before-country', () => {
 });
 
 describe('Apple login routes unknown Apple IDs to registration', () => {
-  it('login Apple handler sends intent login and handles REGISTRATION_REQUIRED', () => {
+  it('login Apple handler keeps the first credential and never redirects to register', () => {
     const login = fs.readFileSync(path.join(ROOT, 'public/login.html'), 'utf8');
     const start = login.indexOf('async function handleAppleLogin');
     assert.ok(start > 0);
     const fn = login.slice(start, login.indexOf('function openAppleLinkModal', start));
-    assert.match(fn, /intent:\s*'login'/);
-    assert.match(fn, /data\.code === 'REGISTRATION_REQUIRED'/);
-    assert.doesNotMatch(fn, /CountryChoice/);
-    assert.doesNotMatch(fn, /RegistrationCountryGate/);
-    assert.doesNotMatch(fn, /RegisterAppleAuth/);
-    assert.doesNotMatch(fn, /status === 201/);
+    assert.match(fn, /AppleAuthSession\.remember/);
+    assert.match(fn, /isCompletionRequired/);
+    assert.doesNotMatch(fn, /REGISTRATION_REQUIRED/);
+    assert.doesNotMatch(fn, /\/register\?method=apple/);
   });
 });
 
