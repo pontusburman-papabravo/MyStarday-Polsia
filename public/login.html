@@ -34,7 +34,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/tailwind.build.css?v=1">
-  <script src="/js/platform.js?v=2026-09-09-siwa"></script>
+  <script src="/js/apple-auth-cancel.js?v=1"></script>
+  <script src="/js/platform.js?v=2026-09-09-siwa-cancel"></script>
   <script src="/js/auth-login-platform.js?v=2026-07-03"></script>
     <link rel="stylesheet" href="/css/theme.css?v=2.12.0">
   <link rel="stylesheet" href="/css/login-magic.css?v=139">
@@ -824,7 +825,7 @@
           hasIdToken: !!(result && result.idToken),
         });
 
-        if (!result) {
+        if (!result || result.canceled) {
           diag.hideErrors();
           return;
         }
@@ -861,10 +862,16 @@
           diag.showError(data.error || t('auth.login.apple.genericError'));
         }
       } catch (err) {
+        if (window.AppleAuthCancel && AppleAuthCancel.isAppleAuthCancellation(err)) {
+          diag.hideErrors();
+          return;
+        }
         var appleMsg = (err && err.message) || '';
         diag.log('step_error', { message: appleMsg });
         if (window.AppEntry) AppEntry.trackAuthFailed('apple', appleMsg || 'exception');
-        if (appleMsg === 'APPLE_SIGN_IN_FAILED') {
+        if (appleMsg === 'SIGN_IN_UNAVAILABLE') {
+          diag.showError(t('auth.login.apple.unavailable'));
+        } else if (appleMsg === 'APPLE_SIGN_IN_FAILED') {
           diag.showError(t('auth.login.apple.failed'));
         } else {
           diag.showError(appleMsg || t('auth.login.apple.signInFailed'));

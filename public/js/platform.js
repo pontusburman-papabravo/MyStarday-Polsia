@@ -546,7 +546,8 @@ const Platform = (function () {
      * Start Apple Sign In and return the identity token.
      * On native: calls the Capacitor plugin via bridge.
      * On web: loads Apple's JS and uses the Sign in with Apple popup flow.
-     * Returns: { idToken, name, authorizationCode, givenName, familyName } or throws on failure/cancel.
+     * Returns: { idToken, name, authorizationCode, givenName, familyName },
+     * { canceled: true } on user dismissal, or throws on real failure.
      */
     async signIn() {
       if (isNative()) {
@@ -576,16 +577,24 @@ const Platform = (function () {
         } catch (err) {
           const msg = (err && (err.message || err.errorMessage)) || String(err || '');
           const code = err && (err.code || err.errorCode);
-          if (
+          if (msg === 'SIGN_IN_UNAVAILABLE') {
+            throw err instanceof Error ? err : new Error('SIGN_IN_UNAVAILABLE');
+          }
+          const cancelApi = (typeof window !== 'undefined' && window.AppleAuthCancel) ? window.AppleAuthCancel : null;
+          if (cancelApi && cancelApi.isAppleAuthCancellation(err)) {
+            return cancelApi.canceledResult();
+          }
+          if (!cancelApi && (
             msg === 'cancel' ||
-            msg === 'SIGN_IN_UNAVAILABLE' ||
             code === 'ERR_CANCELED' ||
             code === 1001 ||
             code === '1001' ||
             /AuthorizationError error 1001/i.test(msg) ||
-            /cancel/i.test(msg)
-          ) {
-            return null;
+            /error\s*1001/i.test(msg) ||
+            /cancel/i.test(msg) ||
+            /avbr[oö]t|avbruten/i.test(msg)
+          )) {
+            return { canceled: true };
           }
           // Native plugin errors — avoid leaking raw ASAuthorizationError strings to users.
           console.warn('[Platform] Apple Sign In failed:', msg, code);
@@ -678,8 +687,12 @@ const Platform = (function () {
         familyName: family || null,
       };
     }).catch(function (err) {
+      const cancelApi = (typeof window !== 'undefined' && window.AppleAuthCancel) ? window.AppleAuthCancel : null;
+      if (cancelApi && cancelApi.isAppleAuthCancellation(err)) {
+        return cancelApi.canceledResult();
+      }
       if (err && (err.error === 'user_cancelled' || err.error === 'popup_closed_by_user')) {
-        return null;
+        return { canceled: true };
       }
       throw err;
     });

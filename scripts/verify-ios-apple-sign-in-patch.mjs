@@ -53,5 +53,9 @@ if (!content.includes('DispatchQueue.main.async')) {
   console.error('❌ Apple Sign In patch must present on the main thread (DispatchQueue.main.async) — iPad fails otherwise.');
   process.exit(1);
 }
+if (!content.includes('ERR_CANCELED')) {
+  console.error('❌ Apple Sign In patch must reject user-cancel as ERR_CANCELED — sheet dismiss is not an auth failure.');
+  process.exit(1);
+}
 
 console.log('✅ Apple Sign In iPad presentation patch present');

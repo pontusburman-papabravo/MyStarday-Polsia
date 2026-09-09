@@ -42,7 +42,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/tailwind.build.css?v=1">
-  <script src="/js/platform.js?v=2026-09-09-siwa"></script>
+  <script src="/js/apple-auth-cancel.js?v=1"></script>
+  <script src="/js/platform.js?v=2026-09-09-siwa-cancel"></script>
   <script src="/js/auth-login-platform.js?v=2026-07-03"></script>
   <script src="/js/apple-sign-in-diagnostics.js?v=2026-06-22"></script>
     <link rel="stylesheet" href="/css/theme.css?v=2.12.0">
@@ -588,7 +589,7 @@
         }
         const result = await window.Platform.appleSignIn.signIn();
         if (diag) diag.log('register_step_2', { hasIdToken: !!(result && result.idToken) });
-        if (!result) {
+        if (!result || result.canceled) {
           document.getElementById('appleRegisterError').classList.add('hidden');
           return;
         }
@@ -638,8 +639,14 @@
           showError('appleRegisterError', data.error || t('auth.login.apple.genericError'));
         }
       } catch (err) {
+        if (window.AppleAuthCancel && AppleAuthCancel.isAppleAuthCancellation(err)) {
+          document.getElementById('appleRegisterError').classList.add('hidden');
+          return;
+        }
         var appleMsg = (err && err.message) || '';
-        if (appleMsg === 'APPLE_SIGN_IN_FAILED') {
+        if (appleMsg === 'SIGN_IN_UNAVAILABLE') {
+          showError('appleRegisterError', t('auth.login.apple.unavailable'));
+        } else if (appleMsg === 'APPLE_SIGN_IN_FAILED') {
           showError('appleRegisterError', t('auth.login.apple.failed'));
         } else {
           showError('appleRegisterError', appleMsg || t('auth.login.apple.signInFailed'));

@@ -322,12 +322,17 @@ describe('SIWA invariants — client contract', () => {
     assert.match(register, /AppleAuthSession\.remember/);
   });
 
-  it('cancel returns null and login re-enables the button', () => {
-    assert.match(platformSrc, /return null;/);
+  it('cancel is a quiet abort and login re-enables the button', () => {
+    assert.match(platformSrc, /canceled: true/);
+    assert.match(platformSrc, /isAppleAuthCancellation/);
     const fn = login.slice(login.indexOf('async function handleAppleLogin'));
-    assert.match(fn, /if \(!result\) \{\s*diag\.hideErrors\(\);\s*return;/);
+    assert.match(fn, /if \(!result \|\| result\.canceled\) \{\s*diag\.hideErrors\(\);\s*return;/);
+    assert.match(fn, /AppleAuthCancel\.isAppleAuthCancellation/);
     assert.doesNotMatch(fn, /showError\(t\('auth\.login\.apple\.cancelled'\)\)/);
     assert.match(fn, /btn\.disabled = false/);
+    const registerFn = register.slice(register.indexOf('async function handleAppleRegister'));
+    assert.match(registerFn, /result\.canceled/);
+    assert.match(registerFn, /AppleAuthCancel\.isAppleAuthCancellation/);
     assert.doesNotMatch(register, /showError\('appleRegisterError', t\('auth\.login\.apple\.cancelled'\)\)/);
   });
 
