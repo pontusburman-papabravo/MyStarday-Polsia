@@ -589,7 +589,7 @@
         const result = await window.Platform.appleSignIn.signIn();
         if (diag) diag.log('register_step_2', { hasIdToken: !!(result && result.idToken) });
         if (!result) {
-          showError('appleRegisterError', t('auth.login.apple.cancelled'));
+          document.getElementById('appleRegisterError').classList.add('hidden');
           return;
         }
         if (!result.idToken) {

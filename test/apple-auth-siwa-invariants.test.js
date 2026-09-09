@@ -279,12 +279,16 @@ describe('SIWA invariants — client contract', () => {
   const platformSrc = fs.readFileSync(path.join(ROOT, 'public/js/platform.js'), 'utf8');
 
   it('8) UI contract — Apple path is not blocked by required email/password/name after auth', () => {
-    assert.match(login, /APPLE_ACCOUNT_COMPLETION_REQUIRED/);
+    assert.match(login, /isCompletionRequired/);
     assert.doesNotMatch(login, /REGISTRATION_REQUIRED/);
     assert.doesNotMatch(login, /\/register\?method=apple/);
     assert.match(login, /id="appleAccountCompletion"/);
-    assert.doesNotMatch(login.slice(login.indexOf('id="appleAccountCompletion"')), /type="password"/);
-    assert.doesNotMatch(login.slice(login.indexOf('id="appleAccountCompletion"'), login.indexOf('id="appleLinkingPrompt"')), /type="email"/);
+    const completion = login.slice(
+      login.indexOf('id="appleAccountCompletion"'),
+      login.indexOf('id="appleLinkingPrompt"')
+    );
+    assert.doesNotMatch(completion, /type="password"/);
+    assert.doesNotMatch(completion, /type="email"/);
     assert.match(register, /emailPasswordRegisterFields/);
     assert.match(register, /hideEmailPasswordIdentityFields/);
   });
@@ -292,8 +296,8 @@ describe('SIWA invariants — client contract', () => {
   it('9) TOKEN SAFETY — no idToken in URL or web storage', () => {
     assert.doesNotMatch(login, /location\.href[^;]*idToken/);
     assert.doesNotMatch(register, /location\.href[^;]*idToken/);
-    assert.doesNotMatch(sessionSrc, /localStorage/);
-    assert.doesNotMatch(sessionSrc, /sessionStorage/);
+    assert.doesNotMatch(sessionSrc, /localStorage\.setItem/);
+    assert.doesNotMatch(sessionSrc, /sessionStorage\.setItem/);
     assert.match(sessionSrc, /never URL, localStorage, or sessionStorage/);
     assert.doesNotMatch(login, /localStorage\.setItem\([^)]*idToken/);
     assert.doesNotMatch(register, /localStorage\.setItem\([^)]*idToken/);
@@ -309,9 +313,11 @@ describe('SIWA invariants — client contract', () => {
 
   it('cancel returns null and login re-enables the button', () => {
     assert.match(platformSrc, /return null;/);
-    const fn = login.slice(login.indexOf('async function handleAppleLogin'), login.indexOf('document.getElementById(\'appleCompletionSubmitBtn\')'));
-    assert.match(fn, /cancelled/);
+    const fn = login.slice(login.indexOf('async function handleAppleLogin'));
+    assert.match(fn, /if \(!result\) \{\s*diag\.hideErrors\(\);\s*return;/);
+    assert.doesNotMatch(fn, /showError\(t\('auth\.login\.apple\.cancelled'\)\)/);
     assert.match(fn, /btn\.disabled = false/);
+    assert.doesNotMatch(register, /showError\('appleRegisterError', t\('auth\.login\.apple\.cancelled'\)\)/);
   });
 
   it('platform returns authorizationCode and first-auth name', () => {

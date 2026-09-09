@@ -825,7 +825,7 @@
         });
 
         if (!result) {
-          diag.showError(t('auth.login.apple.cancelled'));
+          diag.hideErrors();
           return;
         }
         if (!result.idToken) {
