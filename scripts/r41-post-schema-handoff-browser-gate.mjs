@@ -54,7 +54,9 @@ export async function runR41HandoffBrowserGate({ BASE, cookies, familyId, page, 
   const expectedTitle = locale === 'en-GB'
     ? 'Next step: Let your child try their routine'
     : 'Nästa steg: Låt barnet testa sin rutin';
-  const expectedCta = locale === 'en-GB' ? 'Try child mode now' : 'Testa barnläget nu';
+  const expectedCtas = locale === 'en-GB'
+    ? ['Log in with the child\'s PIN', 'Open child view', 'Try child mode now']
+    : ['Logga in med barnets PIN', 'Öppna barnets vy', 'Testa barnläget nu'];
 
   await page.goto(`${BASE}/dashboard?next_step=child_handoff`, {
     waitUntil: 'domcontentloaded',
@@ -71,7 +73,7 @@ export async function runR41HandoffBrowserGate({ BASE, cookies, familyId, page, 
     { timeout: 90000 },
   );
 
-  const metrics = await page.evaluate((expTitle, expCta) => {
+  const metrics = await page.evaluate((expTitle, expCtas) => {
     const handoff = document.querySelector('.parent-handoff-card');
     const primary = handoff?.querySelector('[data-action="child-login"]');
     const secondary = handoff?.querySelector('[data-action="parent-logout"]');
@@ -86,13 +88,13 @@ export async function runR41HandoffBrowserGate({ BASE, cookies, familyId, page, 
       title,
       cta,
       titleOk: title === expTitle,
-      ctaOk: cta === expCta,
+      ctaOk: expCtas.includes(cta),
       logoutHidden: secondary?.classList.contains('hidden') || secondary?.offsetParent === null,
       primaryMinHeight: rect ? rect.height : 0,
       horizontalScroll: scrollW > clientW + 2,
       consoleErrors: window.__r41ConsoleErrors || [],
     };
-  }, expectedTitle, expectedCta);
+  }, expectedTitle, expectedCtas);
 
   const primaryTouchOk = metrics.primaryMinHeight >= 44;
   return {

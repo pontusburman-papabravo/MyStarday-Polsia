@@ -52,11 +52,35 @@
     "parentLogout": "Log out",
     "regionAria": "Switch to child login",
     "dismissTitle": "Close",
+    "trusted": {
+      "title": "Time to open child view?",
+      "sub": "Open your child's view on this device.",
+      "childLogin": "Open child view",
+      "regionAria": "Open child view"
+    },
+    "pin": {
+      "title": "Time for your child to log in?",
+      "sub": "Switch to child view with PIN.",
+      "childLogin": "Log in with the child's PIN",
+      "regionAria": "Log in with the child's PIN"
+    },
     "postSchema": {
       "title": "Next step: Let your child try their routine",
       "sub": "Open child mode together — it only takes about a minute.",
       "childLogin": "Try child mode now",
-      "regionAria": "Next step: let your child try their routine"
+      "regionAria": "Next step: let your child try their routine",
+      "trusted": {
+        "title": "Next step: Open child view",
+        "sub": "Open child mode together — it only takes about a minute.",
+        "childLogin": "Open child view",
+        "regionAria": "Next step: open child view"
+      },
+      "pin": {
+        "title": "Next step: Let your child try their routine",
+        "sub": "Open child mode together — it only takes about a minute.",
+        "childLogin": "Log in with the child's PIN",
+        "regionAria": "Next step: log in with the child's PIN"
+      }
     }
   },
   "firstSuccess": {
@@ -85,12 +109,12 @@
       },
       "child_access": {
         "headline": "Open child view",
-        "body": "Let your child log in with their PIN and try the first activity.",
-        "cta": "Child logs in"
+        "body": "Let your child try today's first activity in child view.",
+        "cta": "Open child view"
       },
       "child_access_named": {
         "headline": "{{name}}'s routine is ready",
-        "body": "Your child can log in with their PIN and start when it suits you.",
+        "body": "Your child can start when it suits you.",
         "cta": "Open child view"
       },
       "await_first_completion": {

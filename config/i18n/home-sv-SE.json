@@ -52,11 +52,35 @@
     "parentLogout": "Logga ut",
     "regionAria": "Byt till barnets inloggning",
     "dismissTitle": "Stäng",
+    "trusted": {
+      "title": "Dags att öppna barnets vy?",
+      "sub": "Öppna barnets vy på den här enheten.",
+      "childLogin": "Öppna barnets vy",
+      "regionAria": "Öppna barnets vy"
+    },
+    "pin": {
+      "title": "Dags för barnet att logga in?",
+      "sub": "Byt till barnets vy med PIN-kod.",
+      "childLogin": "Logga in med barnets PIN",
+      "regionAria": "Logga in med barnets PIN"
+    },
     "postSchema": {
       "title": "Nästa steg: Låt barnet testa sin rutin",
       "sub": "Det tar ungefär en minut",
       "childLogin": "Testa barnläget nu",
-      "regionAria": "Nästa steg: låt barnet testa sin rutin"
+      "regionAria": "Nästa steg: låt barnet testa sin rutin",
+      "trusted": {
+        "title": "Nästa steg: Öppna barnets vy",
+        "sub": "Det tar ungefär en minut",
+        "childLogin": "Öppna barnets vy",
+        "regionAria": "Nästa steg: öppna barnets vy"
+      },
+      "pin": {
+        "title": "Nästa steg: Låt barnet testa sin rutin",
+        "sub": "Det tar ungefär en minut",
+        "childLogin": "Logga in med barnets PIN",
+        "regionAria": "Nästa steg: låt barnet logga in med PIN"
+      }
     }
   },
   "firstSuccess": {
@@ -85,12 +109,12 @@
       },
       "child_access": {
         "headline": "Öppna barnets vy",
-        "body": "Låt barnet logga in med PIN och prova dagens första aktivitet.",
-        "cta": "Barnet loggar in"
+        "body": "Låt barnet prova dagens första aktivitet i barnvyn.",
+        "cta": "Öppna barnets vy"
       },
       "child_access_named": {
         "headline": "{{name}}s rutin är redo",
-        "body": "Barnet kan logga in med PIN och börja när det passar.",
+        "body": "Barnet kan börja när det passar.",
         "cta": "Öppna barnets vy"
       },
       "await_first_completion": {

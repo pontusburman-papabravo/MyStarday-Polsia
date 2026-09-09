@@ -211,8 +211,9 @@
     const headline = payload.headline || pt('home.firstSuccess.actions.' + payload.next_action + '.headline');
     const body = payload.body || pt('home.firstSuccess.actions.' + payload.next_action + '.body');
     const cta = payload.cta_label || pt('home.firstSuccess.actions.' + payload.next_action + '.cta');
-    const pinHint = (payload.next_action === 'child_access' || payload.next_action === 'await_first_completion' || payload.next_action === 'welcome_back')
-      ? '<p class="text-xs text-text-soft mt-2">' + esc(pt('home.firstSuccess.pinHint')) + '</p>'
+    const needsHandoffHint = (payload.next_action === 'child_access' || payload.next_action === 'await_first_completion' || payload.next_action === 'welcome_back');
+    const pinHint = needsHandoffHint
+      ? '<p class="activation-fs-pin-hint hidden text-xs text-text-soft mt-2"></p>'
       : '';
 
     const dismissHtml = payload.dismiss_action
@@ -251,6 +252,23 @@
     const deferBtn = mount.querySelector('.activation-fs-defer');
     if (deferBtn && payload.can_defer) {
       deferBtn.addEventListener('click', function () { onDefer(payload, deferBtn); });
+    }
+
+    if (needsHandoffHint) {
+      const hintEl = mount.querySelector('.activation-fs-pin-hint');
+      const showPinHint = function () {
+        if (!hintEl) return;
+        hintEl.textContent = pt('home.firstSuccess.pinHint');
+        hintEl.classList.remove('hidden');
+      };
+      if (window.DashboardChildHandoff && typeof DashboardChildHandoff.probeTrustedChildPath === 'function') {
+        DashboardChildHandoff.probeTrustedChildPath().then(function (path) {
+          if (path && path.available) return;
+          showPinHint();
+        }).catch(showPinHint);
+      } else {
+        showPinHint();
+      }
     }
 
     if (payload.next_action === 'invite_adult') {
