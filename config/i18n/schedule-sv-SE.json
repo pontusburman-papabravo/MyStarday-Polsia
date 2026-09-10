@@ -156,6 +156,7 @@
     "showAll": "Visa alla ({{count}})",
     "showAllTitle": "Visa alla {{count}} aktiviteter",
     "editTime": "Redigera tid",
+    "editSection": "Byt del av dagen",
     "addTime": "Tid",
     "addTimeAria": "Lägg till tid",
     "editActivity": "Redigera aktivitet",

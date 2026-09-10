@@ -87,6 +87,8 @@
     document.querySelectorAll('.sde-time-chip').forEach((el) => {
       if (el.id !== keepChip) el.setAttribute('aria-expanded', 'false');
     });
+    document.querySelectorAll('.sse-editor').forEach((el) => el.classList.add('hidden'));
+    document.querySelectorAll('.sse-section-chip').forEach((el) => el.setAttribute('aria-expanded', 'false'));
   }
 
   function toggle(itemId) {
