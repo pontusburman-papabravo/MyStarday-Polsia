@@ -108,6 +108,7 @@ function createDirectEditSandbox(opts = {}) {
 describe('Planner PR B — Direct Day Editing', () => {
   it('is an IIFE exposing time chip, editor, toggle, setTime, and putItemTimes', () => {
     const src = read(MODULE);
+    assert.doesNotThrow(() => vm.runInNewContext(src, { window: {}, document: { getElementById() { return null; }, querySelectorAll() { return []; } } }));
     assert.match(src, /^\(function \(\) \{/m);
     assert.match(src, /window\.ScheduleDirectEdit\s*=/);
     for (const fn of ['timeChipHtml', 'timeEditorHtml', 'toggle', 'setTime', 'putItemTimes']) {
