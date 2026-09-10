@@ -139,6 +139,15 @@ describe('i18n child UI leaks — mobile smoke', () => {
         const summary = document.querySelector('#weekNavDetails .child-week-summary');
         return summary && /other days/i.test((summary.textContent || '').trim());
       }, { timeout: 30000 });
+      await page.waitForFunction(() => {
+        const view = document.getElementById('scheduleView');
+        if (!view) return true;
+        const style = window.getComputedStyle(view);
+        if (view.classList.contains('hidden') || style.display === 'none') return true;
+        const text = (view.textContent || '').trim();
+        if (/Laddar/i.test(text) && !/Loading/i.test(text)) return false;
+        return true;
+      }, { timeout: 30000 });
       const weekSummary = await page.evaluate(() => {
         const el = document.querySelector('#weekNavDetails .child-week-summary');
         return (el && el.textContent || '').trim();
