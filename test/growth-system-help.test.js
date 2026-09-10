@@ -283,4 +283,93 @@ describe('growth-system-help client attaches to existing Hem CTA', () => {
     assert.match(firstSuccess, /attachPrimaryCta/);
     assert.match(firstSuccess, /activation-fs-cta/);
   });
+
+  it('help card omits report unless showSupportRequest and binds existing CTA', async () => {
+    const vm = require('node:vm');
+    const posts = [];
+    const ctaEl = {
+      attrs: {},
+      listeners: {},
+      getAttribute(k) { return this.attrs[k] || null; },
+      setAttribute(k, v) { this.attrs[k] = v; },
+      addEventListener(ev, fn) { this.listeners[ev] = fn; },
+      classList: { contains: () => false },
+    };
+    const rootEl = {
+      classList: { contains: () => false },
+      querySelector(sel) { return sel === '.activation-fs-cta' ? ctaEl : null; },
+    };
+    const win = {
+      I18n: { getLocale: () => 'sv-SE' },
+      sessionStorage: {
+        _m: {},
+        getItem(k) { return this._m[k] || null; },
+        setItem(k, v) { this._m[k] = String(v); },
+      },
+      Auth: {
+        api: async (path, opts) => {
+          posts.push({ path, opts });
+          if (String(path).includes('/context')) {
+            return {
+              eligible: true,
+              blockingStep: 'schema_no_child_login',
+              help: {
+                blockingStep: 'schema_no_child_login',
+                headline: 'Hjälp barnet logga in',
+                body: 'PIN',
+                ctaLabel: 'Starta barninloggning',
+                ctaAction: 'start_child_login',
+                secondaryCtaLabel: 'Visa eller byt PIN',
+                secondaryCtaAction: 'open_child_profile',
+                showSupportRequest: false,
+              },
+            };
+          }
+          return { ok: true };
+        },
+      },
+      location: { pathname: '/dashboard', href: '/dashboard' },
+      document: { documentElement: { lang: 'sv-SE' } },
+    };
+    const sandbox = {
+      window: win,
+      document: win.document,
+      sessionStorage: win.sessionStorage,
+      Auth: win.Auth,
+      URLSearchParams,
+      setImmediate,
+    };
+    vm.createContext(sandbox);
+    vm.runInContext(read('public/js/growth-system-help.js'), sandbox);
+
+    const htmlNoReport = win.GrowthSystemHelp.buildCardHtml({
+      blockingStep: 'schema_no_child_login',
+      headline: 'Hjälp barnet logga in',
+      body: 'PIN',
+      ctaLabel: 'Starta barninloggning',
+      secondaryCtaLabel: 'Visa eller byt PIN',
+      secondaryCtaAction: 'open_child_profile',
+      showSupportRequest: false,
+    }, 'help_panel');
+    assert.match(htmlNoReport, /Visa eller byt PIN/);
+    assert.doesNotMatch(htmlNoReport, /Rapportera problem/);
+
+    const htmlReport = win.GrowthSystemHelp.buildCardHtml({
+      headline: 'Något gick fel',
+      body: 'PIN',
+      ctaLabel: 'Visa barnets PIN',
+      showSupportRequest: true,
+    }, 'help_panel');
+    assert.match(htmlReport, /Rapportera problem/);
+
+    await win.GrowthSystemHelp.attachPrimaryCta(rootEl, {
+      surface: 'child_handoff',
+      ctaSelector: '.activation-fs-cta',
+    });
+    assert.equal(ctaEl.attrs['data-system-help-engage'], '1');
+    assert.equal(typeof ctaEl.listeners.click, 'function');
+    ctaEl.listeners.click();
+    await new Promise((r) => setImmediate(r));
+    assert.ok(posts.some((p) => String(p.path).includes('/engage')));
+  });
 });
