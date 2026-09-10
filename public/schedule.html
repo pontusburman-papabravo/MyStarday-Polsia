@@ -26,7 +26,8 @@
   <script src="/js/pictogram-registry.js?v=1"></script>
   <script src="/js/schedule-activity-modals.js?v=3"></script>
   <script src="/js/schedule-custody.js?v=4"></script>
-  <script src="/js/schedule.js?v=2.27.1"></script>
+  <script src="/js/schedule.js?v=2.27.2"></script>
+  <script src="/js/schedule-direct-edit.js?v=1"></script>
   <script src="/js/schedule-dnd.js?v=2"></script>
   <script src="/js/schedule-family-grid.js?v=1"></script>
   <script src="/js/schedule-special-days.js?v=2"></script>
@@ -40,7 +41,7 @@
   <link rel="stylesheet" href="/css/mobile-nav.css?v=2.13.0">
   <link rel="stylesheet" href="/css/app-view-toggle.css?v=10">
   <link rel="stylesheet" href="/css/parent-magic-3d.css?v=1">
-  <link rel="stylesheet" href="/css/parent-magic-common.css?v=12">
+  <link rel="stylesheet" href="/css/parent-magic-common.css?v=13">
   <link rel="stylesheet" href="/css/parent-bottom-nav.css?v=2">
   <link rel="stylesheet" href="/css/dashboard-warmth.css?v=2026-06-10-copy">
   <script src="/js/theme.js?v=2.12.0"></script>
@@ -161,6 +162,15 @@
     .overflow-menu-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center;
       background: #EDE7F6; border-radius: 8px; border: none; cursor: pointer; font-size: 18px; color: #1B2340; }
     .overflow-menu-btn:active { background: #F5A623; color: white; }
+
+    /* Direct Day Editing — hide native time chrome so iOS cannot paint the clock */
+    .sde-time-field input[type="time"].sde-time-input {
+      opacity: 0;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+      appearance: none;
+      -webkit-appearance: none;
+    }
     .overflow-menu-popup {
       /* BUG-19/BUG-22/BUG-24: MÅSTE ha display:none — rör inte */
       display: none; position: absolute; right: 0; top: calc(100% + 4px); z-index: 500;

@@ -156,6 +156,8 @@
     "showAll": "Show all ({{count}})",
     "showAllTitle": "Show all {{count}} activities",
     "editTime": "Edit time",
+    "addTime": "Time",
+    "addTimeAria": "Add time",
     "editActivity": "Edit activity",
     "edit": "Edit",
     "moveUp": "Move up",
