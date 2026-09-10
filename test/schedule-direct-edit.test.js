@@ -300,6 +300,8 @@ describe('Planner PR B — Direct Day Editing', () => {
     const fn = fnMatch[0];
     assert.match(fn, /openConfirmModal/);
     assert.match(fn, /recurrenceModal/);
+    assert.match(fn, /ScheduleI18n\.recurrenceRemoveCopy/);
+    assert.doesNotMatch(fn, /Bara alla/);
     assert.match(fn, /bindRecurrenceDeleteHandlers/);
     assert.match(fn, /modal\.classList\.remove\('hidden'\)/);
     const recurringOnly = fn.replace(/if \(item\?\.is_once_task\) \{[\s\S]*?return;\n  \}/, '');

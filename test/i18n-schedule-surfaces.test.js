@@ -125,4 +125,25 @@ describe('schedule/planning i18n surfaces', () => {
     assert.equal(t('en-GB', 'schedule.daysPlural.1'), 'every Monday');
     assert.equal(t('sv-SE', 'schedule.daysPlural.1'), 'alla måndagar');
   });
+
+  it('recurrence remove copy is locale-complete in sv-SE and en-GB', () => {
+    assert.equal(t('sv-SE', 'schedule.modals.recurrence.deleteTitle'), 'Ta bort aktivitet');
+    assert.equal(t('sv-SE', 'schedule.modals.recurrence.onceLblRemove'), 'Bara denna dag');
+    assert.equal(t('sv-SE', 'schedule.modals.recurrence.onceDescRemove'), 'Tas bara bort från dagens schema');
+    assert.equal(t('sv-SE', 'schedule.modals.recurrence.weeklyDescRemove', { day: t('sv-SE', 'schedule.daysPlural.4') }), 'Tas bort från alla torsdagar i veckoschemat');
+    assert.equal(t('sv-SE', 'schedule.modals.recurrence.allDaysLbl'), 'Alla dagar i veckan');
+    assert.equal(t('sv-SE', 'schedule.modals.recurrence.allDaysDesc'), 'Tas bort från måndag till söndag');
+    assert.equal(t('sv-SE', 'schedule.modals.common.cancel'), 'Avbryt');
+    assert.equal(t('en-GB', 'schedule.modals.recurrence.deleteTitle'), 'Remove activity');
+    assert.equal(t('en-GB', 'schedule.modals.recurrence.onceLblRemove'), 'This day only');
+    assert.equal(t('en-GB', 'schedule.modals.recurrence.onceDescRemove'), "Removed from today's schedule only");
+    assert.equal(t('en-GB', 'schedule.modals.recurrence.weeklyDescRemove', { day: t('en-GB', 'schedule.daysPlural.4') }), 'Removes from every Thursday in the weekly schedule');
+    assert.equal(t('en-GB', 'schedule.modals.recurrence.allDaysLbl'), 'All days of the week');
+    assert.equal(t('en-GB', 'schedule.modals.recurrence.allDaysDesc'), 'Removes from Monday through Sunday');
+    assert.equal(t('en-GB', 'schedule.modals.common.cancel'), 'Cancel');
+    assert.equal(t('sv-SE', 'schedule.days.4'), 'Torsdag');
+    assert.equal(t('sv-SE', 'schedule.daysPlural.4'), 'alla torsdagar');
+    assert.equal(t('en-GB', 'schedule.days.4'), 'Thursday');
+    assert.equal(t('en-GB', 'schedule.daysPlural.4'), 'every Thursday');
+  });
 });
