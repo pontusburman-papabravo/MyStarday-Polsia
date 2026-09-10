@@ -45,6 +45,7 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
     for (const fn of [
       'open', 'openMenu', 'close', 'openActivity', 'submitActivity', 'openTemplate',
       'submitTemplate', 'openCopyDay', 'submitCopyDay', 'openSaveAsTemplate', 'submitSaveAsTemplate',
+      'selectPendingCreate',
     ]) {
       assert.match(src, new RegExp(`\\b${fn}\\b`), `ScheduleAddMenu API must include ${fn}`);
     }
@@ -171,10 +172,11 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
       assert.match(body, /custodyHomeId,?\s*\}\);/, `${startMarker} client call must forward custodyHomeId`);
     }
 
-    const submitActivityBody = src.slice(src.indexOf('const days = [...activityState.days];'), src.indexOf('setPending(\'samActivitySaveBtn\', false);'));
+    const applyCallStart = src.indexOf('ScheduleApplyClient.applyActivity(currentChildId');
+    const submitActivityBody = src.slice(src.lastIndexOf('const days = [...activityState.days];', applyCallStart), applyCallStart + 450);
     assert.match(submitActivityBody, /const custodyHomeId = activeCustodyHomeId\(\)/);
     assert.match(submitActivityBody, /forCommand\(\{[^]*?custodyHomeId[^]*?\}\)/);
-    assert.match(submitActivityBody, /operationId, custodyHomeId,?\s*\}\);/);
+    assert.match(submitActivityBody, /operationId, custodyHomeId/);
 
     const submitCopyDayBody = src.slice(src.indexOf('async function doSubmitCopyDay'), src.indexOf('setPending(\'samCopyDaySaveBtn\', false);'));
     assert.match(submitCopyDayBody, /const custodyHomeId = activeCustodyHomeId\(\)/);
@@ -208,5 +210,104 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
     for (const literal of ['Lägg till aktivitet', 'Ersätt hela dagen', 'Spara dagen som mall']) {
       assert.doesNotMatch(codeOnly, new RegExp(literal), `"${literal}" must be an i18n key, not a hardcoded literal in code`);
     }
+  });
+
+  it('inline create: create row only for non-empty trimmed name without exact match', () => {
+    const src = read(MODULE);
+    assert.match(src, /function normalizeActivityName/);
+    assert.match(src, /function activityNameKey/);
+    assert.match(src, /function findExactActivityMatch/);
+    assert.match(src, /function shouldShowCreateRow/);
+    const showBody = src.slice(src.indexOf('function shouldShowCreateRow'), src.indexOf('function timeGroupFromSection'));
+    assert.match(showBody, /normalizeActivityName\(query\)/);
+    assert.match(showBody, /if \(!name\) return false/);
+    assert.match(showBody, /findExactActivityMatch/);
+    const picker = src.slice(src.indexOf('function renderActivityPicker'), src.indexOf('function renderActivityStep'));
+    assert.match(picker, /shouldShowCreateRow\(activityState\.query/);
+    assert.match(picker, /selectPendingCreate/);
+    assert.match(picker, /libraryAutoSaveNote/);
+    assert.doesNotMatch(picker, /template\.noneMine/);
+    assert.match(picker, /activity\.noneFound/);
+    assert.match(picker, /activity\.noneYet/);
+  });
+
+  it('inline create: new activity creates once at Save then applies', () => {
+    const src = read(MODULE);
+    const createFn = src.slice(src.indexOf('async function createFamilyActivity'), src.indexOf('async function submitActivity'));
+    assert.match(createFn, /apiFetch\('\/api\/activities'/);
+    assert.match(createFn, /method:\s*'POST'/);
+    const submit = src.slice(src.indexOf('async function submitActivity'), src.indexOf('const templateState'));
+    const createIdx = submit.indexOf('createFamilyActivity(');
+    const applyIdx = submit.indexOf('ScheduleApplyClient.applyActivity');
+    assert.ok(createIdx > -1 && applyIdx > createIdx, 'create runs before apply');
+    assert.match(submit, /createdUnappliedId \|\| activityState\.templateId/);
+    assert.match(submit, /createFamilyActivity\(stagedName\)/);
+    assert.match(submit, /if \(!created\.ok \|\| !created\.data\.id\)/);
+    assert.match(submit, /createdUnappliedId = templateId/);
+    assert.match(submit, /loadTemplates/);
+    assert.match(submit, /loadScheduleForDay|afterSuccessfulMutation/);
+    assert.doesNotMatch(submit, /\/api\/activities\/\$\{/);
+  });
+
+  it('inline create: existing exact match is reused with zero create requests', () => {
+    const src = read(MODULE);
+    const filterBody = src.slice(src.indexOf('function filterActivity'), src.indexOf('function selectActivity'));
+    assert.match(filterBody, /findExactActivityMatch\(allTemplates, q\)/);
+    assert.match(filterBody, /activityState\.templateId = match\.id/);
+    const helpers = src.slice(src.indexOf('function findExactActivityMatch'), src.indexOf('function shouldShowCreateRow'));
+    assert.match(helpers, /activityNameKey\(tpl\.name\) === key/);
+    const submit = src.slice(src.indexOf('async function submitActivity'), src.indexOf('const templateState'));
+    const createGuard = submit.slice(0, submit.indexOf('createFamilyActivity'));
+    assert.match(createGuard, /createdUnappliedId \|\| activityState\.templateId/);
+    assert.match(createGuard, /findExactActivityMatch\(allTemplates, stagedName\)/);
+    assert.match(createGuard, /if \(!templateId && shouldShowCreateRow\(stagedName/);
+  });
+
+  it('inline create: match is trim + case-insensitive; whitespace-only never creates', () => {
+    const src = read(MODULE);
+    const normalize = src.slice(src.indexOf('function normalizeActivityName'), src.indexOf('function activityNameKey'));
+    assert.match(normalize, /\.trim\(\)/);
+    const keyFn = src.slice(src.indexOf('function activityNameKey'), src.indexOf('function findExactActivityMatch'));
+    assert.match(keyFn, /\.toLowerCase\(\)/);
+    const showBody = src.slice(src.indexOf('function shouldShowCreateRow'), src.indexOf('function timeGroupFromSection'));
+    assert.match(showBody, /if \(!name\) return false/);
+    const submit = src.slice(src.indexOf('async function submitActivity'), src.indexOf('const templateState'));
+    assert.match(submit, /shouldShowCreateRow\(stagedName, allTemplates\)/);
+  });
+
+  it('inline create: create failure does not apply; apply failure keeps id for retry', () => {
+    const src = read(MODULE);
+    const submit = src.slice(src.indexOf('async function submitActivity'), src.indexOf('const templateState'));
+    const beforeApply = submit.slice(0, submit.indexOf('ScheduleApplyClient.applyActivity'));
+    assert.match(beforeApply, /if \(!created\.ok \|\| !created\.data\.id\)/);
+    assert.match(beforeApply, /return;/);
+    assert.match(submit, /activityState\.createdUnappliedId = templateId/);
+    assert.match(submit, /activity\.applyFailed/);
+    const afterFail = submit.slice(submit.indexOf('if (!ok)'), submit.indexOf('activityState.createdUnappliedId = null'));
+    assert.match(afterFail, /return;/);
+    assert.doesNotMatch(afterFail, /createdUnappliedId = null/);
+    const createGuard = submit.slice(0, submit.indexOf('createFamilyActivity'));
+    assert.match(createGuard, /createdUnappliedId/);
+    assert.doesNotMatch(src, /DELETE \/api\/activities/);
+  });
+
+  it('inline create: existing add-activity path still applies selected templates', () => {
+    const src = read(MODULE);
+    assert.match(src, /function selectActivity\(id\)/);
+    assert.match(src, /ScheduleApplyClient\.applyActivity\(currentChildId/);
+    assert.match(src, /activity\.added/);
+    const submit = src.slice(src.indexOf('async function submitActivity'), src.indexOf('const templateState'));
+    assert.match(submit, /createdThisSave \? 'schedule\.addMenu\.activity\.createdAndAdded' : 'schedule\.addMenu\.activity\.added'/);
+  });
+
+  it('inline create: Copy Day path is unchanged and does not create activities', () => {
+    const src = read(MODULE);
+    const copyDay = src.slice(src.indexOf('function openCopyDay'), src.indexOf('function openSaveAsTemplate'));
+    assert.ok(copyDay.length > 200, 'copy-day slice includes open + submit handlers');
+    assert.match(copyDay, /ScheduleApplyClient\.copyDay/, 'copy day still applies via ScheduleApplyClient');
+    assert.doesNotMatch(copyDay, /createFamilyActivity/, 'copy day does not create activities');
+    assert.doesNotMatch(copyDay, /pendingNewName/, 'copy day does not use inline-create state');
+    assert.match(src, /function openCopyDay/);
+    assert.match(src, /function submitCopyDay/);
   });
 });
