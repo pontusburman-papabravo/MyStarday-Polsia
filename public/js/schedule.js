@@ -806,6 +806,8 @@ function renderItem(item) {
     ? ScheduleDirectEdit.timeChipHtml(item)
     : (timeStr ? `<div class="text-xs text-text-soft">${timeStr}</div>` : '');
   const timeEditor = window.ScheduleDirectEdit ? ScheduleDirectEdit.timeEditorHtml(item) : '';
+  const sectionChip = window.ScheduleSectionEdit ? ScheduleSectionEdit.sectionChipHtml(item) : '';
+  const sectionEditor = window.ScheduleSectionEdit ? ScheduleSectionEdit.sectionEditorHtml(item) : '';
   const removeBtn = `<button type="button" data-id="${item.id}" onclick="event.stopPropagation(); removeItem('${item.id}')"
             class="action-btn action-btn-remove p-2 rounded-lg transition-colors text-text-soft" title="${spt('schedule.actions.removeFromSchedule')}" aria-label="${spt('schedule.actions.removeFromSchedule')}">✕</button>`;
   const steps = Array.isArray(item.sub_steps) ? item.sub_steps : [];
@@ -834,7 +836,10 @@ function renderItem(item) {
         ${oncePin}
         <div class="flex-1 min-w-0">
           ${nameBtn}
-          ${timeChip}
+          <div class="flex items-center gap-2 flex-wrap">
+            ${sectionChip}
+            ${timeChip}
+          </div>
         </div>
         ${hasSubSteps && (onceTplId || item.activity_template_id) ? `<button onclick="toggleScheduleSubSteps('${onceTplId || item.activity_template_id}', this)" class="text-[10px] bg-lavender text-navy px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0 flex items-center gap-0.5 hover:bg-purple-200 transition-colors" title="${spt('schedule.actions.toggleSubsteps')}"><span>${spt('schedule.actions.substepsCount', { count: subCount })}</span><span class="chevron-icon ml-0.5">▸</span></button>` : ''}
         ${removeBtn}
@@ -851,6 +856,7 @@ function renderItem(item) {
           </div>
         </div>
       </div>
+      ${sectionEditor}
       ${timeEditor}
       ${subStepsHtml}
     </div>`;
