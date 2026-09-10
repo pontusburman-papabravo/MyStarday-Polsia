@@ -36,6 +36,7 @@ const CRITICAL_INTEGRATION = [
   'test/iap-app-review-eligibility.test.js',
   'test/standard-library-v11-foundation.test.js',
   'test/support-reply-token.integration.test.js',
+  'test/acquisition-register-attribution.integration.test.js',
 ];
 
 const CRITICAL_UNIT = [

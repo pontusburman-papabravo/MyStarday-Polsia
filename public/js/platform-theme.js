@@ -71,7 +71,7 @@
           try {
             loggedIn = !!localStorage.getItem('stjarndag_user');
           } catch (_) {}
-          window.location.replace(loggedIn ? '/dashboard' : '/login');
+          window.location.replace((loggedIn ? '/dashboard' : '/login') + location.search + location.hash);
           return;
         }
       } catch (_) {}

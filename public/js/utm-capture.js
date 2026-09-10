@@ -85,13 +85,13 @@
       if (!merged.platform) merged.platform = incoming.platform;
       if (!merged.landing_locale) merged.landing_locale = incoming.landing_locale;
       if (!merged.captured_at) merged.captured_at = new Date().toISOString();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
     } catch (_) {}
   }
 
   function getRaw() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = window.localStorage.getItem(STORAGE_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch (_) {
       return null;
@@ -120,7 +120,7 @@
 
   function clear() {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      window.localStorage.removeItem(STORAGE_KEY);
     } catch (_) {}
   }
 
@@ -139,6 +139,27 @@
     };
   }
 
+  const ATTR_KEYS = [
+    'utm_source',
+    'utm_medium',
+    'utm_campaign',
+    'utm_content',
+    'utm_term',
+    'platform',
+    'landing_locale',
+    'first_touch_at',
+  ];
+
+  /** Fill missing attribution keys on an existing register/OAuth payload. */
+  function applyToPayload(body) {
+    const payload = body && typeof body === 'object' ? body : {};
+    const attr = toRegisterFields();
+    ATTR_KEYS.forEach(function (key) {
+      if (attr[key] && !payload[key]) payload[key] = attr[key];
+    });
+    return payload;
+  }
+
   capture();
 
   window.UtmCapture = {
@@ -146,6 +167,7 @@
     clear: clear,
     capture: capture,
     toRegisterFields: toRegisterFields,
+    applyToPayload: applyToPayload,
     detectPlatform: detectPlatform,
   };
 })();

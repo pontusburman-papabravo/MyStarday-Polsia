@@ -16,13 +16,13 @@ describe('Native startup + family fast path', () => {
     const theme = read('public/js/platform-theme.js');
     assert.doesNotMatch(theme, /native_landing_redirected/);
     assert.match(theme, /stjarndag_user/);
-    assert.match(theme, /location\.replace\(loggedIn \? '\/dashboard' : '\/login'\)/);
+    assert.match(theme, /location\.replace\(\(loggedIn \? '\/dashboard' : '\/login'\) \+ location\.search \+ location\.hash\)/);
   });
 
   it('platform-html injects early native redirect to authoritative entry surface', () => {
     const html = read('src/middleware/platform-html.js');
     assert.doesNotMatch(html, /stjarndag_user/);
-    assert.match(html, /location\.replace\("\/home"\)/);
+    assert.match(html, /location\.replace\("\/home"\+location\.search\+location\.hash\)/);
   });
 
   it('family init shows cached data immediately after successful fetch', () => {

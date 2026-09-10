@@ -30,6 +30,9 @@
         payload.terms_accepted = true;
       }
     }
+    if (window.UtmCapture && typeof window.UtmCapture.applyToPayload === 'function') {
+      payload = window.UtmCapture.applyToPayload(payload);
+    }
     return payload;
   }
 

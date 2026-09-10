@@ -57,7 +57,15 @@
         "src/lib/support-security-headers.js",
         "src/lib/support-escalation.js",
         "src/routes/support-follow-up.js",
-        "db/contact-message-reply-tokens.js"
+        "db/contact-message-reply-tokens.js",
+        "public/js/utm-capture.js",
+        "public/js/oauth-registration-payload.js",
+        "src/lib/acquisition-attribution.js",
+        "db/family-acquisition-attribution.js",
+        "src/middleware/platform-html.js",
+        "test/acquisition-attribution.test.js",
+        "test/utm-attribution.test.js",
+        "test/acquisition-register-attribution.integration.test.js"
       ],
       "l1Tests": [
         "test/auth.test.js",
@@ -66,6 +74,9 @@
         "test/register-form-gate.test.js",
         "test/register-oauth-country-gate.test.js",
         "test/register-language-displayed.test.js",
+        "test/acquisition-attribution.test.js",
+        "test/utm-attribution.test.js",
+        "test/acquisition-register-attribution.integration.test.js",
         "test/apple-auth-siwa-invariants.test.js",
         "test/apple-auth-token-revoke.test.js",
         "test/apple-refresh-token-exposure.test.js",
@@ -315,6 +326,7 @@
         "scripts/build-android*.mjs",
         "scripts/prepare-*-native.mjs",
         "public/js/platform.js",
+        "public/js/platform-theme.js",
         "public/sw.js",
         "config/cache-version.json"
       ],
@@ -323,7 +335,8 @@
         "test/platform-runtime-flag.test.js",
         "test/capacitor-webview-background.test.js",
         "test/android-app-links-patch.test.js",
-        "test/android-aab-release-gate.test.js"
+        "test/android-aab-release-gate.test.js",
+        "test/native-startup-family.test.js"
       ],
       "testGlobs": [
         "test/*ios*.test.js",
