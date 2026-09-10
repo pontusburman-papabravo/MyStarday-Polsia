@@ -230,8 +230,9 @@
 
   function afterSuccessfulMutation() {
     if (typeof window.loadScheduleForDay === 'function' && currentChildId) {
-      loadScheduleForDay();
+      return loadScheduleForDay();
     }
+    return undefined;
   }
 
   // ── 1) Aktivitet ─────────────────────────────────────────────────────────
@@ -285,6 +286,7 @@
     }
     renderActivityStep();
     showModal();
+    restoreSearchFocus();
   }
 
   /**
@@ -309,6 +311,7 @@
     if (typeof dayOfWeek === 'number') activityState.days = new Set([dayOfWeek]);
     if (section) activityState.section = section;
     renderActivityStep();
+    restoreSearchFocus();
   }
 
   function renderActivityPicker(templates, filtered) {
@@ -491,6 +494,7 @@
 
     activitySubmitInFlight = true;
     setPending('samActivitySaveBtn', true);
+    let restoreNextEntryFocus = false;
     try {
       let templateId = activityState.createdUnappliedId || activityState.templateId;
       let displayName = activityState.createdUnappliedName || '';
@@ -575,11 +579,16 @@
       renderActivityStep();
       const statusEl = document.getElementById('samActivityStatus');
       if (statusEl) statusEl.textContent = successMsg;
-      restoreSearchFocus();
-      afterSuccessfulMutation();
+      restoreNextEntryFocus = true;
+      try {
+        await afterSuccessfulMutation();
+      } catch (_refreshErr) {
+        /* schedule refresh must not block the next name */
+      }
     } finally {
       activitySubmitInFlight = false;
       setPending('samActivitySaveBtn', false);
+      if (restoreNextEntryFocus) restoreSearchFocus();
     }
   }
 

@@ -331,8 +331,12 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
     const success = submit.slice(submit.indexOf('resetActivityForNextEntry()'));
     assert.match(success, /resetActivityForNextEntry\(\)/);
     assert.match(success, /renderActivityStep\(\)/);
+    assert.match(success, /await afterSuccessfulMutation\(\)/);
     assert.match(success, /restoreSearchFocus\(\)/);
-    assert.match(success, /afterSuccessfulMutation\(\)/);
+    assert.ok(
+      success.lastIndexOf('setPending(\'samActivitySaveBtn\', false)') < success.lastIndexOf('restoreSearchFocus()'),
+      'search focus must be restored after Save is re-enabled, not before the mutation path'
+    );
     assert.doesNotMatch(success, /closeAddMenu\(\)/);
     const createFail = submit.slice(0, submit.indexOf('ScheduleApplyClient.applyActivity'));
     assert.doesNotMatch(createFail, /resetActivityForNextEntry\(\)/);
@@ -438,10 +442,10 @@ function createRapidEntrySandbox(opts = {}) {
       children: [],
       textContent: '',
       value: '',
-      disabled: false,
       selectionStart: 0,
       attributes: {},
       _innerHTML: '',
+      _disabled: false,
       setAttribute(name, value) {
         this.attributes[name] = String(value);
         if (name === 'id') {
@@ -458,6 +462,16 @@ function createRapidEntrySandbox(opts = {}) {
         return child;
       },
     };
+    Object.defineProperty(el, 'disabled', {
+      get() { return el._disabled; },
+      set(value) {
+        const wasDisabled = el._disabled;
+        el._disabled = Boolean(value);
+        if (wasDisabled && !el._disabled && el.id === 'samActivitySaveBtn') {
+          el.focus();
+        }
+      },
+    });
     Object.defineProperty(el, 'classList', { get() { return createClassList(el); } });
     Object.defineProperty(el, 'innerHTML', {
       get() { return el._innerHTML; },
@@ -485,6 +499,9 @@ function createRapidEntrySandbox(opts = {}) {
     createElement: (tag) => makeEl(tag),
     addEventListener() {},
   };
+  Object.defineProperty(document, 'activeElement', {
+    get() { return (focusedId && byId.get(focusedId)) || body; },
+  });
 
   const sandbox = {
     console,
@@ -494,7 +511,11 @@ function createRapidEntrySandbox(opts = {}) {
     currentDay: opts.day == null ? 5 : opts.day,
     allTemplates: opts.templates || [{ id: 'tpl-middag', name: 'Middag', icon: '🍽️' }],
     loadTemplates: async () => {},
-    loadScheduleForDay: () => { sandbox.scheduleReloads += 1; },
+    loadScheduleForDay: async () => {
+      sandbox.scheduleReloads += 1;
+      const steal = document.getElementById('samActivitySaveBtn');
+      if (steal) steal.focus();
+    },
     scheduleReloads: 0,
     showToast(msg, isError) { toasts.push({ msg, isError: Boolean(isError) }); },
     pt(key, params) {
@@ -606,10 +627,30 @@ describe('Rapid Entry — executable Activity submit', () => {
     assert.equal(harness.applyCalls[0].payload.startTime, '18:00');
     assert.equal(harness.applyCalls[0].payload.endTime, '18:30');
     assert.equal(harness.modalHidden(), false);
-    assert.equal(harness.focused(), 'samActivitySearch');
+    assert.equal(harness.sandbox.document.activeElement.id, 'samActivitySearch');
     assert.equal(harness.sandbox.document.getElementById('samActivitySearch').value, '');
+    assert.equal(harness.sandbox.scheduleReloads, 1);
     assert.match(harness.toasts[0].msg, /activity\.added/);
     assert.equal(harness.toasts[0].isError, false);
+  });
+
+  it('keeps document.activeElement on #samActivitySearch after the mutation refresh completes', async () => {
+    const harness = createRapidEntrySandbox();
+    const { ScheduleAddMenu, document } = harness.sandbox;
+    await ScheduleAddMenu.openActivityForDay(5, 'kvall');
+    ScheduleAddMenu.selectActivity('tpl-middag');
+    await ScheduleAddMenu.submitActivity();
+
+    assert.equal(harness.sandbox.scheduleReloads, 1, 'background schedule refresh must run');
+    assert.equal(document.activeElement && document.activeElement.id, 'samActivitySearch');
+    assert.equal(document.getElementById('samActivitySearch').value, '');
+
+    ScheduleAddMenu.filterActivity('Läkemedel');
+    ScheduleAddMenu.selectPendingCreate();
+    await ScheduleAddMenu.submitActivity();
+    assert.equal(harness.applyCalls.length, 2);
+    assert.equal(document.activeElement && document.activeElement.id, 'samActivitySearch');
+    assert.equal(harness.sandbox.scheduleReloads, 2);
   });
 
   it('creates a new activity once, applies once, and starts the next entry empty', async () => {
