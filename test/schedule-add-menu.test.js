@@ -283,8 +283,9 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
     assert.match(beforeApply, /return;/);
     assert.match(submit, /activityState\.createdUnappliedId = templateId/);
     assert.match(submit, /activity\.applyFailed/);
-    const afterFail = submit.slice(submit.indexOf('if (!ok)'), submit.indexOf('activityState.createdUnappliedId = null'));
+    const afterFail = submit.slice(submit.indexOf('if (!ok)'), submit.indexOf('resetActivityForNextEntry()'));
     assert.match(afterFail, /return;/);
+    assert.doesNotMatch(afterFail, /resetActivityForNextEntry\(\)/);
     assert.doesNotMatch(afterFail, /createdUnappliedId = null/);
     const createGuard = submit.slice(0, submit.indexOf('createFamilyActivity'));
     assert.match(createGuard, /createdUnappliedId/);
@@ -309,5 +310,89 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
     assert.doesNotMatch(copyDay, /pendingNewName/, 'copy day does not use inline-create state');
     assert.match(src, /function openCopyDay/);
     assert.match(src, /function submitCopyDay/);
+  });
+
+  it('rapid entry: successful Activity save stays open and resets for the next name', () => {
+    const src = read(MODULE);
+    assert.match(src, /function resetActivityForNextEntry/);
+    const helper = src.slice(src.indexOf('function resetActivityForNextEntry'), src.indexOf('async function openActivity'));
+    assert.match(helper, /resetActivityCreateState\(\)/);
+    assert.match(helper, /activityState\.query = ''/);
+    assert.match(helper, /activityState\.days = days/);
+    assert.match(helper, /activityState\.section = section/);
+    assert.match(helper, /activityState\.startTime = startTime/);
+    assert.match(helper, /activityState\.endTime = endTime/);
+    assert.match(helper, /opTracker\.reset\(\)/);
+    const submit = src.slice(src.indexOf('async function submitActivity'), src.indexOf('const templateState'));
+    const success = submit.slice(submit.indexOf('resetActivityForNextEntry()'));
+    assert.match(success, /resetActivityForNextEntry\(\)/);
+    assert.match(success, /renderActivityStep\(\)/);
+    assert.match(success, /restoreSearchFocus\(\)/);
+    assert.match(success, /afterSuccessfulMutation\(\)/);
+    assert.doesNotMatch(success, /closeAddMenu\(\)/);
+    const createFail = submit.slice(0, submit.indexOf('ScheduleApplyClient.applyActivity'));
+    assert.doesNotMatch(createFail, /resetActivityForNextEntry\(\)/);
+  });
+
+  it('rapid entry: submit mutex blocks a second in-flight Activity save', () => {
+    const src = read(MODULE);
+    assert.match(src, /let activitySubmitInFlight = false/);
+    const submit = src.slice(src.indexOf('async function submitActivity'), src.indexOf('const templateState'));
+    assert.match(submit, /if \(activitySubmitInFlight\) return;/);
+    assert.match(submit, /activitySubmitInFlight = true/);
+    assert.match(submit, /finally \{\s*activitySubmitInFlight = false/s);
+    assert.doesNotMatch(submit, /setTimeout\(|debounce/);
+  });
+
+  it('rapid entry: two sequential saves reset opTracker so the second apply is a new command', () => {
+    const src = read(MODULE);
+    const helper = src.slice(src.indexOf('function resetActivityForNextEntry'), src.indexOf('async function openActivity'));
+    assert.match(helper, /opTracker\.reset\(\)/);
+    const submit = src.slice(src.indexOf('async function submitActivity'), src.indexOf('const templateState'));
+    const resetIdx = submit.indexOf('resetActivityForNextEntry()');
+    const applyIdx = submit.indexOf('ScheduleApplyClient.applyActivity');
+    assert.ok(resetIdx > applyIdx, 'opTracker reset happens after a successful apply, not before');
+    assert.doesNotMatch(submit.slice(submit.indexOf('if (!ok)'), resetIdx), /opTracker\.reset\(\)/);
+  });
+
+  it('rapid entry: Template and Copy Day still close on success', () => {
+    const src = read(MODULE);
+    const templateSuccess = src.slice(src.indexOf('async function doSubmitTemplate'), src.indexOf('function openCopyDay'));
+    assert.match(templateSuccess, /closeAddMenu\(\)/);
+    assert.doesNotMatch(templateSuccess, /resetActivityForNextEntry\(\)/);
+    const copySuccess = src.slice(src.indexOf('async function doSubmitCopyDay'), src.indexOf('function openSaveAsTemplate'));
+    assert.match(copySuccess, /closeAddMenu\(\)/);
+    assert.doesNotMatch(copySuccess, /resetActivityForNextEntry\(\)/);
+  });
+
+  it('rapid entry: child switch closes the Activity modal instead of applying to the wrong child', () => {
+    const src = read(MODULE);
+    assert.match(src, /let activityContextChildId = null/);
+    assert.match(src, /activityContextChildId = currentChildId/);
+    assert.match(src, /function closeIfChildContextChanged/);
+    assert.match(src, /function bindChildContextGuards/);
+    assert.match(src, /window\.selectChild = wrappedSelectChild/);
+    assert.match(src, /window\.backToChildrenList = wrappedBackToChildren/);
+    const submit = src.slice(src.indexOf('async function submitActivity'), src.indexOf('const templateState'));
+    assert.match(submit, /currentChildId !== activityContextChildId/);
+    assert.match(submit, /activity\.childChanged/);
+    const applySlice = submit.slice(submit.lastIndexOf('if (!currentChildId || currentChildId !== activityContextChildId)'), submit.indexOf('ScheduleApplyClient.applyActivity'));
+    assert.match(applySlice, /closeAddMenu\(\)/);
+    assert.doesNotMatch(applySlice, /applyActivity\(/);
+  });
+
+  it('rapid entry: 375px Activity modal keeps a sticky Save footer and Escape still closes', () => {
+    const src = read(MODULE);
+    const html = read(HTML);
+    assert.match(src, /sam-activity-shell/);
+    assert.match(src, /sam-activity-scroll/);
+    assert.match(src, /sam-activity-footer/);
+    assert.match(src, /id="samActivitySaveBtn"/);
+    assert.match(src, /aria-labelledby',\s*'scheduleAddMenuTitle'/);
+    assert.match(src, /aria-live="polite"/);
+    assert.match(html, /#scheduleAddMenuModal \.sam-activity-footer/);
+    assert.match(html, /100dvh/);
+    assert.match(src, /'Escape'/);
+    assert.match(src, /ScheduleAddMenu\.close\(\)/);
   });
 });

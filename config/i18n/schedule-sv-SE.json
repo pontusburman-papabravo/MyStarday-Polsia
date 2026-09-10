@@ -581,7 +581,8 @@
       "createFailed": "Kunde inte skapa aktiviteten. Försök igen.",
       "applyFailed": "Aktiviteten sparades, men schemat kunde inte uppdateras. Försök spara igen.",
       "added": "\"{{name}}\" tillagt på {{count}} dag(ar)",
-      "createdAndAdded": "\"{{name}}\" skapad och tillagd på {{count}} dag(ar)"
+      "createdAndAdded": "\"{{name}}\" skapad och tillagd på {{count}} dag(ar)",
+      "childChanged": "Barnet byttes. Öppna Lägg till igen för det barn du vill ändra."
     },
     "template": {
       "title": "Från mall",

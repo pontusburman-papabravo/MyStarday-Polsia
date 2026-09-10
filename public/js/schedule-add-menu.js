@@ -2,9 +2,12 @@
  * "+ Lägg till" — Phase 1B primary Weekly Schedule action (Aktivitet / Från mall / Kopiera dag)
  * plus the "Spara dagen som mall" day action.
  *
- * Planner inline create v1: Aktivitet can select an existing family activity or stage a new
- * name (`+ Skapa "<namn>"`). Creation is delayed until final Save (`POST /api/activities`),
- * then the existing apply-activity path runs. Retry after apply-failure reuses the created id.
+ * Planner inline create v1 + Rapid Entry: Aktivitet can select an existing family activity
+ * or stage a new name (`+ Skapa "<namn>"`). Creation is delayed until final Save
+ * (`POST /api/activities`), then the existing apply-activity path runs. Retry after
+ * apply-failure reuses the created id. After a successful apply the Activity modal stays
+ * open so the next name can be typed immediately (days/section/time preserved). Template
+ * and Copy Day still close on success — do not change closeAddMenu() globally.
  *
  * Reads globals from schedule.js (currentChildId, currentDay, allTemplates, loadTemplates,
  * loadScheduleForDay) the same way schedule-special-days.js / schedule-activity-modals.js do —
@@ -54,6 +57,8 @@
   }
 
   const opTracker = window.ScheduleApplyClient ? ScheduleApplyClient.createOperationTracker() : null;
+  let activitySubmitInFlight = false;
+  let activityContextChildId = null;
 
   // ── Modal shell (one shared container, step-based) ─────────────────────────
 
@@ -62,11 +67,14 @@
     if (modal) return modal;
     modal = document.createElement('div');
     modal.id = 'scheduleAddMenuModal';
-    modal.className = 'hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
+    modal.className = 'sam-add-modal hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'scheduleAddMenuTitle');
     modal.innerHTML = `
-      <div class="bg-white rounded-2xl p-6 max-w-md w-full max-h-[85vh] overflow-y-auto" id="scheduleAddMenuBody"></div>`;
+      <div class="bg-white rounded-2xl max-w-md w-full shadow-xl" id="scheduleAddMenuPanel">
+        <div class="p-6" id="scheduleAddMenuBody"></div>
+      </div>`;
     modal.addEventListener('mousedown', (ev) => {
       if (ev.target === modal) closeAddMenu();
     });
@@ -86,6 +94,8 @@
   function closeAddMenu() {
     const modal = document.getElementById('scheduleAddMenuModal');
     if (modal) modal.classList.add('hidden');
+    activitySubmitInFlight = false;
+    activityContextChildId = null;
     if (opTracker) opTracker.reset();
   }
 
@@ -130,7 +140,7 @@
     if (!currentChildId) return;
     bodyEl().innerHTML = `
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xl font-heading font-bold text-navy">${t('schedule.addMenu.title')}</h3>
+        <h3 id="scheduleAddMenuTitle" class="text-xl font-heading font-bold text-navy">${t('schedule.addMenu.title')}</h3>
         <button type="button" onclick="ScheduleAddMenu.close()" class="${TOUCH_BTN} flex items-center justify-center text-text-soft hover:text-navy" aria-label="${t('schedule.addMenu.close')}">✕</button>
       </div>
       <div class="space-y-3">
@@ -245,7 +255,25 @@
     activityState.createdUnappliedName = '';
   }
 
+  function resetActivityForNextEntry() {
+    const days = activityState.days;
+    const section = activityState.section;
+    const startTime = activityState.startTime;
+    const endTime = activityState.endTime;
+    resetActivityCreateState();
+    activityState.query = '';
+    activityState.days = days;
+    activityState.section = section;
+    activityState.startTime = startTime;
+    activityState.endTime = endTime;
+    activitySubmitInFlight = false;
+    if (opTracker) opTracker.reset();
+  }
+
   async function openActivity() {
+    if (!currentChildId) return;
+    activityContextChildId = currentChildId;
+    activitySubmitInFlight = false;
     resetActivityCreateState();
     activityState.days = new Set([currentDay || 1]);
     activityState.section = 'dag';
@@ -294,6 +322,7 @@
 
     return `
       <input type="text" id="samActivitySearch" value="${escHtml(activityState.query)}" placeholder="${t('schedule.addMenu.activity.pickActivityPlaceholder')}"
+        aria-label="${t('schedule.addMenu.activity.pickActivityPlaceholder')}"
         class="${TOUCH_BTN} w-full px-3 py-2 border-2 border-lavender rounded-xl text-sm mb-2" oninput="ScheduleAddMenu.filterActivity(this.value)" />
       ${showCreate ? `
         <button type="button" onclick="ScheduleAddMenu.selectPendingCreate()"
@@ -303,7 +332,7 @@
         <p class="text-xs text-text-soft mb-3">${t('schedule.addMenu.activity.libraryAutoSaveNote')}</p>` : ''}
       <div class="max-h-40 overflow-y-auto space-y-1 mb-4" id="samActivityList">
         ${filtered.length === 0 ? `<p class="text-sm text-text-soft py-2">${escHtml(emptyCopy)}</p>` : filtered.map((tpl) => `
-          <button type="button" onclick="ScheduleAddMenu.selectActivity('${tpl.id}')" class="${TOUCH_BTN} w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors ${activityState.templateId === tpl.id ? 'bg-sky border-2 border-gold' : 'border-2 border-transparent hover:bg-sky'}">
+          <button type="button" onclick="ScheduleAddMenu.selectActivity('${tpl.id}')" aria-pressed="${activityState.templateId === tpl.id}" class="${TOUCH_BTN} w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors ${activityState.templateId === tpl.id ? 'bg-sky border-2 border-gold' : 'border-2 border-transparent hover:bg-sky'}">
             <span class="text-xl" aria-hidden="true">${tpl.icon || '📌'}</span>
             <span class="font-semibold text-sm text-navy truncate">${escHtml(tpl.name)}</span>
           </button>`).join('')}
@@ -319,37 +348,44 @@
     ];
 
     bodyEl().innerHTML = `
-      <div class="flex items-center justify-between mb-4">
-        <button type="button" onclick="ScheduleAddMenu.openMenu()" class="${TOUCH_BTN} text-text-soft hover:text-navy text-sm font-semibold">${t('schedule.addMenu.back')}</button>
-        <button type="button" onclick="ScheduleAddMenu.close()" class="${TOUCH_BTN} flex items-center justify-center text-text-soft hover:text-navy" aria-label="${t('schedule.addMenu.close')}">✕</button>
-      </div>
-      <h3 class="text-lg font-heading font-bold text-navy mb-3">${t('schedule.addMenu.activity.title')}</h3>
+      <div class="sam-activity-shell">
+        <div class="sam-activity-scroll">
+          <div class="flex items-center justify-between mb-4">
+            <button type="button" onclick="ScheduleAddMenu.openMenu()" class="${TOUCH_BTN} text-text-soft hover:text-navy text-sm font-semibold">${t('schedule.addMenu.back')}</button>
+            <button type="button" onclick="ScheduleAddMenu.close()" class="${TOUCH_BTN} flex items-center justify-center text-text-soft hover:text-navy" aria-label="${t('schedule.addMenu.close')}">✕</button>
+          </div>
+          <h3 id="scheduleAddMenuTitle" class="text-lg font-heading font-bold text-navy mb-3">${t('schedule.addMenu.activity.title')}</h3>
 
-      <p class="text-xs font-semibold text-navy uppercase tracking-wide mb-2">${t('schedule.addMenu.activity.pickActivity')}</p>
-      ${renderActivityPicker(templates, filtered)}
+          <p class="text-xs font-semibold text-navy uppercase tracking-wide mb-2">${t('schedule.addMenu.activity.pickActivity')}</p>
+          ${renderActivityPicker(templates, filtered)}
 
-      <p class="text-xs font-semibold text-navy uppercase tracking-wide mb-2">${t('schedule.addMenu.activity.pickDays')}</p>
-      <div class="mb-4">${renderWeekdayChips(activityState.days, 'ScheduleAddMenu.toggleActivityDay')}</div>
+          <p class="text-xs font-semibold text-navy uppercase tracking-wide mb-2">${t('schedule.addMenu.activity.pickDays')}</p>
+          <div class="mb-4">${renderWeekdayChips(activityState.days, 'ScheduleAddMenu.toggleActivityDay')}</div>
 
-      <p class="text-xs font-semibold text-navy uppercase tracking-wide mb-2">${t('schedule.addMenu.activity.pickSection')}</p>
-      <div class="flex gap-2 flex-wrap mb-4">
-        ${sections.map((s) => `<button type="button" onclick="ScheduleAddMenu.selectActivitySection('${s.key}')"
-          class="${TOUCH_BTN} px-3 py-2 rounded-xl text-sm font-semibold border-2 ${activityState.section === s.key ? 'bg-navy text-white border-navy' : 'border-lavender text-navy'}">
-          ${s.emoji || ''} ${window.ScheduleCore ? ScheduleCore.sectionName(s.key) : s.key}</button>`).join('')}
-      </div>
+          <p class="text-xs font-semibold text-navy uppercase tracking-wide mb-2">${t('schedule.addMenu.activity.pickSection')}</p>
+          <div class="flex gap-2 flex-wrap mb-4">
+            ${sections.map((s) => `<button type="button" onclick="ScheduleAddMenu.selectActivitySection('${s.key}')"
+              aria-pressed="${activityState.section === s.key}"
+              class="${TOUCH_BTN} px-3 py-2 rounded-xl text-sm font-semibold border-2 ${activityState.section === s.key ? 'bg-navy text-white border-navy' : 'border-lavender text-navy'}">
+              ${s.emoji || ''} ${window.ScheduleCore ? ScheduleCore.sectionName(s.key) : s.key}</button>`).join('')}
+          </div>
 
-      <details class="mb-4">
-        <summary class="text-xs font-semibold text-navy uppercase tracking-wide cursor-pointer">${t('schedule.addMenu.activity.pickTime')}</summary>
-        <div class="flex gap-2 mt-2">
-          <input type="time" value="${activityState.startTime}" onchange="ScheduleAddMenu.setActivityTime('start', this.value)" class="${TOUCH_BTN} flex-1 px-2 py-2 border-2 border-lavender rounded-xl text-sm" />
-          <input type="time" value="${activityState.endTime}" onchange="ScheduleAddMenu.setActivityTime('end', this.value)" class="${TOUCH_BTN} flex-1 px-2 py-2 border-2 border-lavender rounded-xl text-sm" />
+          <details class="mb-4">
+            <summary class="text-xs font-semibold text-navy uppercase tracking-wide cursor-pointer">${t('schedule.addMenu.activity.pickTime')}</summary>
+            <div class="flex gap-2 mt-2">
+              <input type="time" value="${activityState.startTime}" onchange="ScheduleAddMenu.setActivityTime('start', this.value)" class="${TOUCH_BTN} flex-1 px-2 py-2 border-2 border-lavender rounded-xl text-sm" />
+              <input type="time" value="${activityState.endTime}" onchange="ScheduleAddMenu.setActivityTime('end', this.value)" class="${TOUCH_BTN} flex-1 px-2 py-2 border-2 border-lavender rounded-xl text-sm" />
+            </div>
+          </details>
         </div>
-      </details>
-
-      <p id="samActivityError" class="text-sm text-red-600 mb-2 hidden"></p>
-      <div class="flex gap-3">
-        <button type="button" onclick="ScheduleAddMenu.close()" class="${TOUCH_BTN} flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold text-sm">${t('schedule.addMenu.cancel')}</button>
-        <button type="button" id="samActivitySaveBtn" onclick="ScheduleAddMenu.submitActivity()" class="${TOUCH_BTN} flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm">${t('schedule.addMenu.save')}</button>
+        <div class="sam-activity-footer" id="samActivityFooter">
+          <p id="samActivityStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+          <p id="samActivityError" class="text-sm text-red-600 mb-2 hidden"></p>
+          <div class="flex gap-3">
+            <button type="button" onclick="ScheduleAddMenu.close()" class="${TOUCH_BTN} flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold text-sm">${t('schedule.addMenu.cancel')}</button>
+            <button type="button" id="samActivitySaveBtn" onclick="ScheduleAddMenu.submitActivity()" class="${TOUCH_BTN} flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm">${t('schedule.addMenu.save')}</button>
+          </div>
+        </div>
       </div>`;
   }
 
@@ -437,87 +473,114 @@
   }
 
   async function submitActivity() {
+    if (activitySubmitInFlight) return;
     const errEl = document.getElementById('samActivityError');
-    errEl.classList.add('hidden');
+    if (errEl) errEl.classList.add('hidden');
+    if (!currentChildId || currentChildId !== activityContextChildId) {
+      closeAddMenu();
+      showToast(t('schedule.addMenu.activity.childChanged'), true);
+      return;
+    }
     if (activityState.days.size === 0) {
-      errEl.textContent = t('schedule.addMenu.selectAtLeastOneDay');
-      errEl.classList.remove('hidden');
+      if (errEl) {
+        errEl.textContent = t('schedule.addMenu.selectAtLeastOneDay');
+        errEl.classList.remove('hidden');
+      }
       return;
     }
 
-    let templateId = activityState.createdUnappliedId || activityState.templateId;
-    let displayName = activityState.createdUnappliedName || '';
-    let createdThisSave = false;
-    const stagedName = activityState.pendingNewName || normalizeActivityName(activityState.query);
-
-    if (!templateId) {
-      const exact = findExactActivityMatch(allTemplates, stagedName);
-      if (exact) templateId = exact.id;
-    }
-
-    if (!templateId && shouldShowCreateRow(stagedName, allTemplates)) {
-      setPending('samActivitySaveBtn', true);
-      let created;
-      try {
-        created = await createFamilyActivity(stagedName);
-      } catch (_err) {
-        setPending('samActivitySaveBtn', false);
-        errEl.textContent = t('schedule.addMenu.activity.createFailed');
-        errEl.classList.remove('hidden');
-        return;
-      }
-      if (!created.ok || !created.data.id) {
-        setPending('samActivitySaveBtn', false);
-        errEl.textContent = (created.data && created.data.error) || t('schedule.addMenu.activity.createFailed');
-        errEl.classList.remove('hidden');
-        return;
-      }
-      templateId = created.data.id;
-      displayName = created.data.name || stagedName;
-      createdThisSave = true;
-      activityState.createdUnappliedId = templateId;
-      activityState.createdUnappliedName = displayName;
-      activityState.templateId = templateId;
-      activityState.pendingNewName = '';
-      if (typeof window.loadTemplates === 'function') {
-        try { await loadTemplates(); } catch (_refreshErr) { /* apply still uses created id */ }
-      }
-    }
-
-    if (!templateId) {
-      errEl.textContent = t('schedule.addMenu.activity.selectActivityFirst');
-      errEl.classList.remove('hidden');
-      return;
-    }
-
-    const days = [...activityState.days];
-    const custodyHomeId = activeCustodyHomeId();
-    const operationId = opTracker ? opTracker.forCommand({
-      cmd: 'apply-activity', childId: currentChildId, activityTemplateId: templateId,
-      days: [...days].sort(), section: activityState.section, startTime: activityState.startTime, endTime: activityState.endTime,
-      custodyHomeId,
-    }) : null;
-
+    activitySubmitInFlight = true;
     setPending('samActivitySaveBtn', true);
-    const { ok, data } = await ScheduleApplyClient.applyActivity(currentChildId, {
-      activityTemplateId: templateId, days, section: activityState.section,
-      startTime: activityState.startTime || null, endTime: activityState.endTime || null, operationId, custodyHomeId,
-    });
-    setPending('samActivitySaveBtn', false);
+    try {
+      let templateId = activityState.createdUnappliedId || activityState.templateId;
+      let displayName = activityState.createdUnappliedName || '';
+      let createdThisSave = false;
+      const stagedName = activityState.pendingNewName || normalizeActivityName(activityState.query);
 
-    if (!ok) {
-      errEl.textContent = (data && data.error) || t('schedule.addMenu.activity.applyFailed');
-      errEl.classList.remove('hidden');
-      return;
+      if (!templateId) {
+        const exact = findExactActivityMatch(allTemplates, stagedName);
+        if (exact) templateId = exact.id;
+      }
+
+      if (!templateId && shouldShowCreateRow(stagedName, allTemplates)) {
+        let created;
+        try {
+          created = await createFamilyActivity(stagedName);
+        } catch (_err) {
+          if (errEl) {
+            errEl.textContent = t('schedule.addMenu.activity.createFailed');
+            errEl.classList.remove('hidden');
+          }
+          return;
+        }
+        if (!created.ok || !created.data.id) {
+          if (errEl) {
+            errEl.textContent = (created.data && created.data.error) || t('schedule.addMenu.activity.createFailed');
+            errEl.classList.remove('hidden');
+          }
+          return;
+        }
+        templateId = created.data.id;
+        displayName = created.data.name || stagedName;
+        createdThisSave = true;
+        activityState.createdUnappliedId = templateId;
+        activityState.createdUnappliedName = displayName;
+        activityState.templateId = templateId;
+        activityState.pendingNewName = '';
+        if (typeof window.loadTemplates === 'function') {
+          try { await loadTemplates(); } catch (_refreshErr) { /* apply still uses created id */ }
+        }
+      }
+
+      if (!templateId) {
+        if (errEl) {
+          errEl.textContent = t('schedule.addMenu.activity.selectActivityFirst');
+          errEl.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (!currentChildId || currentChildId !== activityContextChildId) {
+        closeAddMenu();
+        showToast(t('schedule.addMenu.activity.childChanged'), true);
+        return;
+      }
+
+      const days = [...activityState.days];
+      const custodyHomeId = activeCustodyHomeId();
+      const operationId = opTracker ? opTracker.forCommand({
+        cmd: 'apply-activity', childId: currentChildId, activityTemplateId: templateId,
+        days: [...days].sort(), section: activityState.section, startTime: activityState.startTime, endTime: activityState.endTime,
+        custodyHomeId,
+      }) : null;
+
+      const { ok, data } = await ScheduleApplyClient.applyActivity(currentChildId, {
+        activityTemplateId: templateId, days, section: activityState.section,
+        startTime: activityState.startTime || null, endTime: activityState.endTime || null, operationId, custodyHomeId,
+      });
+
+      if (!ok) {
+        if (errEl) {
+          errEl.textContent = (data && data.error) || t('schedule.addMenu.activity.applyFailed');
+          errEl.classList.remove('hidden');
+        }
+        return;
+      }
+      const tpl = (allTemplates || []).find((x) => x.id === templateId);
+      const name = displayName || (tpl ? tpl.name : '');
+      const toastKey = createdThisSave ? 'schedule.addMenu.activity.createdAndAdded' : 'schedule.addMenu.activity.added';
+      const successMsg = t(toastKey, { name, count: days.length });
+      showToast(successMsg);
+      resetActivityForNextEntry();
+      renderActivityStep();
+      const statusEl = document.getElementById('samActivityStatus');
+      if (statusEl) statusEl.textContent = successMsg;
+      restoreSearchFocus();
+      afterSuccessfulMutation();
+    } finally {
+      activitySubmitInFlight = false;
+      setPending('samActivitySaveBtn', false);
     }
-    activityState.createdUnappliedId = null;
-    activityState.createdUnappliedName = '';
-    const tpl = (allTemplates || []).find((x) => x.id === templateId);
-    const name = displayName || (tpl ? tpl.name : '');
-    const toastKey = createdThisSave ? 'schedule.addMenu.activity.createdAndAdded' : 'schedule.addMenu.activity.added';
-    showToast(t(toastKey, { name, count: days.length }));
-    closeAddMenu();
-    afterSuccessfulMutation();
   }
 
   // ── 2) Från mall ─────────────────────────────────────────────────────────
@@ -851,11 +914,42 @@
     addBtn.classList.toggle('hidden', fwBtn.classList.contains('hidden'));
   }
 
+  function closeIfChildContextChanged(nextChildId) {
+    const modal = document.getElementById('scheduleAddMenuModal');
+    if (!modal || modal.classList.contains('hidden')) return;
+    if (activityContextChildId && nextChildId !== activityContextChildId) {
+      closeAddMenu();
+    }
+  }
+
+  function bindChildContextGuards() {
+    if (typeof window.selectChild === 'function' && !window.selectChild.__samGuarded) {
+      const original = window.selectChild;
+      function wrappedSelectChild(id) {
+        closeIfChildContextChanged(id);
+        return original.apply(this, arguments);
+      }
+      wrappedSelectChild.__samGuarded = true;
+      window.selectChild = wrappedSelectChild;
+    }
+    if (typeof window.backToChildrenList === 'function' && !window.backToChildrenList.__samGuarded) {
+      const original = window.backToChildrenList;
+      function wrappedBackToChildren() {
+        closeIfChildContextChanged(null);
+        return original.apply(this, arguments);
+      }
+      wrappedBackToChildren.__samGuarded = true;
+      window.backToChildrenList = wrappedBackToChildren;
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const fwBtn = document.getElementById('fillWeekBtn');
     if (fwBtn) {
       new MutationObserver(syncAddMenuButtonVisibility).observe(fwBtn, { attributes: true, attributeFilter: ['class'] });
     }
     syncAddMenuButtonVisibility();
+    bindChildContextGuards();
   });
+  bindChildContextGuards();
 })();

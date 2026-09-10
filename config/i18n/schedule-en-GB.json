@@ -581,7 +581,8 @@
       "createFailed": "Couldn't create the activity. Please try again.",
       "applyFailed": "The activity was saved, but the schedule could not be updated. Try saving again.",
       "added": "\"{{name}}\" added on {{count}} day(s)",
-      "createdAndAdded": "\"{{name}}\" created and added on {{count}} day(s)"
+      "createdAndAdded": "\"{{name}}\" created and added on {{count}} day(s)",
+      "childChanged": "The child changed. Open Add again for the child you want to edit."
     },
     "template": {
       "title": "From a template",
