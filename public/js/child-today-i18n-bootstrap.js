@@ -28,9 +28,13 @@
       const header = document.getElementById('childMainHeader');
       const todayMount = document.getElementById('todayFocusMount');
       const nav = document.getElementById('childBottomNav');
+      const scheduleView = document.getElementById('scheduleView');
+      const homeView = document.getElementById('homeView');
       if (header) I18n.apply(header);
       if (todayMount) I18n.apply(todayMount);
       if (nav) I18n.apply(nav);
+      if (scheduleView) I18n.apply(scheduleView);
+      if (homeView) I18n.apply(homeView);
     }
   }
 

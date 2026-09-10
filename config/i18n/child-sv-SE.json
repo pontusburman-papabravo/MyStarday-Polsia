@@ -86,6 +86,7 @@
     "checkOffToContinue": "Bocka av för att gå vidare",
     "greeting": "Hej {{name}} 👋",
     "loading": "Laddar…",
+    "loadingHome": "Laddar ditt hem…",
     "saving": "Sparar…",
     "saved": "Sparat!",
     "saveFailed": "Kunde inte spara",

@@ -14,6 +14,8 @@ describe('child today i18n bootstrap', () => {
     assert.match(src, /childTodayI18nReady/);
     assert.match(src, /markChildTodayI18nReady/);
     assert.match(src, /renderBottomNav/);
+    assert.match(src, /getElementById\('scheduleView'\)/);
+    assert.match(src, /getElementById\('homeView'\)/);
   });
 
   it('child dashboard init marks ready after loadDay path', () => {

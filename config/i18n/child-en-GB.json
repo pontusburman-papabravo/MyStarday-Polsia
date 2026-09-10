@@ -86,6 +86,7 @@
     "checkOffToContinue": "Check off to continue",
     "greeting": "Hi {{name}} 👋",
     "loading": "Loading…",
+    "loadingHome": "Loading your home…",
     "saving": "Saving…",
     "saved": "Saved!",
     "saveFailed": "Could not save",

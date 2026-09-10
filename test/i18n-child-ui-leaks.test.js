@@ -49,6 +49,28 @@ describe('i18n child UI leaks — static wiring', () => {
     assert.doesNotMatch(html, /<summary class="child-week-summary">📅 Andra dagar<\/summary>/);
   });
 
+  it('child-dashboard.html wires English loading chrome (no bare Laddar placeholders)', () => {
+    const html = read('public/child-dashboard.html');
+    assert.match(html, /data-i18n="child\.scheduleChrome\.loadingSchedule"/);
+    assert.match(html, /data-i18n="child\.today\.loadingHome"/);
+    assert.doesNotMatch(
+      html,
+      /<p class="text-text-soft">Laddar ditt schema\.\.\.<\/p>/
+    );
+    assert.doesNotMatch(
+      html,
+      /<p class="text-text-soft font-semibold mt-3">Laddar ditt hem…<\/p>/
+    );
+    const i18n = require('../src/lib/i18n');
+    i18n.loadLocales();
+    assert.equal(
+      i18n.t('en-GB', 'child.scheduleChrome.loadingSchedule'),
+      'Loading your schedule…'
+    );
+    assert.equal(i18n.t('en-GB', 'child.today.loadingHome'), 'Loading your home…');
+    assert.equal(i18n.t('sv-SE', 'child.today.loadingHome'), 'Laddar ditt hem…');
+  });
+
   it('child-dashboard-photo-cards uses substepsLabel from locale', () => {
     const src = read('public/js/child-dashboard-photo-cards.js');
     assert.match(src, /t\('steps\.substepsLabel'\)/);
