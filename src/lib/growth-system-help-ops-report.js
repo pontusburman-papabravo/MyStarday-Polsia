@@ -10,7 +10,7 @@ const db = require('./db');
 const appSettings = require('../../db/app-settings');
 const { sendEmail } = require('./email');
 const config = require('./config');
-const { FLAG_KEY } = require('./growth-system-help');
+const { FLAG_KEY, HEM_CTA_EXPOSURE } = require('./growth-system-help');
 
 const STATE_KEY = 'growth_system_help_ops_report_state';
 const SUPPORT_MESSAGE_PREFIX = '[Systemhjälp — Rapportera problem]';
@@ -576,7 +576,13 @@ function buildEmailBody({ metrics, decision, rollbackPerformed }) {
     `  familjer med shown: ${metrics.help_state.families_shown}`,
     `  familjer med engaged: ${metrics.help_state.families_engaged}`,
     `  no_progress (state): ${metrics.help_state.families_no_progress}`,
-    '  (Hjälp-state = nuvarande episod; analytics = totalt över episoder)'
+    '  (Hjälp-state = nuvarande episod; analytics = totalt över episoder)',
+    '',
+    `Exposure-semantik (PR ${HEM_CTA_EXPOSURE.pr} / ${HEM_CTA_EXPOSURE.cacheName}+):`,
+    `  OLD shown = ${HEM_CTA_EXPOSURE.oldExposure}.`,
+    `  NEW shown = ${HEM_CTA_EXPOSURE.newExposure}.`,
+    `  Segmentera pre/post deploy-SHA — poola inte som ett experiment.`,
+    `  (${HEM_CTA_EXPOSURE.segmentBy})`
   );
 
   const recent = metrics.recent_completed_outcomes || [];

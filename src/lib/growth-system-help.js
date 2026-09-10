@@ -13,6 +13,21 @@ const analytics = require('../../db/analytics');
 
 const FLAG_KEY = 'growth_system_help_v1';
 
+/**
+ * PR 1152 changes what `system_help_shown` means.
+ * OLD (shown before this deploy / SW < v932): help-panel or handoff detour.
+ * NEW (shown at/after this deploy / SW v932+): existing Hem / First Success CTA.
+ * Segment ops outcomes pre/post deploy SHA (or cacheName). Do not pool as one experiment.
+ * Historical progression_outcome rows are retained — this is not a reset.
+ */
+const HEM_CTA_EXPOSURE = Object.freeze({
+  pr: 1152,
+  cacheName: 'stjarndag-v932',
+  oldExposure: 'help_panel_or_handoff_detour',
+  newExposure: 'existing_hem_or_first_success_cta',
+  segmentBy: 'system_help_shown.created_at versus deploy SHA / cacheName',
+});
+
 const SURFACES = Object.freeze({
   help_panel: 'help_panel',
   child_handoff: 'child_handoff',
@@ -37,6 +52,7 @@ const SURFACE_BY_BLOCKING_STEP = Object.freeze({
     SURFACES.child_login,
     SURFACES.help_panel,
     SURFACES.onboarding,
+    SURFACES.dashboard,
   ],
   login_no_completion: [
     SURFACES.schedule,
@@ -68,11 +84,14 @@ const CONTENT = Object.freeze({
   },
   schema_no_child_login: {
     headlineSv: 'Hjälp barnet logga in',
-    bodySv: 'Schemat är klart. Låt barnet logga in med namn och PIN på samma enhet.',
+    bodySv: 'Schemat är sparat. Ge barnet den här enheten — du kan logga in som förälder igen efteråt. Har ni glömt PIN? Visa den under barnets profil först.',
     ctaSv: 'Starta barninloggning',
     ctaAction: 'start_child_login',
+    secondaryCtaSv: 'Visa eller byt PIN',
+    secondaryCtaEn: 'View or change PIN',
+    secondaryCtaAction: 'open_child_profile',
     headlineEn: 'Help your child log in',
-    bodyEn: 'The schedule is ready. Let your child log in with their name and PIN on this device.',
+    bodyEn: 'The schedule is saved. Hand this device to your child — you can sign back in as a parent afterwards. Forgotten the PIN? Check it under the child profile first.',
     ctaEn: 'Start child login',
   },
   login_no_completion: {
@@ -120,6 +139,10 @@ function buildHelpPayload(blockingStep, locale) {
     body: en ? copy.bodyEn : copy.bodySv,
     ctaLabel: en ? copy.ctaEn : copy.ctaSv,
     ctaAction: copy.ctaAction,
+    secondaryCtaLabel: copy.secondaryCtaAction
+      ? (en ? copy.secondaryCtaEn : copy.secondaryCtaSv)
+      : null,
+    secondaryCtaAction: copy.secondaryCtaAction || null,
     showSupportRequest: Boolean(copy.showSupportRequest),
     surfaces: SURFACE_BY_BLOCKING_STEP[blockingStep] || [SURFACES.help_panel],
   };
@@ -434,6 +457,7 @@ function mapSystemHelpRouteError(err, opts = {}) {
 
 module.exports = {
   FLAG_KEY,
+  HEM_CTA_EXPOSURE,
   SURFACES,
   SURFACE_BY_BLOCKING_STEP,
   CONTENT,

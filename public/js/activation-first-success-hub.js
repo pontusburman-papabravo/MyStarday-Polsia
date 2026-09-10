@@ -282,7 +282,54 @@
     }
 
     trackShownOnce(payload);
+    if (needsHandoffHint) {
+      attachSystemHelpToCoach(mount);
+    }
     return true;
+  }
+
+  function attachSystemHelpToCoach(mount) {
+    function run() {
+      if (window.GrowthSystemHelp && typeof GrowthSystemHelp.attachPrimaryCta === 'function') {
+        GrowthSystemHelp.attachPrimaryCta(mount, {
+          surface: 'child_handoff',
+          ctaSelector: '.activation-fs-cta',
+        });
+      }
+    }
+    ensureGrowthSystemHelpScript(run);
+  }
+
+  function ensureGrowthSystemHelpScript(cb) {
+    if (window.GrowthSystemHelp) {
+      cb();
+      return;
+    }
+    if (typeof document.addEventListener === 'function') {
+      document.addEventListener('growth-system-help-ready', cb, { once: true });
+    }
+    if (window.__growthSystemHelpLoading) return;
+    if (typeof document.createElement !== 'function' || !document.head) return;
+    const existing = document.querySelector('script[data-growth-system-help-src="1"]')
+      || document.querySelector('script[src="/js/growth-system-help.js"]');
+    if (existing) {
+      window.__growthSystemHelpLoading = true;
+      return;
+    }
+    window.__growthSystemHelpLoading = true;
+    const s = document.createElement('script');
+    s.src = '/js/growth-system-help.js';
+    s.setAttribute('data-growth-system-help-src', '1');
+    s.onload = function () {
+      window.__growthSystemHelpLoading = false;
+      if (typeof document.dispatchEvent === 'function') {
+        document.dispatchEvent(new Event('growth-system-help-ready'));
+      }
+    };
+    s.onerror = function () {
+      window.__growthSystemHelpLoading = false;
+    };
+    document.head.appendChild(s);
   }
 
   function renderBlocked(state) {
