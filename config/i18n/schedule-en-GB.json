@@ -568,13 +568,20 @@
     "selectAtLeastOneDay": "Choose at least one weekday",
     "activity": {
       "title": "Add activity",
-      "pickActivity": "1. Choose activity",
-      "pickActivityPlaceholder": "Search activity…",
+      "pickActivity": "1. Search or type a name",
+      "pickActivityPlaceholder": "Search or type a new name…",
       "pickDays": "2. Choose weekday(s)",
       "pickSection": "3. Choose part of the day",
       "pickTime": "Time (optional)",
-      "selectActivityFirst": "Choose an activity",
-      "added": "\"{{name}}\" added on {{count}} day(s)"
+      "selectActivityFirst": "Choose an activity or create a new one",
+      "createFromSearch": "+ Create \"{{name}}\"",
+      "libraryAutoSaveNote": "New activities are saved automatically so you can use them again.",
+      "noneFound": "No activity matches. Create a new one.",
+      "noneYet": "Search or type a name to create one.",
+      "createFailed": "Couldn't create the activity. Please try again.",
+      "applyFailed": "The activity was saved, but the schedule could not be updated. Try saving again.",
+      "added": "\"{{name}}\" added on {{count}} day(s)",
+      "createdAndAdded": "\"{{name}}\" created and added on {{count}} day(s)"
     },
     "template": {
       "title": "From a template",

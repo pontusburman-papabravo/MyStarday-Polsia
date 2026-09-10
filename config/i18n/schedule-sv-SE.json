@@ -568,13 +568,20 @@
     "selectAtLeastOneDay": "Välj minst en veckodag",
     "activity": {
       "title": "Lägg till aktivitet",
-      "pickActivity": "1. Välj aktivitet",
-      "pickActivityPlaceholder": "Sök aktivitet…",
+      "pickActivity": "1. Sök eller skriv namn",
+      "pickActivityPlaceholder": "Sök eller skriv ett nytt namn…",
       "pickDays": "2. Välj veckodag(ar)",
       "pickSection": "3. Välj del av dagen",
       "pickTime": "Tid (valfritt)",
-      "selectActivityFirst": "Välj en aktivitet",
-      "added": "\"{{name}}\" tillagt på {{count}} dag(ar)"
+      "selectActivityFirst": "Välj en aktivitet eller skapa en ny",
+      "createFromSearch": "+ Skapa \"{{name}}\"",
+      "libraryAutoSaveNote": "Nya aktiviteter sparas automatiskt så att du kan använda dem igen.",
+      "noneFound": "Ingen aktivitet matchar. Skapa en ny.",
+      "noneYet": "Sök eller skriv ett namn för att skapa.",
+      "createFailed": "Kunde inte skapa aktiviteten. Försök igen.",
+      "applyFailed": "Aktiviteten sparades, men schemat kunde inte uppdateras. Försök spara igen.",
+      "added": "\"{{name}}\" tillagt på {{count}} dag(ar)",
+      "createdAndAdded": "\"{{name}}\" skapad och tillagd på {{count}} dag(ar)"
     },
     "template": {
       "title": "Från mall",

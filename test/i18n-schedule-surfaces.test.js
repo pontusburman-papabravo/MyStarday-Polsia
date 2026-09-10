@@ -67,6 +67,27 @@ describe('schedule/planning i18n surfaces', () => {
     assert.match(html, /data-i18n="schedule\.modals\.giveStars\.title"/);
   });
 
+  it('planner inline create keys exist in sv-SE and en-GB', () => {
+    assert.equal(
+      t('sv-SE', 'schedule.addMenu.activity.libraryAutoSaveNote'),
+      'Nya aktiviteter sparas automatiskt så att du kan använda dem igen.'
+    );
+    assert.equal(
+      t('en-GB', 'schedule.addMenu.activity.libraryAutoSaveNote'),
+      'New activities are saved automatically so you can use them again.'
+    );
+    assert.equal(t('sv-SE', 'schedule.addMenu.activity.createFromSearch', { name: 'Läkemedel' }), '+ Skapa "Läkemedel"');
+    assert.equal(t('en-GB', 'schedule.addMenu.activity.createFromSearch', { name: 'Medicine' }), '+ Create "Medicine"');
+    assert.equal(
+      t('sv-SE', 'schedule.addMenu.activity.applyFailed'),
+      'Aktiviteten sparades, men schemat kunde inte uppdateras. Försök spara igen.'
+    );
+    assert.equal(
+      t('en-GB', 'schedule.addMenu.activity.applyFailed'),
+      'The activity was saved, but the schedule could not be updated. Try saving again.'
+    );
+  });
+
   it('schedule fragment keys have full sv-SE / en-GB parity', () => {
     const { missingInEn, missingInSv } = compareLocaleStructures();
     const scheduleMissingEn = missingInEn.filter((k) => k.startsWith('schedule.'));
