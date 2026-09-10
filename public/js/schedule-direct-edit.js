@@ -62,7 +62,7 @@
     const start = fmtTime(item.start_time);
     const filled = Boolean(start);
     const aria = filled ? t('schedule.editor.editTime') : t('schedule.editor.addTimeAria');
-    return `<button type="button" id="sde-chip-${item.id}" class="sde-time-chip min-h-[44px] px-2 -ml-2 rounded-lg text-xs font-semibold ${filled ? 'text-navy' : 'text-text-soft'} text-left"
+    return `<button type="button" id="sde-chip-${item.id}" class="sde-time-chip min-h-[44px] min-w-[44px] px-2 -ml-2 rounded-lg text-xs font-semibold ${filled ? 'text-navy' : 'text-text-soft'} text-left"`
       onclick="event.stopPropagation(); ScheduleDirectEdit.toggle('${item.id}')" aria-expanded="false" aria-controls="sde-editor-${item.id}" aria-label="${escHtml(aria)}">${escHtml(chipLabel(item))}</button>`;
   }
 
