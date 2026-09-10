@@ -452,6 +452,24 @@ body.parent-magic-view:not(.parent-theme-light) .dash-child-card .dash-status-ro
   color: #1b2340 !important;
 }
 
+/* Planner child picker — white cards; global .text-navy / .text-text-soft
+   would paint light-on-white (the leftover "6 aktiviteter" fail). */
+body.parent-magic-view:not(.parent-theme-light)[data-magic-page="schedule"] .child-card {
+  background: #ffffff !important;
+  border-color: #ede7f6 !important;
+  color: #1b2340 !important;
+}
+
+body.parent-magic-view:not(.parent-theme-light)[data-magic-page="schedule"] .child-card .text-navy,
+body.parent-magic-view:not(.parent-theme-light)[data-magic-page="schedule"] .child-card h4 {
+  color: #1b2340 !important;
+}
+
+body.parent-magic-view:not(.parent-theme-light)[data-magic-page="schedule"] .child-card .text-text-soft,
+body.parent-magic-view:not(.parent-theme-light)[data-magic-page="schedule"] .child-card .child-card-count {
+  color: #2a3458 !important;
+}
+
 body.parent-magic-view:not(.parent-theme-light) .dash-child-card .dash-expand-chevron {
   color: #9ca3af !important;
 }
@@ -560,6 +578,11 @@ body.parent-magic-view:not(.parent-theme-light) .day-tab.bg-gold {
   background: linear-gradient(135deg, #ffcc33, #f5a623) !important;
   border-color: transparent !important;
   color: #1b2340 !important;
+}
+
+body.parent-magic-view:not(.parent-theme-light) .day-tab .day-tab-date {
+  opacity: 1;
+  color: inherit !important;
 }
 
 body.parent-magic-view:not(.parent-theme-light) .insert-day-btn.bg-white {

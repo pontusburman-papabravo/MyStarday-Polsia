@@ -10,8 +10,6 @@ function spt(key, params) {
   return window.ScheduleI18n ? ScheduleI18n.t(key, params) : (window.pt ? window.pt(key, params) : key);
 }
 
-  const { DAYS } = window.ScheduleCore;
-
   function escHtml(s) {
     if (typeof window.escHtml === 'function') return window.escHtml(s);
     if (typeof escapeHtml === 'function') return escapeHtml(s);
@@ -967,19 +965,22 @@ function removeItem(itemId){
   const modal = document.getElementById('recurrenceModal');
   const titleEl = modal.querySelector('h3');
   const iconEl = modal.querySelector('.text-3xl');
-  if (titleEl) titleEl.textContent = spt('schedule.modals.recurrence.deleteTitle');
   if (iconEl) iconEl.textContent = '🗑️';
-  document.getElementById('recurrenceActivityName').textContent = item ? `"${item.activity_name || 'aktiviteten'}"` : '';
-  document.getElementById('recurrenceOnceLbl').textContent = '📌 Bara denna dag';
-  document.getElementById('recurrenceOnceDesc').textContent = spt('schedule.modals.recurrence.onceDescRemove');
-  document.getElementById('recurrenceWeeklyLbl').textContent = `🗑️ Bara alla ${DAYS[currentDay]}ar`;
-  document.getElementById('recurrenceWeeklyDesc').textContent = spt('schedule.modals.recurrence.weeklyDescRemove', { day: DAYS[currentDay].toLowerCase() });
+  const copy = window.ScheduleI18n.recurrenceRemoveCopy(currentDay, item && item.activity_name);
+  if (titleEl) titleEl.textContent = copy.title;
+  document.getElementById('recurrenceActivityName').textContent = item ? copy.activityQuoted : '';
+  document.getElementById('recurrenceOnceLbl').textContent = copy.onceLbl;
+  document.getElementById('recurrenceOnceDesc').textContent = copy.onceDesc;
+  document.getElementById('recurrenceWeeklyLbl').textContent = copy.weeklyLbl;
+  document.getElementById('recurrenceWeeklyDesc').textContent = copy.weeklyDesc;
   const allDaysBtn = document.getElementById('recurrenceAllDaysBtn');
   if (allDaysBtn) {
     allDaysBtn.classList.remove('hidden');
-    document.getElementById('recurrenceAllDaysLbl').textContent = '🗓️ ' + spt('schedule.modals.recurrence.allDaysLbl');
-    document.getElementById('recurrenceAllDaysDesc').textContent = spt('schedule.modals.recurrence.allDaysDesc');
+    document.getElementById('recurrenceAllDaysLbl').textContent = copy.allDaysLbl;
+    document.getElementById('recurrenceAllDaysDesc').textContent = copy.allDaysDesc;
   }
+  const cancelBtn = modal.querySelector('[data-i18n="schedule.modals.common.cancel"]');
+  if (cancelBtn) cancelBtn.textContent = copy.cancel;
   document.getElementById('recurrenceStep1').classList.remove('hidden');
   document.getElementById('recurrenceStep2').classList.add('hidden');
   document.getElementById('recurrenceError').classList.add('hidden');

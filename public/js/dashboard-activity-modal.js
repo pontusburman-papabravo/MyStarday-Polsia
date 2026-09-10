@@ -13,8 +13,7 @@ function damIntlLang() {
   return (window.I18n && typeof I18n.getCurrentLang === 'function') ? I18n.getCurrentLang() : 'sv-SE';
 }
   const _scheduleCore = window.ScheduleCore || {};
-  const { DAYS } = _scheduleCore;
-  if (!window.ScheduleCore) {
+  if (!_scheduleCore.dayName) {
     console.warn('[DASHBOARD] activity-modal: ScheduleCore missing');
   }
 
@@ -831,19 +830,22 @@ function removeItem(itemId){
   const modal = document.getElementById('recurrenceModal');
   const titleEl = modal.querySelector('h3');
   const iconEl = modal.querySelector('.text-3xl');
-  if (titleEl) titleEl.textContent = spt('schedule.modals.recurrence.deleteTitle');
   if (iconEl) iconEl.textContent = '🗑️';
-  document.getElementById('recurrenceActivityName').textContent = item ? `"${item.activity_name || 'aktiviteten'}"` : '';
-  document.getElementById('recurrenceOnceLbl').textContent = '📌 ' + spt('schedule.modals.recurrence.onceLbl');
-  document.getElementById('recurrenceOnceDesc').textContent = spt('schedule.modals.recurrence.onceDescRemove');
-  document.getElementById('recurrenceWeeklyLbl').textContent = `🗑️ ${spt('schedule.modals.recurrence.weeklyDeleteLbl', { day: DAYS[currentDay] })}`;
-  document.getElementById('recurrenceWeeklyDesc').textContent = spt('schedule.modals.recurrence.weeklyDescRemove', { day: DAYS[currentDay].toLowerCase() });
+  const copy = window.ScheduleI18n.recurrenceRemoveCopy(currentDay, item && item.activity_name);
+  if (titleEl) titleEl.textContent = copy.title;
+  document.getElementById('recurrenceActivityName').textContent = item ? copy.activityQuoted : '';
+  document.getElementById('recurrenceOnceLbl').textContent = '📌 ' + copy.onceLbl;
+  document.getElementById('recurrenceOnceDesc').textContent = copy.onceDesc;
+  document.getElementById('recurrenceWeeklyLbl').textContent = '🗑️ ' + copy.weeklyLbl;
+  document.getElementById('recurrenceWeeklyDesc').textContent = copy.weeklyDesc;
   const allDaysBtn = document.getElementById('recurrenceAllDaysBtn');
   if (allDaysBtn) {
     allDaysBtn.classList.remove('hidden');
-    document.getElementById('recurrenceAllDaysLbl').textContent = '🗓️ ' + spt('schedule.modals.recurrence.allDaysLbl');
-    document.getElementById('recurrenceAllDaysDesc').textContent = spt('schedule.modals.recurrence.allDaysDesc');
+    document.getElementById('recurrenceAllDaysLbl').textContent = '🗓️ ' + copy.allDaysLbl;
+    document.getElementById('recurrenceAllDaysDesc').textContent = copy.allDaysDesc;
   }
+  const cancelBtn = modal.querySelector('button[onclick*="closeRecurrenceModal"]');
+  if (cancelBtn) cancelBtn.textContent = copy.cancel;
   document.getElementById('weekdayPickerSection').classList.add('hidden');
   document.getElementById('recurrenceError').classList.add('hidden');
   // Override button handlers for delete mode

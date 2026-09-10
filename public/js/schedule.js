@@ -411,7 +411,7 @@ async function renderChildrenOverview() {
         <div class="flex items-center gap-1.5 mb-1">
           <span class="inline-block w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span>
           <span class="text-xs font-bold text-navy">${dayName(d)}</span>
-          <span class="text-[10px] text-text-soft ml-auto">${actLabel}</span>
+          <span class="child-card-count text-[10px] text-text-soft ml-auto">${actLabel}</span>
         </div>
         ${actList}${moreHtml}
       </div>`;
@@ -550,7 +550,7 @@ function renderDayTabs() {
         ${currentDay===d?'bg-gold text-white border-gold':'border-lavender text-navy hover:border-navy'}"
         data-day="${d}">
         <span>${dayShort(d)}</span>
-        <span class="font-normal text-[10px] opacity-75">${dateLabel}</span>
+        <span class="day-tab-date font-normal text-[10px]">${dateLabel}</span>
         ${todayDot}
       </button>
       <button onclick="${window.ScheduleAddMenu ? `ScheduleAddMenu.openActivityForDay(${d})` : `openInsertDayModal(${d})`}" title="${spt('schedule.actions.addSchedule')}"
@@ -802,6 +802,12 @@ function renderItem(item) {
     ? `<button onclick="openEditTemplateModal('${onceTplId || item.activity_template_id}')" class="font-semibold text-sm text-navy truncate hover:text-gold transition-colors block w-full text-left" title="${spt('schedule.actions.editActivity')}">${escHtml(item.activity_name_display || item.activity_name)}</button>`
     : `<span class="font-semibold text-sm text-navy truncate">${escHtml(item.activity_name_display || item.activity_name)}</span>`;
   const timeStr = item.start_time ? fmtTime(item.start_time) + (item.end_time ? '–' + fmtTime(item.end_time) : '') : '';
+  const timeChip = window.ScheduleDirectEdit
+    ? ScheduleDirectEdit.timeChipHtml(item)
+    : (timeStr ? `<div class="text-xs text-text-soft">${timeStr}</div>` : '');
+  const timeEditor = window.ScheduleDirectEdit ? ScheduleDirectEdit.timeEditorHtml(item) : '';
+  const removeBtn = `<button type="button" data-id="${item.id}" onclick="event.stopPropagation(); removeItem('${item.id}')"
+            class="action-btn action-btn-remove p-2 rounded-lg transition-colors text-text-soft" title="${spt('schedule.actions.removeFromSchedule')}" aria-label="${spt('schedule.actions.removeFromSchedule')}">✕</button>`;
   const steps = Array.isArray(item.sub_steps) ? item.sub_steps : [];
   const subCount = steps.length;
   const hasSubSteps = subCount > 0;
@@ -828,17 +834,16 @@ function renderItem(item) {
         ${oncePin}
         <div class="flex-1 min-w-0">
           ${nameBtn}
-          ${timeStr ? `<div class="text-xs text-text-soft">${timeStr}</div>` : ''}
+          ${timeChip}
         </div>
         ${hasSubSteps && (onceTplId || item.activity_template_id) ? `<button onclick="toggleScheduleSubSteps('${onceTplId || item.activity_template_id}', this)" class="text-[10px] bg-lavender text-navy px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0 flex items-center gap-0.5 hover:bg-purple-200 transition-colors" title="${spt('schedule.actions.toggleSubsteps')}"><span>${spt('schedule.actions.substepsCount', { count: subCount })}</span><span class="chevron-icon ml-0.5">▸</span></button>` : ''}
+        ${removeBtn}
         <div class="icon-btns-desktop flex gap-1 flex-shrink-0">
           ${editBtn}
-          <button type="button" data-id="${item.id}" onclick="event.stopPropagation(); removeItem('${item.id}')"
-            class="action-btn action-btn-remove p-2 rounded-lg transition-colors text-text-soft" title="${spt('schedule.actions.removeFromSchedule')}">✕</button>
         </div>
         <!-- Mobile: ⋯ overflow menu — outside .icon-btns-desktop so it doesn't wrap to new line on narrow screens -->
         <div class="overflow-menu-wrap flex-shrink-0" style="margin-left:4px">
-          <button class="overflow-menu-btn" onclick="toggleOverflowMenu(event,'omenu-s-${item.id}')" aria-label="Fler alternativ">⋯</button>
+          <button class="overflow-menu-btn" onclick="toggleOverflowMenu(event,'omenu-s-${item.id}')" aria-label="${spt('schedule.editor.moreOptions')}">⋯</button>
           <div id="omenu-s-${item.id}" class="overflow-menu-popup">
             ${canEditTpl ? `<button onclick="closeOverflowMenus();openEditTemplateModal('${onceTplId || item.activity_template_id}')">✏️ ${spt('schedule.editor.edit')}</button>` : ''}
             ${!isOnce ? `<button onclick="closeOverflowMenus();openEditItem('${item.id}')">🕐 ${spt('schedule.editor.editTime')}</button>` : ''}
@@ -846,6 +851,7 @@ function renderItem(item) {
           </div>
         </div>
       </div>
+      ${timeEditor}
       ${subStepsHtml}
     </div>`;
 }
