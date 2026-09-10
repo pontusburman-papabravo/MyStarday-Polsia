@@ -283,6 +283,7 @@
 // stjarndag-v892: App Store 2.2 fix — remove "Beta" badge/label from English language selection (locale-switcher, language-choice)
 // stjarndag-v893: Phase 4 — Weekly Schedule chrome: advanced view modes + PDF export tucked under a "Visa" disclosure
 // stjarndag-v894: Phase 4 closure — Kalender links to Specialdagar as an explicit secondary bridge
+// stjarndag-v932: system help schema_no_child_login — Hem CTA + PIN, no help-panel detour
 // stjarndag-v931: SIWA sheet cancel is a quiet abort (no fake Apple-failed banner)
 // stjarndag-v930: Trusted Device child session counts as activation child_access + First Star starter
 // stjarndag-v929: OAuth payload terms lookup is document-safe
@@ -318,7 +319,7 @@
 // stjarndag-v898: Apple Review R3 — register CountryChoice gate (never-throw) + IAP review path
 // stjarndag-v897: P0.2 hide child-delete action unless caller role is primary
 // stjarndag-v896: P0.1 settings deletion_impact — leave vs full-family copy from server
-const CACHE_NAME = 'stjarndag-v931';
+const CACHE_NAME = 'stjarndag-v932';
 // stjarndag-v744: fix admin-start.js SyntaxError (restore formatPct)
 // stjarndag-v660: i18n foundation — locale bundles, auth-entry-i18n, locale-switcher
 // stjarndag-v659: calendar day-card text + magic dark tab bar on all parent pages

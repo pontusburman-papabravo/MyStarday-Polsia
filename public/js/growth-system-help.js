@@ -95,6 +95,10 @@
           DashboardChildHandoff.startChildLogin();
           return;
         }
+        if (window.Auth && typeof Auth.logout === 'function') {
+          Auth.logout({ childFlow: true });
+          return;
+        }
         window.location.href = '/child-login';
         return;
       case 'open_daily_log':
@@ -140,6 +144,14 @@
   function buildCardHtml(help, surface) {
     if (!help) return '';
     const reportLabel = isEnglish() ? 'Report a problem' : 'Rapportera problem';
+    const secondary = help.secondaryCtaAction
+      ? '<button type="button" class="growth-system-help-secondary mt-2 w-full min-h-[44px] text-sm text-indigo-700 underline">' +
+        esc(help.secondaryCtaLabel) + '</button>'
+      : '';
+    const report = help.showSupportRequest
+      ? '<button type="button" class="growth-system-help-report mt-2 w-full text-xs text-slate-500 underline">' +
+        esc(reportLabel) + '</button>'
+      : '';
     return (
       '<div class="help-journey-tip help-journey-tip--coach growth-system-help-card" ' +
       'data-blocking-step="' + esc(help.blockingStep || '') + '" data-surface="' + esc(surface) + '">' +
@@ -147,8 +159,8 @@
       '<p class="help-journey-tip-headline">' + esc(help.headline) + '</p>' +
       '<p class="help-journey-tip-body">' + esc(help.body) + '</p>' +
       '<button type="button" class="help-journey-tip-cta growth-system-help-cta">' + esc(help.ctaLabel) + '</button>' +
-      '<button type="button" class="growth-system-help-report mt-2 w-full text-xs text-slate-500 underline">' +
-        esc(reportLabel) + '</button>' +
+      secondary +
+      report +
       '</div>'
     );
   }
@@ -157,6 +169,7 @@
     const card = mount.querySelector('.growth-system-help-card');
     if (!card) return;
     const cta = card.querySelector('.growth-system-help-cta');
+    const secondary = card.querySelector('.growth-system-help-secondary');
     const report = card.querySelector('.growth-system-help-report');
     if (cta) {
       cta.addEventListener('click', async function () {
@@ -166,6 +179,17 @@
           cta_action: data.help && data.help.ctaAction,
         });
         runCtaAction(data.help && data.help.ctaAction);
+        if (typeof window.__hbClose === 'function') window.__hbClose();
+      });
+    }
+    if (secondary) {
+      secondary.addEventListener('click', async function () {
+        await postJson('/api/growth/system-help/engage', {
+          surface: surface,
+          blocking_step: data.blockingStep,
+          cta_action: data.help && data.help.secondaryCtaAction,
+        });
+        runCtaAction(data.help && data.help.secondaryCtaAction);
         if (typeof window.__hbClose === 'function') window.__hbClose();
       });
     }
@@ -207,25 +231,77 @@
     return data;
   }
 
+  const PRIMARY_CTA_SELECTOR = [
+    '[data-action="child-login"]',
+    '#dashboardChildLoginBtn',
+    '.activation-fs-cta',
+  ].join(',');
+
+  function bindEngage(el, data, surface, ctaAction) {
+    if (!el || el.getAttribute('data-system-help-engage') === '1') return;
+    el.setAttribute('data-system-help-engage', '1');
+    el.addEventListener('click', function () {
+      postJson('/api/growth/system-help/engage', {
+        surface: surface,
+        blocking_step: data.blockingStep,
+        cta_action: ctaAction || (data.help && data.help.ctaAction),
+      });
+    });
+  }
+
   /**
-   * One-line hint for existing handoff block — not a new banner layer.
+   * Count the existing Hem next-step CTA as system help — no second coach.
+   */
+  async function attachPrimaryCta(rootEl, opts) {
+    opts = opts || {};
+    if (!rootEl || rootEl.classList.contains('hidden')) return null;
+    const surface = opts.surface || 'child_handoff';
+    const data = await fetchContext(surface);
+    if (!data || !data.eligible || !data.help) return null;
+    const cta = rootEl.querySelector(opts.ctaSelector || PRIMARY_CTA_SELECTOR);
+    if (cta) bindEngage(cta, data, surface);
+    await recordShown(data);
+    return data;
+  }
+
+  /**
+   * PIN hint on the existing handoff card — not a detour into the help panel.
    */
   async function enrichHandoff(rootEl) {
-    if (!rootEl) return;
+    if (!rootEl || rootEl.classList.contains('hidden')) return;
+    if (rootEl.querySelector('.growth-system-help-handoff')) return;
     const data = await fetchContext('child_handoff');
     if (!data || !data.eligible || !data.help) return;
-    if (rootEl.querySelector('.growth-system-help-inline')) return;
 
-    const hint = document.createElement('button');
-    hint.type = 'button';
-    hint.className = 'growth-system-help-inline mt-2 text-sm text-indigo-700 underline text-left';
-    hint.textContent = isEnglish() ? 'Need help with login?' : 'Behöver du hjälp med inloggning?';
-    hint.addEventListener('click', function () {
-      if (typeof window.__hbToggle === 'function') {
-        window.__hbToggle();
+    const help = data.help;
+    const wrap = document.createElement('div');
+    wrap.className = 'growth-system-help-handoff';
+    if (help.secondaryCtaAction) {
+      wrap.innerHTML =
+        '<p class="growth-system-help-inline text-sm text-navy mt-2">' +
+          esc(isEnglish()
+            ? 'Forgotten the PIN? Check it under the child profile first.'
+            : 'Har ni glömt PIN? Visa den under barnets profil först.') +
+        '</p>' +
+        '<button type="button" class="growth-system-help-secondary mt-1 min-h-[44px] text-sm text-indigo-700 underline text-left">' +
+          esc(help.secondaryCtaLabel) +
+        '</button>';
+      const secondary = wrap.querySelector('.growth-system-help-secondary');
+      if (secondary) {
+        secondary.addEventListener('click', function () {
+          postJson('/api/growth/system-help/engage', {
+            surface: 'child_handoff',
+            blocking_step: data.blockingStep,
+            cta_action: help.secondaryCtaAction,
+          });
+          runCtaAction(help.secondaryCtaAction);
+        });
       }
-    });
-    rootEl.appendChild(hint);
+      rootEl.appendChild(wrap);
+    }
+
+    const existing = rootEl.querySelector(PRIMARY_CTA_SELECTOR);
+    if (existing) bindEngage(existing, data, 'child_handoff');
     await recordShown(data);
   }
 
@@ -234,6 +310,7 @@
     fetchContext: fetchContext,
     refreshHelpPanel: refreshHelpPanel,
     enrichHandoff: enrichHandoff,
+    attachPrimaryCta: attachPrimaryCta,
     buildCardHtml: buildCardHtml,
     buildTechnicalContext: buildTechnicalContext,
   };

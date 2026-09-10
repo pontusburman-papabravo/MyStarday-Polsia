@@ -331,6 +331,34 @@
     if (typeof DashboardChildHandoff.applyMagicHandoffCopy === 'function') {
       DashboardChildHandoff.applyMagicHandoffCopy(handoff, postSchema);
     }
+    maybeEnrichMagicHandoff(handoff);
+  }
+
+  function maybeEnrichMagicHandoff(handoff) {
+    if (!handoff || handoff.classList.contains('hidden')) return;
+    function run() {
+      if (window.GrowthSystemHelp && typeof GrowthSystemHelp.enrichHandoff === 'function') {
+        GrowthSystemHelp.enrichHandoff(handoff);
+      }
+    }
+    if (window.GrowthSystemHelp) {
+      run();
+      return;
+    }
+    if (typeof document.createElement !== 'function' || !document.head) {
+      return;
+    }
+    if (document.querySelector('script[src="/js/growth-system-help.js"]')) {
+      document.addEventListener('growth-system-help-ready', run, { once: true });
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = '/js/growth-system-help.js';
+    s.onload = function () {
+      document.dispatchEvent(new Event('growth-system-help-ready'));
+      run();
+    };
+    document.head.appendChild(s);
   }
 
   /** Restore mounts to classic DOM order for engine-coach contract tests. */

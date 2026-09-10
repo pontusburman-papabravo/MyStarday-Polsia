@@ -37,6 +37,7 @@ const SURFACE_BY_BLOCKING_STEP = Object.freeze({
     SURFACES.child_login,
     SURFACES.help_panel,
     SURFACES.onboarding,
+    SURFACES.dashboard,
   ],
   login_no_completion: [
     SURFACES.schedule,
@@ -68,11 +69,14 @@ const CONTENT = Object.freeze({
   },
   schema_no_child_login: {
     headlineSv: 'Hjälp barnet logga in',
-    bodySv: 'Schemat är klart. Låt barnet logga in med namn och PIN på samma enhet.',
+    bodySv: 'Schemat är sparat. Ge barnet den här enheten — du kan logga in som förälder igen efteråt. Har ni glömt PIN? Visa den under barnets profil först.',
     ctaSv: 'Starta barninloggning',
     ctaAction: 'start_child_login',
+    secondaryCtaSv: 'Visa eller byt PIN',
+    secondaryCtaEn: 'View or change PIN',
+    secondaryCtaAction: 'open_child_profile',
     headlineEn: 'Help your child log in',
-    bodyEn: 'The schedule is ready. Let your child log in with their name and PIN on this device.',
+    bodyEn: 'The schedule is saved. Hand this device to your child — you can sign back in as a parent afterwards. Forgotten the PIN? Check it under the child profile first.',
     ctaEn: 'Start child login',
   },
   login_no_completion: {
@@ -120,6 +124,10 @@ function buildHelpPayload(blockingStep, locale) {
     body: en ? copy.bodyEn : copy.bodySv,
     ctaLabel: en ? copy.ctaEn : copy.ctaSv,
     ctaAction: copy.ctaAction,
+    secondaryCtaLabel: copy.secondaryCtaAction
+      ? (en ? copy.secondaryCtaEn : copy.secondaryCtaSv)
+      : null,
+    secondaryCtaAction: copy.secondaryCtaAction || null,
     showSupportRequest: Boolean(copy.showSupportRequest),
     surfaces: SURFACE_BY_BLOCKING_STEP[blockingStep] || [SURFACES.help_panel],
   };

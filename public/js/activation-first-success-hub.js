@@ -13,6 +13,7 @@
 
   let cache = { at: 0, data: null, flagOn: false };
   let blockedState = null;
+  let systemHelpLoading = false;
   let fetchGeneration = 0;
   let fetchInFlight = null;
   let retryInFlight = false;
@@ -282,7 +283,44 @@
     }
 
     trackShownOnce(payload);
+    if (needsHandoffHint) {
+      attachSystemHelpToCoach(mount);
+    }
     return true;
+  }
+
+  function attachSystemHelpToCoach(mount) {
+    function run() {
+      if (window.GrowthSystemHelp && typeof GrowthSystemHelp.attachPrimaryCta === 'function') {
+        GrowthSystemHelp.attachPrimaryCta(mount, {
+          surface: 'child_handoff',
+          ctaSelector: '.activation-fs-cta',
+        });
+      }
+    }
+    if (window.GrowthSystemHelp) {
+      run();
+      return;
+    }
+    if (typeof document.createElement !== 'function' || !document.head) {
+      return;
+    }
+    if (systemHelpLoading) {
+      document.addEventListener('growth-system-help-ready', run, { once: true });
+      return;
+    }
+    systemHelpLoading = true;
+    const s = document.createElement('script');
+    s.src = '/js/growth-system-help.js';
+    s.onload = function () {
+      systemHelpLoading = false;
+      document.dispatchEvent(new Event('growth-system-help-ready'));
+      run();
+    };
+    s.onerror = function () {
+      systemHelpLoading = false;
+    };
+    document.head.appendChild(s);
   }
 
   function renderBlocked(state) {

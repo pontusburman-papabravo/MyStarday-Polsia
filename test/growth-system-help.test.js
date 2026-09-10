@@ -74,7 +74,12 @@ describe('growth-system-help content', () => {
     assert.equal(help.helpType, 'preview_child_login_help');
     assert.match(help.headline, /logga in/i);
     assert.equal(help.ctaAction, 'start_child_login');
+    assert.equal(help.secondaryCtaAction, 'open_child_profile');
+    assert.match(help.secondaryCtaLabel, /PIN/i);
+    assert.match(help.body, /PIN/);
+    assert.equal(help.showSupportRequest, false);
     assert.ok(SURFACE_BY_BLOCKING_STEP.schema_no_child_login.includes('child_handoff'));
+    assert.ok(SURFACE_BY_BLOCKING_STEP.schema_no_child_login.includes('dashboard'));
   });
 
   it('computes 24h / 72h progression outcomes', () => {
@@ -248,5 +253,34 @@ describe('growth-system-help deploy snapshot contract', () => {
     const familyOverrides = require('../db/family-feature-overrides');
     const { FLAG_KEYS } = require('../src/lib/activation-flags');
     assert.equal(familyOverrides.isOverrideFeatureKey(FLAG_KEYS.growthSystemHelp), true);
+  });
+});
+
+describe('growth-system-help client attaches to existing Hem CTA', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+
+  function read(rel) {
+    return fs.readFileSync(path.join(__dirname, '..', rel), 'utf8');
+  }
+
+  it('handoff enrichment is a PIN next step, not a help-panel detour', () => {
+    const client = read('public/js/growth-system-help.js');
+    assert.doesNotMatch(client, /Behöver du hjälp med inloggning/);
+    assert.match(client, /attachPrimaryCta/);
+    assert.match(client, /showSupportRequest/);
+    assert.match(client, /Auth\.logout\(\{ childFlow: true \}\)/);
+    assert.match(client, /growth-system-help-handoff/);
+    assert.match(client, /secondaryCtaAction/);
+  });
+
+  it('magic Hem and First Success wire the existing child-login CTA', () => {
+    const hub = read('public/js/dashboard-home-hub.js');
+    const firstSuccess = read('public/js/activation-first-success-hub.js');
+    assert.match(hub, /maybeEnrichMagicHandoff/);
+    assert.match(hub, /enrichHandoff/);
+    assert.match(firstSuccess, /attachSystemHelpToCoach/);
+    assert.match(firstSuccess, /attachPrimaryCta/);
+    assert.match(firstSuccess, /activation-fs-cta/);
   });
 });
