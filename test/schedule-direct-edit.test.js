@@ -167,6 +167,8 @@ describe('Planner PR B — Direct Day Editing', () => {
     assert.match(editor, /type="time"/);
     assert.match(editor, /data-sde-which="start"/);
     assert.match(editor, /data-sde-which="end"/);
+    assert.match(editor, /schedule\.chrome\.startTimePlaceholder|Starttid|Start time/);
+    assert.doesNotMatch(editor, /schedule\.startTimePlaceholder/);
   });
 
   it('hides native type=time so iOS cannot paint the clock', () => {
@@ -232,5 +234,9 @@ describe('Planner PR B — Direct Day Editing', () => {
     assert.equal(sv.editor.addTimeAria, 'Lägg till tid');
     assert.equal(en.editor.addTime, 'Time');
     assert.equal(en.editor.addTimeAria, 'Add time');
+    assert.equal(sv.chrome.startTimePlaceholder, 'Starttid');
+    assert.equal(sv.chrome.endTimePlaceholder, 'Sluttid');
+    assert.equal(en.chrome.startTimePlaceholder, 'Start time');
+    assert.equal(en.chrome.endTimePlaceholder, 'End time');
   });
 });

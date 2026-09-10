@@ -40,8 +40,8 @@
 
   function timeFieldHtml(itemId, which, value) {
     const labelKey = which === 'start'
-      ? 'schedule.startTimePlaceholder'
-      : 'schedule.endTimePlaceholder';
+      ? 'schedule.chrome.startTimePlaceholder'
+      : 'schedule.chrome.endTimePlaceholder';
     const label = t(labelKey);
     const filled = Boolean(value);
     return `<label class="sde-time-field min-h-[44px] relative flex-1 flex items-center justify-center px-3 py-2 border-2 border-lavender rounded-xl">
