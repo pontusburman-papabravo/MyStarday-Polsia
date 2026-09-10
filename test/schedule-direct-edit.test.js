@@ -22,14 +22,15 @@ const MAGIC_CSS = 'public/css/parent-magic-common.css';
 function createDirectEditSandbox(opts = {}) {
   const puts = [];
   const toasts = [];
-  const item = opts.item || {
+  const items = opts.items || [opts.item || {
     id: 'item-1',
     start_time: opts.startTime || null,
     end_time: opts.endTime || null,
     section: 'kvall',
     is_once_task: Boolean(opts.once),
     activity_name: 'Pyjamas',
-  };
+  }];
+  const item = items[0];
   const editors = new Map();
   const chips = new Map();
   const document = {
@@ -76,7 +77,7 @@ function createDirectEditSandbox(opts = {}) {
   };
 
   const sandbox = {
-    scheduleItems: [item],
+    scheduleItems: items,
     currentScheduleId: 'sched-1',
     reloads: 0,
     showToast(msg, isError) { toasts.push({ msg, isError: Boolean(isError) }); },
@@ -93,7 +94,7 @@ function createDirectEditSandbox(opts = {}) {
   sandbox.window = sandbox;
   sandbox.window.apiFetch = async (url, init = {}) => {
     puts.push({ url, method: init.method, body: JSON.parse(init.body) });
-    if (opts.putError) {
+    if (opts.putError && puts.length <= (opts.putErrorUntil || 99)) {
       return { ok: false, json: async () => ({ error: 'save-failed' }) };
     }
     return { ok: true, json: async () => ({ ok: true }) };
@@ -239,5 +240,82 @@ describe('Planner PR B — Direct Day Editing', () => {
     assert.equal(sv.chrome.endTimePlaceholder, 'Sluttid');
     assert.equal(en.chrome.startTimePlaceholder, 'Start time');
     assert.equal(en.chrome.endTimePlaceholder, 'End time');
+  });
+
+  it('clearing start and end persists null on the existing PUT', async () => {
+    const { sandbox, puts } = createDirectEditSandbox({ startTime: '18:00', endTime: '18:30' });
+    await sandbox.ScheduleDirectEdit.setTime('item-1', 'start', '');
+    assert.equal(puts.length, 1);
+    assert.deepEqual(puts[0].body, { start_time: null, end_time: '18:30', section: 'kvall' });
+    await sandbox.ScheduleDirectEdit.setTime('item-1', 'end', '');
+    assert.deepEqual(puts[1].body, { start_time: null, end_time: null, section: 'kvall' });
+    assert.equal(sandbox.scheduleItems[0].start_time, null);
+    assert.equal(sandbox.scheduleItems[0].end_time, null);
+  });
+
+  it('failed PUT leaves local times unchanged and retry can succeed', async () => {
+    const { sandbox, puts, toasts, item } = createDirectEditSandbox({
+      startTime: null,
+      putError: true,
+      putErrorUntil: 1,
+    });
+    await sandbox.ScheduleDirectEdit.setTime('item-1', 'start', '18:00');
+    assert.equal(puts.length, 1);
+    assert.equal(item.start_time, null);
+    assert.equal(sandbox.reloads, 0);
+    assert.equal(toasts[0].isError, true);
+    await sandbox.ScheduleDirectEdit.setTime('item-1', 'start', '18:00');
+    assert.equal(puts.length, 2);
+    assert.equal(item.start_time, '18:00');
+    assert.equal(sandbox.reloads, 1);
+    assert.equal(toasts[1].isError, false);
+  });
+
+  it('saveTail cannot persist row A times onto row B', async () => {
+    const { sandbox, puts } = createDirectEditSandbox({
+      items: [
+        { id: 'item-a', start_time: null, end_time: null, section: 'morgon', is_once_task: false },
+        { id: 'item-b', start_time: '09:00', end_time: '09:30', section: 'kvall', is_once_task: false },
+      ],
+    });
+    await Promise.all([
+      sandbox.ScheduleDirectEdit.setTime('item-a', 'start', '18:00'),
+      sandbox.ScheduleDirectEdit.setTime('item-b', 'end', '10:00'),
+    ]);
+    assert.equal(puts.length, 2);
+    assert.equal(puts[0].url, '/api/schedules/sched-1/items/item-a');
+    assert.deepEqual(puts[0].body, { start_time: '18:00', end_time: null, section: 'morgon' });
+    assert.equal(puts[1].url, '/api/schedules/sched-1/items/item-b');
+    assert.deepEqual(puts[1].body, { start_time: '09:00', end_time: '10:00', section: 'kvall' });
+    assert.notEqual(puts[1].body.start_time, '18:00');
+    assert.notEqual(puts[1].body.section, 'morgon');
+  });
+
+  it('always-visible ✕ calls existing removeItem — no immediate DELETE', () => {
+    const scheduleSrc = read(SCHEDULE_JS);
+    assert.match(scheduleSrc, /onclick="event\.stopPropagation\(\); removeItem\('\$\{item\.id\}'\)"/);
+    const modalSrc = read('public/js/schedule-activity-modals.js');
+    const fnMatch = modalSrc.match(/function removeItem\(itemId\)\{[\s\S]*?\n\}/);
+    assert.ok(fnMatch, 'removeItem must exist');
+    const fn = fnMatch[0];
+    assert.match(fn, /openConfirmModal/);
+    assert.match(fn, /recurrenceModal/);
+    assert.match(fn, /bindRecurrenceDeleteHandlers/);
+    assert.match(fn, /modal\.classList\.remove\('hidden'\)/);
+    const recurringOnly = fn.replace(/if \(item\?\.is_once_task\) \{[\s\S]*?return;\n  \}/, '');
+    assert.doesNotMatch(recurringOnly, /apiFetch/, 'recurring ✕ must only open the confirmation modal');
+    assert.match(modalSrc, /\/api\/daily-log-items\/\$\{itemId\}/);
+    assert.match(modalSrc, /\/items\/\$\{itemId\}\/exclude-date/);
+    const deleteFns = ['function deleteOnce', 'async function deleteAll', 'async function deleteAllDays']
+      .map((needle) => {
+        const start = modalSrc.indexOf(needle);
+        return start === -1 ? '' : modalSrc.slice(start, start + 900);
+      })
+      .join('\n');
+    assert.doesNotMatch(deleteFns, /\/api\/activities\//);
+    assert.doesNotMatch(deleteFns, /activity_template/);
+    const itemRoutes = read('src/routes/schedules/items.js');
+    assert.doesNotMatch(itemRoutes, /DELETE FROM activity_template/);
+    assert.match(itemRoutes, /DELETE FROM weekly_schedule_item/);
   });
 });
