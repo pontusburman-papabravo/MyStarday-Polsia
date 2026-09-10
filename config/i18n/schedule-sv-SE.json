@@ -25,10 +25,14 @@
     "noChildrenTitle": "Inga barn tillagda ännu",
     "goToDashboard": "Gå till Min panel",
     "noScheduleTitle": "{{name}} har inget veckoschema ännu",
-    "noScheduleBody": "Skapa ett schema för att börja planera dagen",
+    "noScheduleBody": "Lägg till aktiviteter direkt här — en dag i taget.",
     "noScheduleDayTitle": "Inget schema för {{day}}{{date}}",
-    "noScheduleDayBody": "Skapa ett schema för att börja planera {{name}}s dag",
-    "createForDay": "+ Skapa schema för {{day}}"
+    "noScheduleDayBody": "Lägg till aktiviteter för {{name}}s dag, eller kopiera från en annan veckodag.",
+    "createForDay": "+ Skapa schema för {{day}}",
+    "addActivity": "Lägg till aktivitet",
+    "useTemplate": "Använd mall",
+    "copyFromDay": "Kopiera från annan dag",
+    "copyDayPromo": "Klar dag? Kopiera till fler veckodagar nedan."
   },
   "custody": {
     "otherParent": "Barnet är hos den andra föräldern {{date}}",

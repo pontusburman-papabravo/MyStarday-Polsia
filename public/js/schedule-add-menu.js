@@ -777,6 +777,27 @@
     showModal();
   }
 
+  function findDefaultCopySourceDay(excludeDay) {
+    const schedules = typeof window.getChildWeekSchedules === 'function'
+      ? window.getChildWeekSchedules()
+      : [];
+    for (const dow of WEEKDAYS) {
+      if (dow === excludeDay) continue;
+      if (schedules.some((row) => row.day_of_week === dow)) return dow;
+    }
+    return excludeDay;
+  }
+
+  /** Empty selected day — preselect copy FROM another populated day TO currentDay. */
+  function openCopyDayToCurrentDay() {
+    const targetDay = typeof currentDay === 'number' ? currentDay : 1;
+    copyDayState.sourceDay = findDefaultCopySourceDay(targetDay);
+    copyDayState.targetDays = new Set([targetDay]);
+    copyDayState.mode = 'merge';
+    renderCopyDayStep();
+    showModal();
+  }
+
   function renderCopyDayStep() {
     bodyEl().innerHTML = `
       <div class="flex items-center justify-between mb-4">
@@ -934,6 +955,7 @@
     setTemplateMode,
     submitTemplate,
     openCopyDay,
+    openCopyDayToCurrentDay,
     setCopyDaySource,
     setCopyDayMode,
     toggleCopyDayTarget,
