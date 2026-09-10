@@ -283,6 +283,7 @@
 // stjarndag-v892: App Store 2.2 fix — remove "Beta" badge/label from English language selection (locale-switcher, language-choice)
 // stjarndag-v893: Phase 4 — Weekly Schedule chrome: advanced view modes + PDF export tucked under a "Visa" disclosure
 // stjarndag-v894: Phase 4 closure — Kalender links to Specialdagar as an explicit secondary bridge
+// stjarndag-v931: SIWA sheet cancel is a quiet abort (no fake Apple-failed banner)
 // stjarndag-v930: Trusted Device child session counts as activation child_access + First Star starter
 // stjarndag-v929: OAuth payload terms lookup is document-safe
 // stjarndag-v928: SIWA client helpers use let/const (lint:public budget)
@@ -946,6 +947,7 @@ const STATIC_ASSETS = [
   '/js/google-auth-ui.js',
   '/js/registration-country-gate.js',
   '/js/register-apple-auth.js',
+  '/js/apple-auth-cancel.js',
   '/js/apple-auth-session.js',
   '/js/apple-auth-completion.js',
   '/js/country-choice.js',

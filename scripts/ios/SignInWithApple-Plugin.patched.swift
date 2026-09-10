@@ -88,7 +88,16 @@ extension SignInWithApple: ASAuthorizationControllerDelegate {
         guard let call = self.bridge?.savedCall(withID: id) else {
             return
         }
-        call.reject(error.localizedDescription)
+        let nsError = error as NSError
+        let canceledCode = ASAuthorizationError.Code.canceled.rawValue
+        let isCanceled = (error as? ASAuthorizationError)?.code == .canceled
+            || (nsError.domain == ASAuthorizationError.errorDomain && nsError.code == canceledCode)
+            || nsError.code == 1001
+        if isCanceled {
+            call.reject("canceled", "ERR_CANCELED", error)
+        } else {
+            call.reject(error.localizedDescription, String(nsError.code), error)
+        }
         self.bridge?.releaseCall(call)
     }
 }

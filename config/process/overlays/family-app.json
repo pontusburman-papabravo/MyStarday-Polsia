@@ -80,7 +80,8 @@
         "test/apple-auth-siwa-invariants.test.js",
         "test/apple-auth-token-revoke.test.js",
         "test/apple-refresh-token-exposure.test.js",
-        "test/apple-login-registration-split.test.js"
+        "test/apple-login-registration-split.test.js",
+        "test/apple-auth-cancel.test.js"
       ],
       "testGlobs": [
         "test/*auth*.test.js",
