@@ -59,6 +59,35 @@
   const opTracker = window.ScheduleApplyClient ? ScheduleApplyClient.createOperationTracker() : null;
   let activitySubmitInFlight = false;
   let activityContextChildId = null;
+  let nextEntryFocusGuard = null;
+
+  function stopNextEntryFocusGuard() {
+    if (!nextEntryFocusGuard) return;
+    nextEntryFocusGuard.disconnect();
+    nextEntryFocusGuard = null;
+  }
+
+  function startNextEntryFocusGuard() {
+    stopNextEntryFocusGuard();
+    const content = document.getElementById('scheduleContent');
+    if (!content || typeof MutationObserver === 'undefined') return;
+    nextEntryFocusGuard = new MutationObserver(() => {
+      const modal = document.getElementById('scheduleAddMenuModal');
+      if (!modal || modal.classList.contains('hidden')) {
+        stopNextEntryFocusGuard();
+        return;
+      }
+      const search = document.getElementById('samActivitySearch');
+      if (!search) return;
+      const active = document.activeElement;
+      if (active === search) return;
+      const saveBtn = document.getElementById('samActivitySaveBtn');
+      const activeInModal = modal.contains(active);
+      if (activeInModal && active !== saveBtn) return;
+      restoreSearchFocus();
+    });
+    nextEntryFocusGuard.observe(content, { childList: true, subtree: true });
+  }
 
   // ── Modal shell (one shared container, step-based) ─────────────────────────
 
@@ -92,6 +121,7 @@
   }
 
   function closeAddMenu() {
+    stopNextEntryFocusGuard();
     const modal = document.getElementById('scheduleAddMenuModal');
     if (modal) modal.classList.add('hidden');
     activitySubmitInFlight = false;
@@ -580,6 +610,7 @@
       const statusEl = document.getElementById('samActivityStatus');
       if (statusEl) statusEl.textContent = successMsg;
       restoreNextEntryFocus = true;
+      startNextEntryFocusGuard();
       try {
         await afterSuccessfulMutation();
       } catch (_refreshErr) {

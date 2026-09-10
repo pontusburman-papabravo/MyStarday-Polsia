@@ -332,6 +332,7 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
     assert.match(success, /resetActivityForNextEntry\(\)/);
     assert.match(success, /renderActivityStep\(\)/);
     assert.match(success, /await afterSuccessfulMutation\(\)/);
+    assert.match(success, /startNextEntryFocusGuard\(\)/);
     assert.match(success, /restoreSearchFocus\(\)/);
     assert.ok(
       success.lastIndexOf('setPending(\'samActivitySaveBtn\', false)') < success.lastIndexOf('restoreSearchFocus()'),
@@ -456,6 +457,11 @@ function createRapidEntrySandbox(opts = {}) {
       getAttribute(name) { return this.attributes[name]; },
       addEventListener() {},
       focus() { focusedId = this.id; },
+      contains(node) {
+        if (!node) return false;
+        if (node === this) return true;
+        return Boolean(this._innerHTML && node.id && this._innerHTML.includes(`id="${node.id}"`));
+      },
       appendChild(child) {
         this.children.push(child);
         if (child.id) byId.set(child.id, child);
@@ -493,6 +499,7 @@ function createRapidEntrySandbox(opts = {}) {
   }
 
   const body = makeEl('body');
+  body.appendChild(makeEl('div', 'scheduleContent'));
   const document = {
     body,
     getElementById: (id) => byId.get(id) || null,
@@ -515,6 +522,16 @@ function createRapidEntrySandbox(opts = {}) {
       sandbox.scheduleReloads += 1;
       const steal = document.getElementById('samActivitySaveBtn');
       if (steal) steal.focus();
+      await Promise.resolve();
+      if (typeof sandbox._focusGuardCb === 'function') sandbox._focusGuardCb();
+    },
+    MutationObserver: function MutationObserver(cb) {
+      return {
+        observe() { sandbox._focusGuardCb = cb; },
+        disconnect() {
+          if (sandbox._focusGuardCb === cb) sandbox._focusGuardCb = null;
+        },
+      };
     },
     scheduleReloads: 0,
     showToast(msg, isError) { toasts.push({ msg, isError: Boolean(isError) }); },
