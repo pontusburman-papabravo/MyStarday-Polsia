@@ -345,6 +345,9 @@ describe('growth-system-help-ops-report', () => {
     assert.match(body, /nuvarande episod/);
     assert.match(body, /Senaste färdiga outcomes:/);
     assert.match(body, /no_progress · schema_no_child_login/);
+    assert.match(body, /Exposure-semantik \(PR 1152/);
+    assert.match(body, /existing_hem_or_first_success_cta/);
+    assert.match(body, /poola inte som ett experiment/);
     assert.doesNotMatch(body, /ÅTGÄRD: Global flagga/);
   });
 

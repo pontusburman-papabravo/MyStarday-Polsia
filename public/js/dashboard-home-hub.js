@@ -341,22 +341,37 @@
         GrowthSystemHelp.enrichHandoff(handoff);
       }
     }
+    ensureGrowthSystemHelpScript(run);
+  }
+
+  function ensureGrowthSystemHelpScript(cb) {
     if (window.GrowthSystemHelp) {
-      run();
+      cb();
       return;
     }
-    if (typeof document.createElement !== 'function' || !document.head) {
+    if (typeof document.addEventListener === 'function') {
+      document.addEventListener('growth-system-help-ready', cb, { once: true });
+    }
+    if (window.__growthSystemHelpLoading) return;
+    if (typeof document.createElement !== 'function' || !document.head) return;
+    const existing = document.querySelector('script[data-growth-system-help-src="1"]')
+      || document.querySelector('script[src="/js/growth-system-help.js"]');
+    if (existing) {
+      window.__growthSystemHelpLoading = true;
       return;
     }
-    if (document.querySelector('script[src="/js/growth-system-help.js"]')) {
-      document.addEventListener('growth-system-help-ready', run, { once: true });
-      return;
-    }
+    window.__growthSystemHelpLoading = true;
     const s = document.createElement('script');
     s.src = '/js/growth-system-help.js';
+    s.setAttribute('data-growth-system-help-src', '1');
     s.onload = function () {
-      document.dispatchEvent(new Event('growth-system-help-ready'));
-      run();
+      window.__growthSystemHelpLoading = false;
+      if (typeof document.dispatchEvent === 'function') {
+        document.dispatchEvent(new Event('growth-system-help-ready'));
+      }
+    };
+    s.onerror = function () {
+      window.__growthSystemHelpLoading = false;
     };
     document.head.appendChild(s);
   }

@@ -13,6 +13,21 @@ const analytics = require('../../db/analytics');
 
 const FLAG_KEY = 'growth_system_help_v1';
 
+/**
+ * PR 1152 changes what `system_help_shown` means.
+ * OLD (shown before this deploy / SW < v932): help-panel or handoff detour.
+ * NEW (shown at/after this deploy / SW v932+): existing Hem / First Success CTA.
+ * Segment ops outcomes pre/post deploy SHA (or cacheName). Do not pool as one experiment.
+ * Historical progression_outcome rows are retained — this is not a reset.
+ */
+const HEM_CTA_EXPOSURE = Object.freeze({
+  pr: 1152,
+  cacheName: 'stjarndag-v932',
+  oldExposure: 'help_panel_or_handoff_detour',
+  newExposure: 'existing_hem_or_first_success_cta',
+  segmentBy: 'system_help_shown.created_at versus deploy SHA / cacheName',
+});
+
 const SURFACES = Object.freeze({
   help_panel: 'help_panel',
   child_handoff: 'child_handoff',
@@ -442,6 +457,7 @@ function mapSystemHelpRouteError(err, opts = {}) {
 
 module.exports = {
   FLAG_KEY,
+  HEM_CTA_EXPOSURE,
   SURFACES,
   SURFACE_BY_BLOCKING_STEP,
   CONTENT,

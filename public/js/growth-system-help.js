@@ -237,8 +237,24 @@
     '.activation-fs-cta',
   ].join(',');
 
+  function isActionablePrimaryCta(el) {
+    if (!el) return false;
+    if (el.disabled === true) return false;
+    if (el.hidden === true) return false;
+    if (typeof el.getAttribute === 'function') {
+      if (el.getAttribute('disabled') != null && el.getAttribute('disabled') !== 'false') return false;
+      if (el.getAttribute('hidden') != null) return false;
+      if (el.getAttribute('aria-hidden') === 'true') return false;
+    }
+    if (el.classList && typeof el.classList.contains === 'function' && el.classList.contains('hidden')) {
+      return false;
+    }
+    return true;
+  }
+
   function bindEngage(el, data, surface, ctaAction) {
-    if (!el || el.getAttribute('data-system-help-engage') === '1') return;
+    if (!isActionablePrimaryCta(el)) return false;
+    if (el.getAttribute('data-system-help-engage') === '1') return false;
     el.setAttribute('data-system-help-engage', '1');
     el.addEventListener('click', function () {
       postJson('/api/growth/system-help/engage', {
@@ -247,10 +263,12 @@
         cta_action: ctaAction || (data.help && data.help.ctaAction),
       });
     });
+    return true;
   }
 
   /**
    * Count the existing Hem next-step CTA as system help — no second coach.
+   * shown starts the 72h clock only when that CTA is found and actionable.
    */
   async function attachPrimaryCta(rootEl, opts) {
     opts = opts || {};
@@ -258,8 +276,10 @@
     const surface = opts.surface || 'child_handoff';
     const data = await fetchContext(surface);
     if (!data || !data.eligible || !data.help) return null;
+    if (data.help.ctaAction !== 'start_child_login') return null;
     const cta = rootEl.querySelector(opts.ctaSelector || PRIMARY_CTA_SELECTOR);
-    if (cta) bindEngage(cta, data, surface);
+    if (!isActionablePrimaryCta(cta)) return null;
+    bindEngage(cta, data, surface);
     await recordShown(data);
     return data;
   }
@@ -301,7 +321,8 @@
     }
 
     const existing = rootEl.querySelector(PRIMARY_CTA_SELECTOR);
-    if (existing) bindEngage(existing, data, 'child_handoff');
+    if (!isActionablePrimaryCta(existing)) return;
+    bindEngage(existing, data, 'child_handoff');
     await recordShown(data);
   }
 
@@ -311,6 +332,7 @@
     refreshHelpPanel: refreshHelpPanel,
     enrichHandoff: enrichHandoff,
     attachPrimaryCta: attachPrimaryCta,
+    isActionablePrimaryCta: isActionablePrimaryCta,
     buildCardHtml: buildCardHtml,
     buildTechnicalContext: buildTechnicalContext,
   };
