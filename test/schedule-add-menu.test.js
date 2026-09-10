@@ -396,10 +396,18 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
     assert.match(src, /sam-activity-shell/);
     assert.match(src, /sam-activity-scroll/);
     assert.match(src, /sam-activity-footer/);
+    assert.match(src, /sam-activity-footer border-t border-lavender/);
     assert.match(src, /id="samActivitySaveBtn"/);
+    const activityFooter = src.slice(src.indexOf('sam-activity-footer'), src.indexOf('samActivitySaveBtn') + 80);
+    assert.match(activityFooter, /text-navy/);
+    assert.match(activityFooter, /schedule\.addMenu\.cancel/);
     assert.match(src, /aria-labelledby',\s*'scheduleAddMenuTitle'/);
     assert.match(src, /aria-live="polite"/);
     assert.match(html, /#scheduleAddMenuModal \.sam-activity-footer/);
+    const footerCss = html.slice(html.indexOf('#scheduleAddMenuModal .sam-activity-footer'), html.indexOf('#scheduleAddMenuModal .sr-only'));
+    assert.match(footerCss, /background:\s*transparent/);
+    assert.doesNotMatch(footerCss, /background:\s*#fff/);
+    assert.match(html, /#scheduleAddMenuModal #samActivityError/);
     assert.match(html, /100dvh/);
     assert.match(src, /'Escape'/);
     assert.match(src, /ScheduleAddMenu\.close\(\)/);
