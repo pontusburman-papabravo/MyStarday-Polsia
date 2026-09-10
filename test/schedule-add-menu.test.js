@@ -398,7 +398,8 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
     assert.match(src, /sam-activity-footer/);
     assert.match(src, /sam-activity-footer border-t border-lavender/);
     assert.match(src, /id="samActivitySaveBtn"/);
-    const activityFooter = src.slice(src.indexOf('sam-activity-footer'), src.indexOf('samActivitySaveBtn') + 80);
+    const activityFooterStart = src.indexOf('sam-activity-footer border-t border-lavender');
+    const activityFooter = src.slice(activityFooterStart, activityFooterStart + 900);
     assert.match(activityFooter, /text-navy/);
     assert.match(activityFooter, /schedule\.addMenu\.cancel/);
     assert.match(src, /aria-labelledby',\s*'scheduleAddMenuTitle'/);
