@@ -86,6 +86,14 @@ describe('schedule/planning i18n surfaces', () => {
       t('en-GB', 'schedule.addMenu.activity.applyFailed'),
       'The activity was saved, but the schedule could not be updated. Try saving again.'
     );
+    assert.equal(
+      t('sv-SE', 'schedule.addMenu.activity.childChanged'),
+      'Barnet byttes. Öppna Lägg till igen för det barn du vill ändra.'
+    );
+    assert.equal(
+      t('en-GB', 'schedule.addMenu.activity.childChanged'),
+      'The child changed. Open Add again for the child you want to edit.'
+    );
   });
 
   it('schedule fragment keys have full sv-SE / en-GB parity', () => {

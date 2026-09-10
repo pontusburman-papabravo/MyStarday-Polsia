@@ -7,12 +7,16 @@
  * harness for schedule.js; manual verification screenshots cover interactive behaviour,
  * see the PR description). Full HTTP/backend coverage lives in
  * test/schedule-apply-routes.test.js and test/schedule-apply-phase1b.test.js.
+ *
+ * Rapid Entry also has an executable vm harness below so sequential apply / mutex
+ * behaviour is proven, not only matched as source text.
  */
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const ROOT = path.join(__dirname, '..');
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -283,8 +287,9 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
     assert.match(beforeApply, /return;/);
     assert.match(submit, /activityState\.createdUnappliedId = templateId/);
     assert.match(submit, /activity\.applyFailed/);
-    const afterFail = submit.slice(submit.indexOf('if (!ok)'), submit.indexOf('activityState.createdUnappliedId = null'));
+    const afterFail = submit.slice(submit.indexOf('if (!ok)'), submit.indexOf('resetActivityForNextEntry()'));
     assert.match(afterFail, /return;/);
+    assert.doesNotMatch(afterFail, /resetActivityForNextEntry\(\)/);
     assert.doesNotMatch(afterFail, /createdUnappliedId = null/);
     const createGuard = submit.slice(0, submit.indexOf('createFamilyActivity'));
     assert.match(createGuard, /createdUnappliedId/);
@@ -309,5 +314,513 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
     assert.doesNotMatch(copyDay, /pendingNewName/, 'copy day does not use inline-create state');
     assert.match(src, /function openCopyDay/);
     assert.match(src, /function submitCopyDay/);
+  });
+
+  it('rapid entry: successful Activity save stays open and resets for the next name', () => {
+    const src = read(MODULE);
+    assert.match(src, /function resetActivityForNextEntry/);
+    const helper = src.slice(src.indexOf('function resetActivityForNextEntry'), src.indexOf('async function openActivity'));
+    assert.match(helper, /resetActivityCreateState\(\)/);
+    assert.match(helper, /activityState\.query = ''/);
+    assert.match(helper, /activityState\.days = days/);
+    assert.match(helper, /activityState\.section = section/);
+    assert.match(helper, /activityState\.startTime = startTime/);
+    assert.match(helper, /activityState\.endTime = endTime/);
+    assert.match(helper, /opTracker\.reset\(\)/);
+    const submit = src.slice(src.indexOf('async function submitActivity'), src.indexOf('const templateState'));
+    const success = submit.slice(submit.indexOf('resetActivityForNextEntry()'));
+    assert.match(success, /resetActivityForNextEntry\(\)/);
+    assert.match(success, /renderActivityStep\(\)/);
+    assert.match(success, /await afterSuccessfulMutation\(\)/);
+    assert.match(success, /startNextEntryFocusGuard\(\)/);
+    assert.match(success, /restoreSearchFocus\(\)/);
+    assert.ok(
+      success.lastIndexOf('setPending(\'samActivitySaveBtn\', false)') < success.lastIndexOf('restoreSearchFocus()'),
+      'search focus must be restored after Save is re-enabled, not before the mutation path'
+    );
+    assert.doesNotMatch(success, /closeAddMenu\(\)/);
+    const createFail = submit.slice(0, submit.indexOf('ScheduleApplyClient.applyActivity'));
+    assert.doesNotMatch(createFail, /resetActivityForNextEntry\(\)/);
+  });
+
+  it('rapid entry: submit mutex blocks a second in-flight Activity save', () => {
+    const src = read(MODULE);
+    assert.match(src, /let activitySubmitInFlight = false/);
+    const submit = src.slice(src.indexOf('async function submitActivity'), src.indexOf('const templateState'));
+    assert.match(submit, /if \(activitySubmitInFlight\) return;/);
+    assert.match(submit, /activitySubmitInFlight = true/);
+    assert.match(submit, /finally \{\s*activitySubmitInFlight = false/s);
+    assert.doesNotMatch(submit, /setTimeout\(|debounce/);
+  });
+
+  it('rapid entry: two sequential saves reset opTracker so the second apply is a new command', () => {
+    const src = read(MODULE);
+    const helper = src.slice(src.indexOf('function resetActivityForNextEntry'), src.indexOf('async function openActivity'));
+    assert.match(helper, /opTracker\.reset\(\)/);
+    const submit = src.slice(src.indexOf('async function submitActivity'), src.indexOf('const templateState'));
+    const resetIdx = submit.indexOf('resetActivityForNextEntry()');
+    const applyIdx = submit.indexOf('ScheduleApplyClient.applyActivity');
+    assert.ok(resetIdx > applyIdx, 'opTracker reset happens after a successful apply, not before');
+    assert.doesNotMatch(submit.slice(submit.indexOf('if (!ok)'), resetIdx), /opTracker\.reset\(\)/);
+  });
+
+  it('rapid entry: Template and Copy Day still close on success', () => {
+    const src = read(MODULE);
+    const templateSuccess = src.slice(src.indexOf('async function doSubmitTemplate'), src.indexOf('function openCopyDay'));
+    assert.match(templateSuccess, /closeAddMenu\(\)/);
+    assert.doesNotMatch(templateSuccess, /resetActivityForNextEntry\(\)/);
+    const copySuccess = src.slice(src.indexOf('async function doSubmitCopyDay'), src.indexOf('function openSaveAsTemplate'));
+    assert.match(copySuccess, /closeAddMenu\(\)/);
+    assert.doesNotMatch(copySuccess, /resetActivityForNextEntry\(\)/);
+  });
+
+  it('rapid entry: child switch closes the Activity modal instead of applying to the wrong child', () => {
+    const src = read(MODULE);
+    assert.match(src, /let activityContextChildId = null/);
+    assert.match(src, /activityContextChildId = currentChildId/);
+    assert.match(src, /function closeIfChildContextChanged/);
+    assert.match(src, /function bindChildContextGuards/);
+    assert.match(src, /window\.selectChild = wrappedSelectChild/);
+    assert.match(src, /window\.backToChildrenList = wrappedBackToChildren/);
+    const submit = src.slice(src.indexOf('async function submitActivity'), src.indexOf('const templateState'));
+    assert.match(submit, /currentChildId !== activityContextChildId/);
+    assert.match(submit, /activity\.childChanged/);
+    const applySlice = submit.slice(submit.lastIndexOf('if (!currentChildId || currentChildId !== activityContextChildId)'), submit.indexOf('ScheduleApplyClient.applyActivity'));
+    assert.match(applySlice, /closeAddMenu\(\)/);
+    assert.doesNotMatch(applySlice, /applyActivity\(/);
+  });
+
+  it('rapid entry: 375px Activity modal keeps a sticky Save footer and Escape still closes', () => {
+    const src = read(MODULE);
+    const html = read(HTML);
+    assert.match(src, /sam-activity-shell/);
+    assert.match(src, /sam-activity-scroll/);
+    assert.match(src, /sam-activity-footer/);
+    assert.match(src, /sam-activity-footer border-t border-lavender/);
+    assert.match(src, /id="samActivitySaveBtn"/);
+    const activityFooterStart = src.indexOf('sam-activity-footer border-t border-lavender');
+    const activityFooter = src.slice(activityFooterStart, activityFooterStart + 900);
+    assert.match(activityFooter, /text-navy/);
+    assert.match(activityFooter, /schedule\.addMenu\.cancel/);
+    assert.match(src, /aria-labelledby',\s*'scheduleAddMenuTitle'/);
+    assert.match(src, /aria-live="polite"/);
+    assert.match(html, /#scheduleAddMenuModal \.sam-activity-footer/);
+    const footerCss = html.slice(html.indexOf('#scheduleAddMenuModal .sam-activity-footer'), html.indexOf('#scheduleAddMenuModal .sr-only'));
+    assert.match(footerCss, /background:\s*transparent/);
+    assert.doesNotMatch(footerCss, /background:\s*#fff/);
+    assert.match(html, /#scheduleAddMenuModal #samActivityError/);
+    assert.match(html, /100dvh/);
+    assert.match(src, /'Escape'/);
+    assert.match(src, /ScheduleAddMenu\.close\(\)/);
+  });
+});
+
+function createClassList(el) {
+  const set = new Set(String(el.className || '').split(/\s+/).filter(Boolean));
+  const sync = () => { el.className = [...set].join(' '); };
+  return {
+    add(...names) { names.forEach((n) => set.add(n)); sync(); },
+    remove(...names) { names.forEach((n) => set.delete(n)); sync(); },
+    contains(name) { return set.has(name); },
+    toggle(name, force) {
+      if (force === true) set.add(name);
+      else if (force === false) set.delete(name);
+      else if (set.has(name)) set.delete(name);
+      else set.add(name);
+      sync();
+    },
+  };
+}
+
+function createRapidEntrySandbox(opts = {}) {
+  const byId = new Map();
+  const toasts = [];
+  const activityPosts = [];
+  const applyCalls = [];
+  const copyDayCalls = [];
+  const templateCalls = [];
+  let uuidSeq = 0;
+  let focusedId = null;
+  const pendingApplies = [];
+
+  function makeEl(tag, id) {
+    const el = {
+      tagName: String(tag).toUpperCase(),
+      id: id || '',
+      className: '',
+      style: {},
+      children: [],
+      textContent: '',
+      value: '',
+      selectionStart: 0,
+      attributes: {},
+      _innerHTML: '',
+      _disabled: false,
+      setAttribute(name, value) {
+        this.attributes[name] = String(value);
+        if (name === 'id') {
+          this.id = String(value);
+          byId.set(this.id, this);
+        }
+      },
+      getAttribute(name) { return this.attributes[name]; },
+      addEventListener() {},
+      focus() { focusedId = this.id; },
+      contains(node) {
+        if (!node) return false;
+        if (node === this) return true;
+        return Boolean(this._innerHTML && node.id && this._innerHTML.includes(`id="${node.id}"`));
+      },
+      appendChild(child) {
+        this.children.push(child);
+        if (child.id) byId.set(child.id, child);
+        return child;
+      },
+    };
+    Object.defineProperty(el, 'disabled', {
+      get() { return el._disabled; },
+      set(value) {
+        const wasDisabled = el._disabled;
+        el._disabled = Boolean(value);
+        if (wasDisabled && !el._disabled && el.id === 'samActivitySaveBtn') {
+          el.focus();
+        }
+      },
+    });
+    Object.defineProperty(el, 'classList', { get() { return createClassList(el); } });
+    Object.defineProperty(el, 'innerHTML', {
+      get() { return el._innerHTML; },
+      set(html) {
+        el._innerHTML = String(html);
+        for (const match of String(html).matchAll(/id="([^"]+)"/g)) {
+          const nextId = match[1];
+          if (!byId.has(nextId)) byId.set(nextId, makeEl('div', nextId));
+        }
+        const search = byId.get('samActivitySearch');
+        if (search) {
+          const valueMatch = String(html).match(/id="samActivitySearch"[^>]*value="([^"]*)"/);
+          search.value = valueMatch ? valueMatch[1] : '';
+        }
+      },
+    });
+    if (id) byId.set(id, el);
+    return el;
+  }
+
+  const body = makeEl('body');
+  body.appendChild(makeEl('div', 'scheduleContent'));
+  const document = {
+    body,
+    getElementById: (id) => byId.get(id) || null,
+    createElement: (tag) => makeEl(tag),
+    addEventListener() {},
+  };
+  Object.defineProperty(document, 'activeElement', {
+    get() { return (focusedId && byId.get(focusedId)) || body; },
+  });
+
+  const sandbox = {
+    console,
+    setTimeout,
+    clearTimeout,
+    currentChildId: opts.childId || 'child-a',
+    currentDay: opts.day == null ? 5 : opts.day,
+    allTemplates: opts.templates || [{ id: 'tpl-middag', name: 'Middag', icon: '🍽️' }],
+    loadTemplates: async () => {},
+    loadScheduleForDay: async () => {
+      sandbox.scheduleReloads += 1;
+      const steal = document.getElementById('samActivitySaveBtn');
+      if (steal) steal.focus();
+      await Promise.resolve();
+      if (typeof sandbox._focusGuardCb === 'function') sandbox._focusGuardCb();
+    },
+    MutationObserver: function MutationObserver(cb) {
+      return {
+        observe() { sandbox._focusGuardCb = cb; },
+        disconnect() {
+          if (sandbox._focusGuardCb === cb) sandbox._focusGuardCb = null;
+        },
+      };
+    },
+    scheduleReloads: 0,
+    showToast(msg, isError) { toasts.push({ msg, isError: Boolean(isError) }); },
+    pt(key, params) {
+      if (!params) return key;
+      return `${key}:${JSON.stringify(params)}`;
+    },
+    crypto: {
+      randomUUID() {
+        uuidSeq += 1;
+        return `op-${uuidSeq}`;
+      },
+    },
+    window: null,
+    document,
+    ScheduleCore: {
+      SECTIONS: [
+        { key: 'morgon', emoji: '🌅' },
+        { key: 'dag', emoji: '☀️' },
+        { key: 'kvall', emoji: '🌆' },
+        { key: 'natt', emoji: '🌙' },
+      ],
+      sectionName: (key) => key,
+      dayShort: (dow) => String(dow),
+    },
+  };
+  sandbox.window = sandbox;
+  sandbox.window.crypto = sandbox.crypto;
+  sandbox.window.pt = sandbox.pt;
+  sandbox.window.showToast = sandbox.showToast;
+  sandbox.window.loadTemplates = sandbox.loadTemplates;
+  sandbox.window.loadScheduleForDay = sandbox.loadScheduleForDay;
+
+  sandbox.apiFetch = async (url, init = {}) => {
+    if (url === '/api/activities' && init.method === 'POST') {
+      activityPosts.push(JSON.parse(init.body));
+      if (opts.createError) {
+        return { ok: false, json: async () => ({ error: 'create-failed' }) };
+      }
+      const body = JSON.parse(init.body);
+      const created = { id: `created-${activityPosts.length}`, name: body.name };
+      sandbox.allTemplates = sandbox.allTemplates.concat([created]);
+      return { ok: true, json: async () => created };
+    }
+    if (url === '/api/schedule-templates' || url === '/api/standard-library/schedules') {
+      const list = url === '/api/schedule-templates'
+        ? [{ id: 'fam-tpl-1', name: 'Kvällsmall', item_count: 3 }]
+        : [];
+      return { ok: true, json: async () => list };
+    }
+    throw new Error(`unexpected apiFetch ${init.method || 'GET'} ${url}`);
+  };
+  sandbox.window.apiFetch = sandbox.apiFetch;
+
+  vm.runInNewContext(read(CLIENT_MODULE), sandbox, { filename: CLIENT_MODULE });
+
+  sandbox.ScheduleApplyClient.applyActivity = async (childId, payload) => {
+    const call = { childId, payload };
+    applyCalls.push(call);
+    if (opts.holdApply) {
+      await new Promise((resolve) => { pendingApplies.push(resolve); });
+    }
+    if (opts.applyError && applyCalls.length <= (opts.applyErrorUntil || 1)) {
+      return { ok: false, status: 500, data: { error: 'apply-failed' } };
+    }
+    return { ok: true, status: 200, data: { ok: true } };
+  };
+  sandbox.ScheduleApplyClient.copyDay = async (childId, payload) => {
+    copyDayCalls.push({ childId, payload });
+    return { ok: true, status: 200, data: { ok: true } };
+  };
+  sandbox.ScheduleApplyClient.applyTemplate = async (childId, payload) => {
+    templateCalls.push({ childId, payload });
+    return { ok: true, status: 200, data: { ok: true } };
+  };
+  sandbox.window.ScheduleApplyClient = sandbox.ScheduleApplyClient;
+
+  vm.runInNewContext(read(MODULE), sandbox, { filename: MODULE });
+
+  return {
+    sandbox,
+    toasts,
+    activityPosts,
+    applyCalls,
+    copyDayCalls,
+    templateCalls,
+    pendingApplies,
+    focused: () => focusedId,
+    modalHidden: () => {
+      const modal = document.getElementById('scheduleAddMenuModal');
+      return !modal || modal.classList.contains('hidden');
+    },
+  };
+}
+
+describe('Rapid Entry — executable Activity submit', () => {
+  it('keeps the modal open, preserves day/section/time, and refocuses search after an existing save', async () => {
+    const harness = createRapidEntrySandbox();
+    const { ScheduleAddMenu } = harness.sandbox;
+    await ScheduleAddMenu.openActivityForDay(5, 'kvall');
+    ScheduleAddMenu.setActivityTime('start', '18:00');
+    ScheduleAddMenu.setActivityTime('end', '18:30');
+    ScheduleAddMenu.selectActivity('tpl-middag');
+    await ScheduleAddMenu.submitActivity();
+
+    assert.equal(harness.applyCalls.length, 1);
+    assert.equal(harness.activityPosts.length, 0);
+    assert.equal(harness.applyCalls[0].payload.section, 'kvall');
+    assert.deepEqual([...harness.applyCalls[0].payload.days], [5]);
+    assert.equal(harness.applyCalls[0].payload.startTime, '18:00');
+    assert.equal(harness.applyCalls[0].payload.endTime, '18:30');
+    assert.equal(harness.modalHidden(), false);
+    assert.equal(harness.sandbox.document.activeElement.id, 'samActivitySearch');
+    assert.equal(harness.sandbox.document.getElementById('samActivitySearch').value, '');
+    assert.equal(harness.sandbox.scheduleReloads, 1);
+    assert.match(harness.toasts[0].msg, /activity\.added/);
+    assert.equal(harness.toasts[0].isError, false);
+  });
+
+  it('keeps document.activeElement on #samActivitySearch after the mutation refresh completes', async () => {
+    const harness = createRapidEntrySandbox();
+    const { ScheduleAddMenu, document } = harness.sandbox;
+    await ScheduleAddMenu.openActivityForDay(5, 'kvall');
+    ScheduleAddMenu.selectActivity('tpl-middag');
+    await ScheduleAddMenu.submitActivity();
+
+    assert.equal(harness.sandbox.scheduleReloads, 1, 'background schedule refresh must run');
+    assert.equal(document.activeElement && document.activeElement.id, 'samActivitySearch');
+    assert.equal(document.getElementById('samActivitySearch').value, '');
+
+    ScheduleAddMenu.filterActivity('Läkemedel');
+    ScheduleAddMenu.selectPendingCreate();
+    await ScheduleAddMenu.submitActivity();
+    assert.equal(harness.applyCalls.length, 2);
+    assert.equal(document.activeElement && document.activeElement.id, 'samActivitySearch');
+    assert.equal(harness.sandbox.scheduleReloads, 2);
+  });
+
+  it('creates a new activity once, applies once, and starts the next entry empty', async () => {
+    const harness = createRapidEntrySandbox({ templates: [] });
+    const { ScheduleAddMenu } = harness.sandbox;
+    await ScheduleAddMenu.openActivityForDay(5, 'kvall');
+    ScheduleAddMenu.filterActivity('Läkemedel');
+    ScheduleAddMenu.selectPendingCreate();
+    await ScheduleAddMenu.submitActivity();
+
+    assert.equal(harness.activityPosts.length, 1);
+    assert.equal(harness.activityPosts[0].name, 'Läkemedel');
+    assert.equal(harness.applyCalls.length, 1);
+    assert.equal(harness.applyCalls[0].payload.activityTemplateId, 'created-1');
+    assert.equal(harness.modalHidden(), false);
+    assert.equal(harness.sandbox.document.getElementById('samActivitySearch').value, '');
+    assert.match(harness.toasts[0].msg, /createdAndAdded/);
+  });
+
+  it('resets opTracker so a second save of the same activity is a new apply, not a silent no-op', async () => {
+    const harness = createRapidEntrySandbox();
+    const { ScheduleAddMenu } = harness.sandbox;
+    await ScheduleAddMenu.openActivityForDay(5, 'kvall');
+    ScheduleAddMenu.selectActivity('tpl-middag');
+    await ScheduleAddMenu.submitActivity();
+    ScheduleAddMenu.selectActivity('tpl-middag');
+    await ScheduleAddMenu.submitActivity();
+
+    assert.equal(harness.applyCalls.length, 2);
+    const firstOp = harness.applyCalls[0].payload.operationId;
+    const secondOp = harness.applyCalls[1].payload.operationId;
+    assert.equal(firstOp, 'op-1');
+    assert.equal(secondOp, 'op-2');
+    assert.notEqual(secondOp, firstOp);
+  });
+
+  it('ignores a second in-flight Save — one create and one apply', async () => {
+    const harness = createRapidEntrySandbox({ templates: [], holdApply: true });
+    const { ScheduleAddMenu } = harness.sandbox;
+    await ScheduleAddMenu.openActivityForDay(5, 'kvall');
+    ScheduleAddMenu.filterActivity('Pyjamas');
+    ScheduleAddMenu.selectPendingCreate();
+
+    const first = ScheduleAddMenu.submitActivity();
+    for (let i = 0; i < 20 && harness.applyCalls.length === 0; i += 1) {
+      await new Promise((resolve) => { setImmediate(resolve); });
+    }
+    const second = ScheduleAddMenu.submitActivity();
+    assert.equal(harness.activityPosts.length, 1);
+    assert.equal(harness.applyCalls.length, 1);
+    assert.equal(harness.sandbox.document.getElementById('samActivitySaveBtn').disabled, true);
+
+    harness.pendingApplies.forEach((release) => release());
+    await first;
+    await second;
+    assert.equal(harness.activityPosts.length, 1);
+    assert.equal(harness.applyCalls.length, 1);
+    assert.equal(harness.sandbox.document.getElementById('samActivitySaveBtn').disabled, false);
+  });
+
+  it('preserves typed state and skips apply when create fails', async () => {
+    const harness = createRapidEntrySandbox({ templates: [], createError: true });
+    const { ScheduleAddMenu } = harness.sandbox;
+    await ScheduleAddMenu.openActivityForDay(5, 'kvall');
+    ScheduleAddMenu.filterActivity('Kroppssmörjning');
+    ScheduleAddMenu.selectPendingCreate();
+    await ScheduleAddMenu.submitActivity();
+
+    assert.equal(harness.activityPosts.length, 1);
+    assert.equal(harness.applyCalls.length, 0);
+    assert.equal(harness.modalHidden(), false);
+    assert.equal(harness.sandbox.document.getElementById('samActivitySearch').value, 'Kroppssmörjning');
+    assert.match(harness.sandbox.document.getElementById('samActivityError').textContent, /create-failed|createFailed/);
+    assert.equal(harness.toasts.length, 0);
+  });
+
+  it('keeps the created id after apply failure and reuses it on retry', async () => {
+    const harness = createRapidEntrySandbox({ templates: [], applyError: true, applyErrorUntil: 1 });
+    const { ScheduleAddMenu } = harness.sandbox;
+    await ScheduleAddMenu.openActivityForDay(5, 'kvall');
+    ScheduleAddMenu.filterActivity('Borsta tänderna');
+    ScheduleAddMenu.selectPendingCreate();
+    await ScheduleAddMenu.submitActivity();
+
+    assert.equal(harness.activityPosts.length, 1);
+    assert.equal(harness.applyCalls.length, 1);
+    assert.equal(harness.modalHidden(), false);
+    assert.equal(harness.sandbox.document.getElementById('samActivitySearch').value, 'Borsta tänderna');
+    assert.equal(harness.toasts.length, 0);
+
+    await ScheduleAddMenu.submitActivity();
+    assert.equal(harness.activityPosts.length, 1, 'retry must not create a second template');
+    assert.equal(harness.applyCalls.length, 2);
+    assert.equal(harness.applyCalls[1].payload.activityTemplateId, 'created-1');
+    assert.equal(harness.applyCalls[0].payload.operationId, harness.applyCalls[1].payload.operationId,
+      'failed apply keeps the same operation id for idempotent retry');
+    assert.equal(harness.modalHidden(), false);
+    assert.equal(harness.sandbox.document.getElementById('samActivitySearch').value, '');
+    assert.match(harness.toasts[0].msg, /activity\.added/);
+  });
+
+  it('does not apply to a different child if context changed while the modal stayed open', async () => {
+    const harness = createRapidEntrySandbox();
+    const { ScheduleAddMenu } = harness.sandbox;
+    await ScheduleAddMenu.openActivityForDay(5, 'kvall');
+    ScheduleAddMenu.selectActivity('tpl-middag');
+    harness.sandbox.currentChildId = 'child-b';
+    await ScheduleAddMenu.submitActivity();
+
+    assert.equal(harness.applyCalls.length, 0);
+    assert.equal(harness.modalHidden(), true);
+    assert.equal(harness.toasts[0].isError, true);
+    assert.match(harness.toasts[0].msg, /childChanged/);
+  });
+
+  it('Copy Day still closes on success and does not use rapid-entry reset', async () => {
+    const harness = createRapidEntrySandbox();
+    const { ScheduleAddMenu } = harness.sandbox;
+    await ScheduleAddMenu.openCopyDay();
+    harness.sandbox.ScheduleAddMenu.setCopyDaySource(5);
+    harness.sandbox.ScheduleAddMenu.toggleCopyDayTarget(1);
+    await ScheduleAddMenu.submitCopyDay();
+    assert.equal(harness.copyDayCalls.length, 1);
+    assert.equal(harness.modalHidden(), true);
+    assert.equal(harness.activityPosts.length, 0);
+  });
+
+  it('Template still closes on success and does not stay in rapid-entry mode', async () => {
+    const harness = createRapidEntrySandbox();
+    const { ScheduleAddMenu } = harness.sandbox;
+    await ScheduleAddMenu.openTemplate();
+    ScheduleAddMenu.selectTemplateItem('fam-tpl-1');
+    await ScheduleAddMenu.submitTemplate();
+    assert.equal(harness.templateCalls.length, 1);
+    assert.equal(harness.modalHidden(), true);
+    assert.equal(harness.activityPosts.length, 0);
+    assert.equal(harness.applyCalls.length, 0);
+  });
+
+  it('Escape still closes the open Activity modal', async () => {
+    const harness = createRapidEntrySandbox();
+    await harness.sandbox.ScheduleAddMenu.openActivityForDay(5, 'kvall');
+    assert.equal(harness.modalHidden(), false);
+    harness.sandbox.ScheduleAddMenu.close();
+    assert.equal(harness.modalHidden(), true);
   });
 });

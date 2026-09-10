@@ -35,7 +35,7 @@
   <script src="/js/schedule-insert-fill.js?v=2"></script>
   <script src="/js/schedule-views.js?v=1.3.0"></script>
   <script src="/js/schedule-apply-client.js?v=2"></script>
-  <script src="/js/schedule-add-menu.js?v=4"></script>
+  <script src="/js/schedule-add-menu.js?v=8"></script>
   <link rel="stylesheet" href="/css/theme.css?v=2.13.0">
   <link rel="stylesheet" href="/css/mobile-nav.css?v=2.13.0">
   <link rel="stylesheet" href="/css/app-view-toggle.css?v=10">
@@ -59,6 +59,65 @@
 
     /* ── 100dvh fallback (Safari iOS: URL-bar included in 100vh) ── */
     .full-height { min-height: 100vh; min-height: 100dvh; }
+
+    /* Rapid Entry: Activity modal keeps Save above the mobile keyboard */
+    #scheduleAddMenuModal #scheduleAddMenuPanel {
+      max-width: min(28rem, calc(100vw - 1.5rem));
+      max-height: min(100dvh, 100vh);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #scheduleAddMenuModal #scheduleAddMenuBody {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      padding: 1.25rem;
+    }
+    #scheduleAddMenuModal .sam-activity-shell {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      max-height: min(100dvh, 100vh);
+    }
+    #scheduleAddMenuModal .sam-activity-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    #scheduleAddMenuModal .sam-activity-footer {
+      flex-shrink: 0;
+      position: sticky;
+      bottom: 0;
+      background: transparent;
+      padding-top: 0.75rem;
+      padding-bottom: max(0.25rem, env(safe-area-inset-bottom, 0px));
+    }
+    body.parent-magic-view:not(.parent-theme-light) #scheduleAddMenuModal #samActivityError {
+      color: #fca5a5;
+    }
+    #scheduleAddMenuModal .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    @media (max-width: 640px) {
+      #scheduleAddMenuModal #scheduleAddMenuPanel {
+        max-width: calc(100vw - 1.5rem);
+        max-height: min(100dvh, 100vh);
+        overflow: hidden;
+      }
+    }
 
     /* ── Month/special-day calendar grids: mobile scroll ── */
     /* Wrap grid-cols-7 in .cal-scroll on mobile to avoid squished cells */
