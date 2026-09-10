@@ -45,6 +45,7 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
     for (const fn of [
       'open', 'openMenu', 'close', 'openActivity', 'submitActivity', 'openTemplate',
       'submitTemplate', 'openCopyDay', 'submitCopyDay', 'openSaveAsTemplate', 'submitSaveAsTemplate',
+      'startCreateNew', 'startCreateNewFromSearch',
     ]) {
       assert.match(src, new RegExp(`\\b${fn}\\b`), `ScheduleAddMenu API must include ${fn}`);
     }
@@ -171,10 +172,11 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
       assert.match(body, /custodyHomeId,?\s*\}\);/, `${startMarker} client call must forward custodyHomeId`);
     }
 
-    const submitActivityBody = src.slice(src.indexOf('const days = [...activityState.days];'), src.indexOf('setPending(\'samActivitySaveBtn\', false);'));
+    const applyCallStart = src.indexOf('ScheduleApplyClient.applyActivity(currentChildId');
+    const submitActivityBody = src.slice(src.lastIndexOf('const days = [...activityState.days];', applyCallStart), applyCallStart + 400);
     assert.match(submitActivityBody, /const custodyHomeId = activeCustodyHomeId\(\)/);
     assert.match(submitActivityBody, /forCommand\(\{[^]*?custodyHomeId[^]*?\}\)/);
-    assert.match(submitActivityBody, /operationId, custodyHomeId,?\s*\}\);/);
+    assert.match(submitActivityBody, /operationId, custodyHomeId/);
 
     const submitCopyDayBody = src.slice(src.indexOf('async function doSubmitCopyDay'), src.indexOf('setPending(\'samCopyDaySaveBtn\', false);'));
     assert.match(submitCopyDayBody, /const custodyHomeId = activeCustodyHomeId\(\)/);
@@ -208,5 +210,25 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
     for (const literal of ['Lägg till aktivitet', 'Ersätt hela dagen', 'Spara dagen som mall']) {
       assert.doesNotMatch(codeOnly, new RegExp(literal), `"${literal}" must be an i18n key, not a hardcoded literal in code`);
     }
+  });
+
+  it('Aktivitet flow can create a new family activity without leaving the planner', () => {
+    const src = read(MODULE);
+    assert.match(src, /function startCreateNew/);
+    assert.match(src, /function startCreateNewFromSearch/);
+    assert.match(src, /function createFamilyActivity/);
+    assert.match(src, /apiFetch\('\/api\/activities'/);
+    assert.match(src, /schedule\.addMenu\.activity\.createNew/);
+    assert.match(src, /schedule\.addMenu\.activity\.createFromSearch/);
+    assert.match(src, /schedule\.addMenu\.activity\.noneFound/);
+    assert.doesNotMatch(
+      src.slice(src.indexOf('function renderActivityPicker'), src.indexOf('function renderActivityStep')),
+      /template\.noneMine/,
+      'empty activity search must not reuse the template-empty copy'
+    );
+    assert.match(src, /async function resolveActivityTemplate/);
+    const resolveBody = src.slice(src.indexOf('async function resolveActivityTemplate'), src.indexOf('async function submitActivity'));
+    assert.match(resolveBody, /createFamilyActivity\(/);
+    assert.match(resolveBody, /loadTemplates/);
   });
 });

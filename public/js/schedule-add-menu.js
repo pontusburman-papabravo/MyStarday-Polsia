@@ -2,6 +2,9 @@
  * "+ Lägg till" — Phase 1B primary Weekly Schedule action (Aktivitet / Från mall / Kopiera dag)
  * plus the "Spara dagen som mall" day action.
  *
+ * Ticket 57: Aktivitet can create a new family activity in-place (name + icon) and apply it
+ * to the chosen days — parents should not have to leave the planner for the library.
+ *
  * Reads globals from schedule.js (currentChildId, currentDay, allTemplates, loadTemplates,
  * loadScheduleForDay) the same way schedule-special-days.js / schedule-activity-modals.js do —
  * classic <script> tags on this page share one global lexical scope.
@@ -93,6 +96,13 @@
 
   // 44x44 effective touch target on every interactive control below (min-h-11 = 44px @ 4px/unit).
   const TOUCH_BTN = 'min-h-[44px] min-w-[44px]';
+  const CREATE_ICONS = ['📌', '💊', '🧴', '🩺', '🩹', '💧', '🧼', '⭐'];
+
+  function timeGroupFromSection(section) {
+    if (section === 'kvall' || section === 'natt') return 'kvall';
+    if (section === 'morgon') return 'morgon';
+    return 'formiddag';
+  }
 
   // ── Entry menu ───────────────────────────────────────────────────────────
 
@@ -196,7 +206,17 @@
 
   // ── 1) Aktivitet ─────────────────────────────────────────────────────────
 
-  const activityState = { templateId: null, days: new Set([currentDay || 1]), section: 'dag', startTime: '', endTime: '', query: '' };
+  const activityState = {
+    templateId: null,
+    days: new Set([currentDay || 1]),
+    section: 'dag',
+    startTime: '',
+    endTime: '',
+    query: '',
+    createNew: false,
+    newName: '',
+    newIcon: '📌',
+  };
 
   async function openActivity() {
     activityState.templateId = null;
@@ -205,6 +225,9 @@
     activityState.startTime = '';
     activityState.endTime = '';
     activityState.query = '';
+    activityState.createNew = false;
+    activityState.newName = '';
+    activityState.newIcon = '📌';
     if (!allTemplates || allTemplates.length === 0) {
       if (typeof window.loadTemplates === 'function') await loadTemplates();
     }
@@ -236,6 +259,52 @@
     renderActivityStep();
   }
 
+  function renderCreateNewFields() {
+    return `
+      <div class="mb-4 p-3 rounded-2xl border-2 border-gold bg-lavender/20">
+        <p class="text-xs text-text-soft mb-2">${t('schedule.addMenu.activity.createNewHint')}</p>
+        <label class="block text-xs font-semibold text-navy uppercase tracking-wide mb-2" for="samNewActivityName">${t('schedule.addMenu.activity.createNameLabel')}</label>
+        <input type="text" id="samNewActivityName" value="${escHtml(activityState.newName)}" placeholder="${t('schedule.addMenu.activity.createNamePlaceholder')}"
+          class="${TOUCH_BTN} w-full px-3 py-2 border-2 border-lavender rounded-xl text-sm mb-3" oninput="ScheduleAddMenu.setNewActivityName(this.value)" />
+        <p class="text-xs font-semibold text-navy uppercase tracking-wide mb-2">${t('schedule.addMenu.activity.createIconLabel')}</p>
+        <div class="flex gap-2 flex-wrap" role="group" aria-label="${t('schedule.addMenu.activity.createIconLabel')}">
+          ${CREATE_ICONS.map((icon) => {
+            const active = activityState.newIcon === icon;
+            return `<button type="button" onclick="ScheduleAddMenu.setNewActivityIcon('${icon}')" aria-pressed="${active}"
+              class="${TOUCH_BTN} px-3 py-2 rounded-xl border-2 text-xl ${active ? 'border-gold bg-sky' : 'border-lavender bg-white'}">${icon}</button>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
+
+  function renderActivityPicker(templates, filtered) {
+    if (activityState.createNew) return renderCreateNewFields();
+
+    const queryName = activityState.query.trim();
+    const exactMatch = queryName
+      ? templates.some((tpl) => tpl.name && tpl.name.toLowerCase() === queryName.toLowerCase())
+      : false;
+    const showCreateFromSearch = Boolean(queryName) && !exactMatch;
+    const emptyCopy = queryName
+      ? t('schedule.addMenu.activity.noneFound')
+      : t('schedule.addMenu.activity.noneYet');
+
+    return `
+      <input type="text" id="samActivitySearch" value="${escHtml(activityState.query)}" placeholder="${t('schedule.addMenu.activity.pickActivityPlaceholder')}"
+        class="${TOUCH_BTN} w-full px-3 py-2 border-2 border-lavender rounded-xl text-sm mb-2" oninput="ScheduleAddMenu.filterActivity(this.value)" />
+      <button type="button" onclick="ScheduleAddMenu.startCreateNewFromSearch()"
+        class="${TOUCH_BTN} w-full mb-3 px-4 py-3 rounded-2xl border-2 ${showCreateFromSearch ? 'border-gold bg-gold text-navy' : 'border-lavender bg-white text-navy'} font-semibold text-sm text-left">
+        ${showCreateFromSearch ? t('schedule.addMenu.activity.createFromSearch', { name: escHtml(queryName) }) : t('schedule.addMenu.activity.createNew')}
+      </button>
+      <div class="max-h-40 overflow-y-auto space-y-1 mb-4" id="samActivityList">
+        ${filtered.length === 0 ? `<p class="text-sm text-text-soft py-2">${escHtml(emptyCopy)}</p>` : filtered.map((tpl) => `
+          <button type="button" onclick="ScheduleAddMenu.selectActivity('${tpl.id}')" class="${TOUCH_BTN} w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors ${activityState.templateId === tpl.id ? 'bg-sky border-2 border-gold' : 'border-2 border-transparent hover:bg-sky'}">
+            <span class="text-xl" aria-hidden="true">${tpl.icon || '📌'}</span>
+            <span class="font-semibold text-sm text-navy truncate">${escHtml(tpl.name)}</span>
+          </button>`).join('')}
+      </div>`;
+  }
+
   function renderActivityStep() {
     const templates = (allTemplates || []);
     const q = activityState.query.toLowerCase();
@@ -252,15 +321,7 @@
       <h3 class="text-lg font-heading font-bold text-navy mb-3">${t('schedule.addMenu.activity.title')}</h3>
 
       <p class="text-xs font-semibold text-navy uppercase tracking-wide mb-2">${t('schedule.addMenu.activity.pickActivity')}</p>
-      <input type="text" id="samActivitySearch" value="${escHtml(activityState.query)}" placeholder="${t('schedule.addMenu.activity.pickActivityPlaceholder')}"
-        class="${TOUCH_BTN} w-full px-3 py-2 border-2 border-lavender rounded-xl text-sm mb-2" oninput="ScheduleAddMenu.filterActivity(this.value)" />
-      <div class="max-h-40 overflow-y-auto space-y-1 mb-4" id="samActivityList">
-        ${filtered.length === 0 ? `<p class="text-sm text-text-soft py-2">${t('schedule.addMenu.template.noneMine')}</p>` : filtered.map((tpl) => `
-          <button type="button" onclick="ScheduleAddMenu.selectActivity('${tpl.id}')" class="${TOUCH_BTN} w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors ${activityState.templateId === tpl.id ? 'bg-sky border-2 border-gold' : 'border-2 border-transparent hover:bg-sky'}">
-            <span class="text-xl" aria-hidden="true">${tpl.icon || '📌'}</span>
-            <span class="font-semibold text-sm text-navy truncate">${escHtml(tpl.name)}</span>
-          </button>`).join('')}
-      </div>
+      ${renderActivityPicker(templates, filtered)}
 
       <p class="text-xs font-semibold text-navy uppercase tracking-wide mb-2">${t('schedule.addMenu.activity.pickDays')}</p>
       <div class="mb-4">${renderWeekdayChips(activityState.days, 'ScheduleAddMenu.toggleActivityDay')}</div>
@@ -287,8 +348,51 @@
       </div>`;
   }
 
-  function filterActivity(q) { activityState.query = q; renderActivityStep(); document.getElementById('samActivitySearch').focus(); document.getElementById('samActivitySearch').selectionStart = document.getElementById('samActivitySearch').value.length; }
-  function selectActivity(id) { activityState.templateId = id; renderActivityStep(); }
+  function restoreCreateNameFocus() {
+    const el = document.getElementById('samNewActivityName');
+    if (!el) return;
+    el.focus();
+    el.selectionStart = el.value.length;
+  }
+
+  function startCreateNew(prefill) {
+    activityState.createNew = true;
+    activityState.templateId = null;
+    activityState.newName = String(prefill || '').trim();
+    if (!activityState.newIcon) activityState.newIcon = '📌';
+    renderActivityStep();
+    restoreCreateNameFocus();
+  }
+
+  function startCreateNewFromSearch() {
+    startCreateNew(activityState.query);
+  }
+
+  function setNewActivityName(val) {
+    activityState.newName = val;
+  }
+
+  function setNewActivityIcon(icon) {
+    activityState.newIcon = icon;
+    renderActivityStep();
+    restoreCreateNameFocus();
+  }
+
+  function filterActivity(q) {
+    activityState.query = q;
+    renderActivityStep();
+    const search = document.getElementById('samActivitySearch');
+    if (!search) return;
+    search.focus();
+    search.selectionStart = search.value.length;
+  }
+
+  function selectActivity(id) {
+    activityState.templateId = id;
+    activityState.createNew = false;
+    renderActivityStep();
+  }
+
   function selectActivitySection(key) { activityState.section = key; renderActivityStep(); }
   function setActivityTime(which, val) { if (which === 'start') activityState.startTime = val; else activityState.endTime = val; }
   function toggleActivityDay(dow, shortcut) {
@@ -298,32 +402,83 @@
     else if (activityState.days.has(dow)) activityState.days.delete(dow);
     else activityState.days.add(dow);
     renderActivityStep();
+    if (activityState.createNew) restoreCreateNameFocus();
+  }
+
+  async function createFamilyActivity(name, icon) {
+    const res = await window.apiFetch('/api/activities', {
+      method: 'POST',
+      body: JSON.stringify({
+        name,
+        icon: icon || '📌',
+        star_value: 1,
+        is_favorite: false,
+        feedback_for: 'both',
+        time_group: timeGroupFromSection(activityState.section),
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, data };
+  }
+
+  async function resolveActivityTemplate(errEl) {
+    if (activityState.templateId && !activityState.createNew) {
+      return { id: activityState.templateId, name: null, created: false };
+    }
+
+    const typedName = (activityState.createNew ? activityState.newName : activityState.query).trim();
+    if (!typedName) {
+      errEl.textContent = activityState.createNew
+        ? t('schedule.addMenu.activity.nameRequired')
+        : t('schedule.addMenu.activity.selectActivityFirst');
+      errEl.classList.remove('hidden');
+      return null;
+    }
+
+    const exact = (allTemplates || []).find((tpl) => tpl.name && tpl.name.toLowerCase() === typedName.toLowerCase());
+    if (exact && !activityState.createNew) {
+      activityState.templateId = exact.id;
+      return { id: exact.id, name: exact.name, created: false };
+    }
+
+    const { ok, data } = await createFamilyActivity(typedName, activityState.createNew ? activityState.newIcon : '📌');
+    if (!ok || !data.id) {
+      errEl.textContent = (data && data.error) || t('schedule.addMenu.activity.createFailed');
+      errEl.classList.remove('hidden');
+      return null;
+    }
+    if (typeof window.loadTemplates === 'function') await loadTemplates();
+    activityState.templateId = data.id;
+    activityState.createNew = false;
+    return { id: data.id, name: data.name || typedName, created: true };
   }
 
   async function submitActivity() {
     const errEl = document.getElementById('samActivityError');
     errEl.classList.add('hidden');
-    if (!activityState.templateId) {
-      errEl.textContent = t('schedule.addMenu.activity.selectActivityFirst');
-      errEl.classList.remove('hidden');
-      return;
-    }
     if (activityState.days.size === 0) {
       errEl.textContent = t('schedule.addMenu.selectAtLeastOneDay');
       errEl.classList.remove('hidden');
       return;
     }
+
+    setPending('samActivitySaveBtn', true);
+    const resolved = await resolveActivityTemplate(errEl);
+    if (!resolved) {
+      setPending('samActivitySaveBtn', false);
+      return;
+    }
+
     const days = [...activityState.days];
     const custodyHomeId = activeCustodyHomeId();
     const operationId = opTracker ? opTracker.forCommand({
-      cmd: 'apply-activity', childId: currentChildId, activityTemplateId: activityState.templateId,
+      cmd: 'apply-activity', childId: currentChildId, activityTemplateId: resolved.id,
       days: [...days].sort(), section: activityState.section, startTime: activityState.startTime, endTime: activityState.endTime,
       custodyHomeId,
     }) : null;
 
-    setPending('samActivitySaveBtn', true);
     const { ok, data } = await ScheduleApplyClient.applyActivity(currentChildId, {
-      activityTemplateId: activityState.templateId, days, section: activityState.section,
+      activityTemplateId: resolved.id, days, section: activityState.section,
       startTime: activityState.startTime || null, endTime: activityState.endTime || null, operationId, custodyHomeId,
     });
     setPending('samActivitySaveBtn', false);
@@ -333,8 +488,10 @@
       errEl.classList.remove('hidden');
       return;
     }
-    const tpl = (allTemplates || []).find((x) => x.id === activityState.templateId);
-    showToast(t('schedule.addMenu.activity.added', { name: tpl ? tpl.name : '', count: days.length }));
+    const tpl = (allTemplates || []).find((x) => x.id === resolved.id);
+    const name = resolved.name || (tpl ? tpl.name : '');
+    const toastKey = resolved.created ? 'schedule.addMenu.activity.createdAndAdded' : 'schedule.addMenu.activity.added';
+    showToast(t(toastKey, { name, count: days.length }));
     closeAddMenu();
     afterSuccessfulMutation();
   }
@@ -636,6 +793,10 @@
     close: closeAddMenu,
     openActivity,
     openActivityForDay,
+    startCreateNew,
+    startCreateNewFromSearch,
+    setNewActivityName,
+    setNewActivityIcon,
     filterActivity,
     selectActivity,
     selectActivitySection,
