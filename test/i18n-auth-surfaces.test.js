@@ -129,7 +129,25 @@ describe('auth i18n — static surfaces', () => {
   test('reset-password uses INVALID_RESET_LINK code not Swedish string match', () => {
     const html = read('public/reset-password.html');
     assert.match(html, /INVALID_RESET_LINK/);
+    assert.match(html, /sd_password_reset_done/);
+    assert.match(html, /location\.replace\(LOGIN_URL\)/);
     assert.doesNotMatch(html, /ogiltig|utgången/);
+  });
+
+  test('reset-password locale keys exist in both locales', () => {
+    loadLocales();
+    const keys = [
+      'auth.resetPassword.alreadyUsed',
+      'auth.resetPassword.submitting',
+      'auth.login.resetSuccessBannerTitle',
+      'auth.login.resetSuccessBannerBody',
+    ];
+    for (const key of keys) {
+      const sv = t('sv-SE', key);
+      const en = t('en-GB', key);
+      assert.notEqual(sv, key, `sv missing ${key}`);
+      assert.notEqual(en, key, `en missing ${key}`);
+    }
   });
 
   test('verify-email welcome uses brand helper', () => {
