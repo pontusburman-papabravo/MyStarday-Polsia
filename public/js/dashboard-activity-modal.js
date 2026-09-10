@@ -12,7 +12,8 @@ function spt(key, params) {
 function damIntlLang() {
   return (window.I18n && typeof I18n.getCurrentLang === 'function') ? I18n.getCurrentLang() : 'sv-SE';
 }
-  if (!window.ScheduleCore) {
+  const _scheduleCore = window.ScheduleCore || {};
+  if (!_scheduleCore.dayName) {
     console.warn('[DASHBOARD] activity-modal: ScheduleCore missing');
   }
 
