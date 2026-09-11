@@ -780,6 +780,7 @@ function renderEmptyDay() {
 function renderSchedule() {
   const child = children.find(c => c.id === currentChildId);
   const sHtml = buildSectionCardsHtml(scheduleItems, renderItem);
+  const copyDayLabel = spt('schedule.editor.copyDay');
 
   const dateLabel = getDayDateLabel();
   document.getElementById('scheduleContent').innerHTML = `
@@ -790,7 +791,7 @@ function renderSchedule() {
         ${scheduleItems.length > 0 ? `<p class="text-xs text-text-soft mt-1">${spt('schedule.empty.copyDayPromo')}</p>` : ''}
       </div>
       <div class="flex gap-2 flex-wrap items-start">
-        <button type="button" onclick="${window.ScheduleAddMenu ? 'ScheduleAddMenu.openCopyDay()' : 'openCopyDayModal()'}" class="min-h-[44px] px-4 py-2 bg-white border-2 border-gold hover:bg-gold-light text-navy rounded-xl text-sm font-semibold" aria-label="${spt('schedule.editor.copyDay')}">📋 ${spt('schedule.editor.copyDay')}</button>
+        <button type="button" onclick="${window.ScheduleAddMenu ? 'ScheduleAddMenu.openCopyDay()' : 'openCopyDayModal()'}" class="min-h-[44px] px-4 py-2 bg-white border-2 border-gold hover:bg-gold-light text-navy rounded-xl text-sm font-semibold" aria-label="${escHtml(copyDayLabel)}">📋 ${escHtml(copyDayLabel)}</button>
         ${window.ScheduleAddMenu ? `<button onclick="ScheduleAddMenu.openSaveAsTemplate()" class="min-h-[44px] px-4 py-2 bg-white border-2 border-lavender hover:border-gold text-navy rounded-xl text-sm font-semibold">${spt('schedule.addMenu.saveAsTemplate.menuLabel')}</button>` : ''}
         <button onclick="confirmDeleteSchedule()" class="min-h-[44px] px-4 py-2 bg-coral hover:bg-red-200 text-navy rounded-xl text-sm font-semibold">🗑️ ${spt('schedule.editor.deleteDay')}</button>
         <details class="relative">

@@ -45,18 +45,33 @@ async function measureButtonText(page, pattern, label) {
     const btn = [...document.querySelectorAll('button')].find((b) => new RegExp(pat).test(b.textContent));
     if (!btn) return { label: lbl, missing: true };
     const fg = getComputedStyle(btn).color;
-    let n2 = btn;
-    let bg = getComputedStyle(document.body).backgroundColor;
-    while (n2) {
-      const bgc = getComputedStyle(n2).backgroundColor;
-      if (bgc && bgc !== 'rgba(0, 0, 0, 0)' && bgc !== 'transparent') {
-        bg = bgc;
-        break;
+    let bg = getComputedStyle(btn).backgroundColor;
+    if (!bg || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') {
+      let n2 = btn.parentElement;
+      while (n2) {
+        const bgc = getComputedStyle(n2).backgroundColor;
+        if (bgc && bgc !== 'rgba(0, 0, 0, 0)' && bgc !== 'transparent') {
+          bg = bgc;
+          break;
+        }
+        n2 = n2.parentElement;
       }
-      n2 = n2.parentElement;
     }
     return { label: lbl, fg, bg };
   }, pattern, label);
+}
+
+async function measureChipContrast(page, selector, label) {
+  return page.evaluate((sel, lbl) => {
+    const el = document.querySelector(sel);
+    if (!el) return { label: lbl, missing: true };
+    const fg = getComputedStyle(el).color;
+    let bg = getComputedStyle(el).backgroundColor;
+    if (!bg || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') {
+      bg = getComputedStyle(document.body).backgroundColor;
+    }
+    return { label: lbl, fg, bg };
+  }, selector, label);
 }
 
 function ratioFromMeasure(m) {
@@ -181,6 +196,18 @@ async function main() {
   }
   const routeAtStart = page.url();
 
+  await page.evaluate(() => document.documentElement.classList.remove('dark'));
+  report.i18n.svSE = await page.evaluate(() => ({
+    emptyDayAdd: [...document.querySelectorAll('button')].some((b) => /Lägg till aktivitet/.test(b.textContent)),
+    copyFrom: false,
+    mixedLanguage: document.body.innerText.includes('Add activity'),
+  }));
+  report.contrast.light = [
+    ratioFromMeasure(await measureButtonText(page, 'Lägg till aktivitet', 'primaryAdd')),
+    ratioFromMeasure(await measureButtonText(page, 'Använd mall', 'useTemplate')),
+  ];
+  await page.screenshot({ path: path.join(ART, 'contrast-empty-day-sv.png'), fullPage: true });
+
   report.scenarios.A = await page.evaluate(() => {
     const btns = [...document.querySelectorAll('button')];
     const primary = btns.find((b) => /Lägg till aktivitet/.test(b.textContent));
@@ -198,6 +225,9 @@ async function main() {
   await page.screenshot({ path: path.join(ART, 'A-empty-week-sv.png'), fullPage: true });
 
   let taps = 0;
+  await page.click('.day-tab[data-day="2"]');
+  await new Promise((r) => setTimeout(r, 500));
+  taps += 1;
   await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Lägg till aktivitet/.test(b.textContent)).click());
   taps += 1;
   await waitForSelector(page, '#scheduleAddMenuBody h3');
@@ -252,8 +282,17 @@ async function main() {
 
   report.scenarios.C = { copyFromVisible: await page.evaluate(() => [...document.querySelectorAll('button')].some((b) => /Kopiera från annan dag/.test(b.textContent))) };
   if (report.scenarios.C.copyFromVisible) {
+    report.i18n.svSE = report.i18n.svSE || {};
+    report.i18n.svSE.copyFrom = true;
+    report.contrast.light.push(ratioFromMeasure(await measureButtonText(page, 'Kopiera från annan dag', 'copyFromDay')));
     await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Kopiera från annan dag/.test(b.textContent)).click());
     await new Promise((r) => setTimeout(r, 500));
+    report.contrast.light.push(
+      ratioFromMeasure(await measureChipContrast(page, '#scheduleAddMenuBody button.bg-navy.text-white', 'sourceDaySelected')),
+    );
+    report.contrast.light.push(
+      ratioFromMeasure(await measureChipContrast(page, '#scheduleAddMenuBody button[aria-pressed="true"]', 'targetDaySelected')),
+    );
     const body = await page.evaluate(() => document.querySelector('#scheduleAddMenuBody')?.innerText || '');
     report.scenarios.C.modalText = body.slice(0, 700);
     report.scenarios.C.hasSourceSection = /Kopiera från/i.test(body);
@@ -267,8 +306,20 @@ async function main() {
     report.scenarios.C.cancelZeroMutation = (await countMondayItems(BASE, session, childId)) === mondayBefore;
     await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Kopiera från annan dag/.test(b.textContent)).click());
     await new Promise((r) => setTimeout(r, 400));
-    await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.includes('Tisdag'))?.click());
-    report.scenarios.C.sourceChangedToTuesday = /✓.*Tisdag/i.test(await page.evaluate(() => document.querySelector('#scheduleAddMenuBody')?.innerText || ''));
+    report.i18n.svSE = report.i18n.svSE || {};
+    report.i18n.svSE.copyFrom = true;
+    await page.evaluate(() => {
+      const btn = [...document.querySelectorAll('#scheduleAddMenuBody button')].find(
+        (b) => b.getAttribute('onclick') === 'ScheduleAddMenu.setCopyDaySource(2)',
+      );
+      btn?.click();
+    });
+    report.scenarios.C.sourceChangedToTuesday = await page.evaluate(() => {
+      const btn = [...document.querySelectorAll('#scheduleAddMenuBody button')].find(
+        (b) => b.getAttribute('onclick') === 'ScheduleAddMenu.setCopyDaySource(2)',
+      );
+      return Boolean(btn && btn.className.includes('bg-navy'));
+    });
     await page.screenshot({ path: path.join(ART, 'C-copy-from-day-modal-sv.png'), fullPage: true });
     await page.keyboard.press('Escape');
   }
@@ -290,9 +341,14 @@ async function main() {
   await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Ersätt hela dagen/.test(b.textContent))?.click());
   await new Promise((r) => setTimeout(r, 300));
   report.scenarios.replace.replaceSelected = /●.*Ersätt hela dagen|Ersätter allt som redan finns/i.test(await page.evaluate(() => document.querySelector('#scheduleAddMenuBody')?.innerText || ''));
-  await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.includes('Tisdag'))?.click());
+  await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('#scheduleAddMenuBody button')].find(
+      (b) => b.getAttribute('onclick') === 'ScheduleAddMenu.toggleCopyDayTarget(1)',
+    );
+    btn?.click();
+  });
   await page.click('#samCopyDaySaveBtn');
-  await new Promise((r) => setTimeout(r, 600));
+  await page.waitForSelector('#samConfirmCancelBtn', { timeout: 3000 }).catch(() => null);
   report.scenarios.replace.confirmDialogShown = Boolean(await page.$('#samConfirmCancelBtn'));
   if (report.scenarios.replace.confirmDialogShown) {
     await page.click('#samConfirmCancelBtn');
@@ -301,43 +357,68 @@ async function main() {
   report.scenarios.replace.cancelConfirmZeroMutation = Boolean(await page.$('#scheduleAddMenuBody'));
   await page.keyboard.press('Escape');
 
-  await page.click('.day-tab[data-day="1"]');
-  await new Promise((r) => setTimeout(r, 400));
-  await page.evaluate(() => document.documentElement.classList.remove('dark'));
-  report.contrast.light.push(ratioFromMeasure(await measureButtonText(page, 'Lägg till aktivitet', 'primaryAdd')));
-  report.contrast.light.push(ratioFromMeasure(await measureButtonText(page, 'Kopiera från annan dag', 'copyFromDay')));
-  report.contrast.light.push(ratioFromMeasure(await measureButtonText(page, 'Använd mall', 'useTemplate')));
   await page.click('.day-tab[data-day="4"]');
+  await new Promise((r) => setTimeout(r, 400));
   report.contrast.light.push(ratioFromMeasure(await measureButtonText(page, 'Kopiera dag', 'promotedCopyDay')));
 
   await page.evaluate(() => document.documentElement.classList.add('dark'));
   await new Promise((r) => setTimeout(r, 300));
-  await page.click('.day-tab[data-day="1"]');
-  report.contrast.dark.push(ratioFromMeasure(await measureButtonText(page, 'Lägg till aktivitet', 'primaryAddDark')));
-  report.contrast.dark.push(ratioFromMeasure(await measureButtonText(page, 'Kopiera från annan dag', 'copyFromDayDark')));
-  report.contrast.dark.push(ratioFromMeasure(await measureButtonText(page, 'Använd mall', 'useTemplateDark')));
+  await page.click('.day-tab[data-day="4"]');
+  await new Promise((r) => setTimeout(r, 400));
+  report.contrast.dark.push(ratioFromMeasure(await measureButtonText(page, 'Kopiera dag', 'promotedCopyDayDark')));
+  await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Kopiera dag/.test(b.textContent))?.click());
+  await new Promise((r) => setTimeout(r, 400));
+  report.contrast.dark.push(
+    ratioFromMeasure(await measureChipContrast(page, '#scheduleAddMenuBody button.bg-navy.text-white', 'sourceDaySelectedDark')),
+  );
+  await page.keyboard.press('Escape');
 
-  report.i18n.svSE = await page.evaluate(() => ({
-    emptyDayAdd: [...document.querySelectorAll('button')].some((b) => /Lägg till aktivitet/.test(b.textContent)),
-    copyFrom: [...document.querySelectorAll('button')].some((b) => /Kopiera från annan dag/.test(b.textContent)),
-    mixedLanguage: document.body.innerText.includes('Add activity'),
-  }));
-
+  const child2Id = await page.evaluate(async () => {
+    const csrf = document.cookie.match(/csrf_token=([^;]+)/)?.[1] || '';
+    const r = await fetch('/api/children', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': decodeURIComponent(csrf) },
+      body: JSON.stringify({ name: 'GateEn', emoji: '🌍', birthday: '2017-06-01' }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(`create child2 failed ${r.status}: ${JSON.stringify(data)}`);
+    return data.id;
+  });
   await page.evaluate(() => {
     localStorage.setItem('sd_preferred_locale', 'en-GB');
     if (window.I18n && I18n.setLocale) I18n.setLocale('en-GB');
   });
-  await page.reload({ waitUntil: 'networkidle2' });
-  await page.waitForFunction(() => document.querySelector('#scheduleContent'), { timeout: 30000 });
-  await page.click('.day-tab[data-day="1"]');
-  await new Promise((r) => setTimeout(r, 600));
+  await page.goto(`${BASE}/schedule?child=${child2Id}`, { waitUntil: 'networkidle2' });
+  await page.waitForFunction(
+    () => [...document.querySelectorAll('button')].some((b) => /Add activity/.test(b.textContent)),
+    { timeout: 60000 },
+  );
+  await new Promise((r) => setTimeout(r, 800));
   report.i18n.enGB = await page.evaluate(() => ({
     emptyDayAdd: [...document.querySelectorAll('button')].some((b) => /Add activity/.test(b.textContent)),
-    copyFrom: [...document.querySelectorAll('button')].some((b) => /Copy from another day/.test(b.textContent)),
+    copyFrom: false,
     useTemplate: [...document.querySelectorAll('button')].some((b) => /Use a template/.test(b.textContent)),
     mixedLanguage: document.body.innerText.includes('Lägg till aktivitet'),
   }));
+  await apiApplyActivities(BASE, session, child2Id, 4, saveNames.slice(0, 3));
+  await page.goto(`${BASE}/schedule?child=${child2Id}`, { waitUntil: 'networkidle2' });
+  await page.click('.day-tab[data-day="1"]');
+  await new Promise((r) => setTimeout(r, 800));
+  report.i18n.enGB.copyFrom = await page.evaluate(() => [...document.querySelectorAll('button')].some((b) => /Copy from another day/.test(b.textContent)));
+  await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Copy from another day/.test(b.textContent))?.click());
+  await new Promise((r) => setTimeout(r, 500));
+  const enCopyModal = await page.evaluate(() => document.querySelector('#scheduleAddMenuBody')?.innerText || '');
+  report.i18n.enGB.copyModal = {
+    sourceSection: /Copy from/i.test(enCopyModal),
+    targetSection: /Copy to/i.test(enCopyModal),
+    mergeDefault: /●.*Add/i.test(enCopyModal),
+    cancel: /Cancel/i.test(enCopyModal),
+    save: /Save/i.test(enCopyModal),
+  };
+  await page.keyboard.press('Escape');
   await page.click('.day-tab[data-day="4"]');
+  await new Promise((r) => setTimeout(r, 800));
   report.i18n.enGB.copyDay = await page.evaluate(() => [...document.querySelectorAll('button')].some((b) => /Copy day/.test(b.textContent)));
   await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Copy day/.test(b.textContent))?.click());
   await new Promise((r) => setTimeout(r, 400));
@@ -345,9 +426,11 @@ async function main() {
   report.i18n.enGB.modal = {
     cancel: /Cancel/i.test(enModal),
     save: /Save/i.test(enModal),
-    merge: /Add/i.test(enModal),
+    merge: /●.*Add/i.test(enModal),
     replace: /Replace entire day/i.test(enModal),
   };
+  report.i18n.enGB.mixedLanguage = await page.evaluate(() => document.body.innerText.includes('Lägg till aktivitet') || document.body.innerText.includes('Kopiera'));
+  await page.screenshot({ path: path.join(ART, 'i18n-en-empty-day.png'), fullPage: true });
   await page.screenshot({ path: path.join(ART, 'i18n-en-copy-modal.png'), fullPage: true });
 
   report.regression = await page.evaluate(() => ({

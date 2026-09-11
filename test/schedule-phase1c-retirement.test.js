@@ -98,8 +98,8 @@ describe('Phase 1C — B. Assign schedule demotion', () => {
 describe('Phase 1C — C. Legacy copy-day control rewired (custody-safe)', () => {
   it('C8/C9: the day-row "Kopiera dag" button opens the canonical add-menu flow, not the legacy modal', () => {
     const src = read(SCHEDULE_JS);
-    const dayActionRow = src.slice(src.indexOf("spt('schedule.editor.copyDay')") - 300, src.indexOf("spt('schedule.editor.copyDay')") + 50);
-    assert.match(dayActionRow, /ScheduleAddMenu\.openCopyDay\(\)/, 'primary path must delegate to the canonical, custody-safe copy-day command');
+    const renderBlock = src.slice(src.indexOf('function renderSchedule()'), src.indexOf('function renderItem'));
+    assert.match(renderBlock, /ScheduleAddMenu\.openCopyDay\(\)/, 'primary path must delegate to the canonical, custody-safe copy-day command');
   });
 
   it('C8/C9: the day-tab drag-and-drop copy gesture calls the canonical ScheduleApplyClient, not the legacy /copy-day route', () => {
@@ -144,8 +144,9 @@ describe('Phase 1C — D. Day action row cleanup (no duplicate primary copy-day 
   it('day action row has exactly one visible "Kopiera dag" control (no duplicate copy-day semantics)', () => {
     const src = read(SCHEDULE_JS);
     const dayActionRow = src.slice(src.indexOf("scheduleContent').innerHTML"), src.indexOf('initDragDrop();'));
-    const copyDayMatches = dayActionRow.match(/schedule\.editor\.copyDay/g) || [];
-    assert.equal(copyDayMatches.length, 1, 'only one "Kopiera dag" control should remain in the primary day action row');
+    const primaryRow = dayActionRow.slice(0, dayActionRow.indexOf('<details'));
+    const copyDayControls = (primaryRow.match(/openCopyDay\(\)/g) || []).length;
+    assert.equal(copyDayControls, 1, 'only one "Kopiera dag" control should remain in the primary day action row');
   });
 
   it('day-level primary actions keep >=44px touch targets after regrouping', () => {
