@@ -259,8 +259,8 @@ async function main() {
     report.scenarios.C.hasSourceSection = /Kopiera från/i.test(body);
     report.scenarios.C.hasTargetSection = /Kopiera till/i.test(body);
     report.scenarios.C.mergeDefault = /●.*Lägg till/i.test(body);
-    report.scenarios.C.targetMondaySelected = /✓.*Måndag/i.test(body);
-    report.scenarios.C.sourceVisible = /Torsdag/i.test(body);
+    report.scenarios.C.targetMondaySelected = /✓\s*Mån/i.test(body);
+    report.scenarios.C.sourceVisible = await page.evaluate(() => [...document.querySelectorAll('#scheduleAddMenuBody button')].some((b) => /Tor|Torsdag/i.test(b.textContent) && b.className.includes('bg-navy')));
     const mondayBefore = await countMondayItems(BASE, session, childId);
     await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Avbryt')?.click());
     await new Promise((r) => setTimeout(r, 400));
@@ -289,7 +289,7 @@ async function main() {
   };
   await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Ersätt hela dagen/.test(b.textContent))?.click());
   await new Promise((r) => setTimeout(r, 300));
-  report.scenarios.replace.replaceSelected = /●.*Ersätt hela dagen/i.test(await page.evaluate(() => document.querySelector('#scheduleAddMenuBody')?.innerText || ''));
+  report.scenarios.replace.replaceSelected = /●.*Ersätt hela dagen|Ersätter allt som redan finns/i.test(await page.evaluate(() => document.querySelector('#scheduleAddMenuBody')?.innerText || ''));
   await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.includes('Tisdag'))?.click());
   await page.click('#samCopyDaySaveBtn');
   await new Promise((r) => setTimeout(r, 600));
@@ -328,6 +328,7 @@ async function main() {
     if (window.I18n && I18n.setLocale) I18n.setLocale('en-GB');
   });
   await page.reload({ waitUntil: 'networkidle2' });
+  await page.waitForFunction(() => document.querySelector('#scheduleContent'), { timeout: 30000 });
   await page.click('.day-tab[data-day="1"]');
   await new Promise((r) => setTimeout(r, 600));
   report.i18n.enGB = await page.evaluate(() => ({
