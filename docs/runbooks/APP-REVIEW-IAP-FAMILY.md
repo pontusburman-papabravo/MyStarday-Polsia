@@ -46,6 +46,20 @@ Store credentials only in the approved secret store (suggested names: `APP_REVIE
 
 ## Verify before sending Apple notes
 
+Automated API check (no secrets in output):
+
+```bash
+APP_REVIEW_IAP_EMAIL=... APP_REVIEW_IAP_PASSWORD=... npm run verify:app-review-iap
+```
+
+Optional: pass `APP_REVIEW_EMAIL` / `APP_REVIEW_PASSWORD` to confirm the complimentary account stays purchase-blocked.
+
+Prod read-only family inspection (on VPS):
+
+```bash
+cd "$VPS_APP_PATH" && source .env && node scripts/ops/inspect-app-review-iap-prod.cjs
+```
+
 As the **complimentary** review account:
 
 - Settings may show complimentary Premium

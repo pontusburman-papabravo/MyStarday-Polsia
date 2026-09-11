@@ -220,6 +220,8 @@ describe('settings premium magic — client wiring', () => {
   it('E: eligible no-premium copy includes Aktivera Premium /paywall', () => {
     assert.match(SUB, /Aktivera Premium/);
     assert.match(SUB, /href: '\/paywall'/);
+    assert.match(SUB, /nativePurchaseEligible === true/);
+    assert.match(SUB, /Premium Månadsvis eller Premium Årsvis/);
   });
 
   it('F/G: magic settings hub has premium group wired with server visibility fetch', () => {
@@ -338,7 +340,27 @@ describe('settings premium — IAP init sequencing', () => {
     assert.equal(result.visible, true);
     assert.deepEqual(callOrder, ['init', 'canPurchase']);
     assert.match(mountEl.innerHTML, /Återställ köp/);
-    assert.match(mountEl.innerHTML, /Hantera abonnemang/);
+    assert.match(mountEl.innerHTML, /href="\/paywall"/);
+    assert.match(mountEl.innerHTML, /Aktivera Premium/);
+    assert.doesNotMatch(mountEl.innerHTML, /Hantera abonnemang/);
+  });
+
+  it('sandbox-eligible family with billing off still links to /paywall', async () => {
+    const { sandbox, mountEl } = loadSettingsSubscriptionHarness({
+      native: true,
+      canPurchase: true,
+      status: {
+        subscription_ui_visible: true,
+        native_purchase_eligible: true,
+        billing_ui_enabled: false,
+        premium: { active: false },
+      },
+    });
+    const result = await sandbox.SettingsSubscription.render(mountEl);
+    assert.equal(result.visible, true);
+    assert.match(mountEl.innerHTML, /href="\/paywall"/);
+    assert.match(mountEl.innerHTML, /Premium Månadsvis eller Premium Årsvis/);
+    assert.doesNotMatch(mountEl.innerHTML, /Betalning är inte live/);
   });
 
   // Regression: an active native (Apple/Google) subscription rendered "Hantera

@@ -21,7 +21,7 @@
     }
   }
 
-  function describePremium(premium, paidTransition, billingUiEnabled) {
+  function describePremium(premium, paidTransition, billingUiEnabled, nativePurchaseEligible) {
     const locale = (window.I18n && typeof I18n.getLocale === 'function')
       ? I18n.getLocale()
       : 'sv-SE';
@@ -51,6 +51,15 @@
       };
     }
     if (!premium || !premium.active) {
+      if (nativePurchaseEligible === true) {
+        return {
+          title: isEn ? 'No active Premium' : 'Ingen aktiv Premium',
+          body: isEn
+            ? 'Choose Premium Monthly or Premium Yearly to unlock full access.'
+            : 'Välj Premium Månadsvis eller Premium Årsvis för full tillgång.',
+          cta: { href: '/paywall', label: isEn ? 'View subscriptions' : 'Aktivera Premium' },
+        };
+      }
       if (billingUiEnabled !== true) {
         return {
           title: isEn ? 'No active Premium' : 'Ingen aktiv Premium',
@@ -157,8 +166,13 @@
       if (section) section.classList.remove('hidden');
 
       const premium = status.premium || {};
-      const copy = describePremium(premium, status.paid_transition, status.billing_ui_enabled);
       const nativePurchaseEligible = status.native_purchase_eligible === true;
+      const copy = describePremium(
+        premium,
+        status.paid_transition,
+        status.billing_ui_enabled,
+        nativePurchaseEligible
+      );
       const billingUiEnabled = status.billing_ui_enabled === true;
       const nativeEligibleOnDevice = isNative() && nativePurchaseEligible
         && window.IAPManager && typeof IAPManager.init === 'function'
@@ -189,9 +203,12 @@
       if (iapPurchaseReady) {
         html +=
           '<div class="mt-4 flex flex-col gap-2">' +
-          '<button type="button" id="restorePurchasesBtn" class="text-sm font-semibold text-navy underline text-left">Återställ köp</button>' +
-          '<button type="button" id="manageSubscriptionBtn" class="text-sm font-semibold text-navy underline text-left">Hantera abonnemang</button>' +
-          '</div>';
+          '<button type="button" id="restorePurchasesBtn" class="text-sm font-semibold text-navy underline text-left">Återställ köp</button>';
+        if (premium.active) {
+          html +=
+            '<button type="button" id="manageSubscriptionBtn" class="text-sm font-semibold text-navy underline text-left">Hantera abonnemang</button>';
+        }
+        html += '</div>';
       } else if (!premium.active && billingUiEnabled && !isNative()) {
         html +=
           '<p class="text-sm text-text-soft mt-4">Premium aktiveras i iPhone- eller Android-appen.</p>' +
