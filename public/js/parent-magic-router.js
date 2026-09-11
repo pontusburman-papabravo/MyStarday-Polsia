@@ -42,7 +42,7 @@
 
   const PAGE_SCRIPTS = {
     dashboard: [
-      '/js/dashboard-home-hub.js?v=5',
+      '/js/dashboard-home-hub.js?v=8',
       '/js/dashboard-daily-summary.js?v=2026-06-09-warmth',
       '/js/dashboard-child-handoff.js?v=2026-09-09-td-activation',
       '/js/dashboard.js?v=2.38.0',

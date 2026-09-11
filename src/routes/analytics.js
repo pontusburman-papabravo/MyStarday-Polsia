@@ -102,6 +102,7 @@ const ALLOWED_CLIENT_EVENTS = new Set([
   'cta_share_app_clicked',
   // In-app navigation + engagement
   'nav_hub_click',
+  'home_shortcut_click',
   'readiness_action_click',
   'child_profile_section',
   'child_world_view',

@@ -138,6 +138,11 @@ describe('analytics regression (static event names)', () => {
     assert.equal(matches.length, 1);
   });
 
+  it('dashboard-home-hub tracks home_shortcut_click on quick action tiles', () => {
+    assert.match(homeHub, /home_shortcut_click/);
+    assert.match(homeHub, /data-shortcut-id="retroactive"/);
+  });
+
   it('dashboard-home-hub preserves nav_hub_click if present', () => {
     if (homeHub.includes('nav_hub_click')) {
       assert.match(homeHub, /nav_hub_click/);
