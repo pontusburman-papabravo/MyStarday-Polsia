@@ -131,7 +131,8 @@ describe('Planner PR C — empty day + copy discoverability', () => {
     const src = read(SCHEDULE_JS);
     assert.match(src, /aria-label="\$\{spt\('schedule\.empty\.addActivity'\)\}"/);
     assert.match(src, /aria-label="\$\{spt\('schedule\.empty\.copyFromDay'\)\}"/);
-    assert.match(src, /aria-label="\$\{spt\('schedule\.editor\.copyDay'\)\}"/);
+    assert.match(src, /const copyDayLabel = spt\('schedule\.editor\.copyDay'\)/);
+    assert.match(src, /aria-label="\$\{escHtml\(copyDayLabel\)\}"/);
   });
 
   it('22 openCopyDayToCurrentDay preselects target day with merge default', () => {
