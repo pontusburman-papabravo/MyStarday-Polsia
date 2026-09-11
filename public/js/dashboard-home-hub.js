@@ -331,6 +331,9 @@
     if (typeof DashboardChildHandoff.applyMagicHandoffCopy === 'function') {
       DashboardChildHandoff.applyMagicHandoffCopy(handoff, postSchema);
     }
+    if (typeof DashboardChildHandoff.maybeEnrichHandoff === 'function') {
+      DashboardChildHandoff.maybeEnrichHandoff(handoff);
+    }
   }
 
   /** Restore mounts to classic DOM order for engine-coach contract tests. */

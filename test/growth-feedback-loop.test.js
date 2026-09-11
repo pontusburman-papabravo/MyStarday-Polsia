@@ -110,6 +110,20 @@ describe('growth feedback loop contracts', () => {
     assert.match(client, /support-request/);
   });
 
+  it('schema_no_child_login uses inline handoff CTA with separate analytics', () => {
+    const client = read('public/js/growth-system-help.js');
+    assert.match(client, /schema_no_child_login/);
+    assert.match(client, /handoff_inline_cta_shown/);
+    assert.match(client, /handoff_inline_cta_clicked/);
+    assert.match(client, /Problem med barninloggningen/);
+    assert.match(client, /DashboardChildHandoff\.startChildLogin/);
+    const analytics = read('src/routes/analytics.js');
+    assert.match(analytics, /handoff_inline_cta_shown/);
+    assert.match(analytics, /handoff_inline_cta_clicked/);
+    const hub = read('public/js/dashboard-home-hub.js');
+    assert.match(hub, /maybeEnrichHandoff/);
+  });
+
   it('English waitlist sends UTM + consent', () => {
     const client = read('public/js/landing-waitlist.js');
     assert.match(client, /utm_source/);

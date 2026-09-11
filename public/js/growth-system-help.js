@@ -6,6 +6,11 @@
   'use strict';
 
   const SHOWN_SESSION_PREFIX = 'msd_system_help_shown_';
+  const INLINE_SHOWN_PREFIX = 'msd_handoff_inline_cta_shown_';
+  const INLINE_ENRICHED_CLASS = 'growth-handoff-inline-enriched';
+  const INLINE_CLICK_BOUND_ATTR = 'data-handoff-inline-click-bound';
+  const PASSIVE_HINT_ENRICHED_CLASS = 'growth-handoff-passive-hint-enriched';
+  const SCHEMA_NO_CHILD_LOGIN = 'schema_no_child_login';
 
   function locale() {
     try {
@@ -207,14 +212,130 @@
     return data;
   }
 
+  function findHandoffParts(rootEl) {
+    return {
+      titleEl: rootEl.querySelector('.dash-child-handoff-title, .parent-handoff-title'),
+      subEl: rootEl.querySelector('.dash-child-handoff-sub, .parent-handoff-sub'),
+      primaryBtn: rootEl.querySelector('#dashboardChildLoginBtn, [data-action="child-login"]'),
+      actionsEl: rootEl.querySelector('.dash-child-handoff-actions, .parent-handoff-actions'),
+    };
+  }
+
+  function buildInlineEventMetadata(data, help) {
+    return {
+      blocking_step: data.blockingStep,
+      cohort: data.blockingStep,
+      help_type: help && help.helpType,
+      surface: 'child_handoff',
+      cta_action: help && help.ctaAction,
+      handoff_variant: 'inline_schema_no_child_login',
+    };
+  }
+
+  function trackInlineEvent(eventType, metadata) {
+    const meta = metadata || {};
+    if (typeof window.analytics !== 'undefined' && analytics.track) {
+      analytics.track(null, eventType, meta);
+      return Promise.resolve();
+    }
+    if (!window.Auth || !Auth.api) return Promise.resolve();
+    return Auth.api('/api/analytics/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_type: eventType, metadata: meta }),
+    }).catch(function () {});
+  }
+
+  function bindInlineCtaClick(parts, data, help) {
+    if (!parts.primaryBtn) return;
+    if (parts.primaryBtn.getAttribute(INLINE_CLICK_BOUND_ATTR) === '1') return;
+    parts.primaryBtn.setAttribute(INLINE_CLICK_BOUND_ATTR, '1');
+    parts.primaryBtn.addEventListener('click', function () {
+      trackInlineEvent('handoff_inline_cta_clicked', buildInlineEventMetadata(data, help));
+    }, { capture: true });
+  }
+
+  function wasInlineShownSession(blockingStep) {
+    try {
+      return Boolean(sessionStorage.getItem(INLINE_SHOWN_PREFIX + blockingStep));
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function markInlineShownSession(blockingStep) {
+    try {
+      sessionStorage.setItem(INLINE_SHOWN_PREFIX + blockingStep, String(Date.now()));
+    } catch (_) {}
+  }
+
+  function appendSecondaryHelpLink(rootEl, parts) {
+    if (rootEl.querySelector('.growth-system-help-handoff-secondary')) return;
+    const helpLink = document.createElement('button');
+    helpLink.type = 'button';
+    helpLink.className =
+      'growth-system-help-handoff-secondary mt-2 text-sm text-slate-500 underline text-left w-full';
+    helpLink.textContent = isEnglish()
+      ? 'Problem with child login?'
+      : 'Problem med barninloggningen?';
+    helpLink.addEventListener('click', function () {
+      if (typeof window.__hbToggle === 'function') window.__hbToggle();
+    });
+    if (parts.actionsEl && parts.actionsEl.parentNode) {
+      parts.actionsEl.parentNode.insertBefore(helpLink, parts.actionsEl.nextSibling);
+    } else {
+      rootEl.appendChild(helpLink);
+    }
+  }
+
   /**
-   * One-line hint for existing handoff block — not a new banner layer.
+   * schema_no_child_login — inline copy + primary CTA on existing handoff card.
+   * Reuses DashboardChildHandoff.startChildLogin(); secondary link opens help panel.
+   */
+  async function enrichHandoffSchemaNoChildLogin(rootEl, data) {
+    if (!rootEl) return;
+    const help = data.help;
+    const parts = findHandoffParts(rootEl);
+    if (!help || !parts.primaryBtn) return;
+
+    const firstEnrich = !rootEl.classList.contains(INLINE_ENRICHED_CLASS);
+    rootEl.classList.add(INLINE_ENRICHED_CLASS);
+
+    // Re-apply on parent-i18n-ready / syncPostSchemaHandoffCard re-runs — postSchema
+    // copy can overwrite headline after first enrich.
+    if (parts.titleEl) parts.titleEl.textContent = help.headline;
+    if (parts.subEl) parts.subEl.textContent = help.body;
+    parts.primaryBtn.textContent = help.ctaLabel;
+    parts.primaryBtn.setAttribute('data-handoff-inline-cta', '1');
+    bindInlineCtaClick(parts, data, help);
+    appendSecondaryHelpLink(rootEl, parts);
+
+    if (firstEnrich && !wasInlineShownSession(data.blockingStep)) {
+      markInlineShownSession(data.blockingStep);
+      await trackInlineEvent('handoff_inline_cta_shown', buildInlineEventMetadata(data, help));
+      await recordShown(data);
+    }
+  }
+
+  /**
+   * Enrich existing handoff block — inline CTA for schema_no_child_login only.
    */
   async function enrichHandoff(rootEl) {
     if (!rootEl) return;
     const data = await fetchContext('child_handoff');
     if (!data || !data.eligible || !data.help) return;
-    if (rootEl.querySelector('.growth-system-help-inline')) return;
+
+    if (data.blockingStep === SCHEMA_NO_CHILD_LOGIN) {
+      await enrichHandoffSchemaNoChildLogin(rootEl, data);
+      return;
+    }
+
+    if (
+      rootEl.classList.contains(PASSIVE_HINT_ENRICHED_CLASS)
+      || rootEl.querySelector('.growth-system-help-inline')
+    ) {
+      return;
+    }
 
     const hint = document.createElement('button');
     hint.type = 'button';
@@ -226,6 +347,7 @@
       }
     });
     rootEl.appendChild(hint);
+    rootEl.classList.add(PASSIVE_HINT_ENRICHED_CLASS);
     await recordShown(data);
   }
 
