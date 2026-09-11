@@ -11,7 +11,7 @@
 
 **Root cause:** App Review Information listed only the **complimentary** review account (`APP_REVIEW_EMAIL`). That family has permanent free Premium (grandfathered) and correctly shows **no** purchase path. Subscriptions are visible only on the dedicated **IAP review** account (`APP_REVIEW_IAP_EMAIL`), which is allowlisted for Apple's sandbox while public billing stays off.
 
-**Before pasting:** run `node scripts/ops/verify-app-review-iap-path.cjs` with `APP_REVIEW_IAP_*` credentials on the deployed build. Physical iPhone + sandbox Apple ID purchase sheet is still required for final proof.
+**Gate before pasting:** complete every item in [`runbooks/APP-REVIEW-IAP-FAMILY.md`](runbooks/APP-REVIEW-IAP-FAMILY.md) § Approval gate. Backend-only green is **not** enough — physical iPhone + Apple sandbox purchase sheet required.
 
 **Paste into App Review Information → Notes (and reply to the 2.1(b) message):**
 
@@ -20,7 +20,9 @@ Thank you for the clarification.
 
 Premium Monthly and Premium Yearly are available through the in-app subscription screen. Our public paid rollout is currently disabled, but we have enabled the subscription flow for App Review on a dedicated sandbox review account (credentials below).
 
-IMPORTANT — use the IAP review account for subscriptions (not the complimentary account):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IN-APP PURCHASE REVIEW ACCOUNT — USE THIS ACCOUNT TO REVIEW PREMIUM MONTHLY / PREMIUM YEARLY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Parent email: APP_REVIEW_IAP_EMAIL (secret store)
 Parent password: APP_REVIEW_IAP_PASSWORD (secret store)
@@ -32,18 +34,20 @@ Steps to locate the subscriptions on iPhone:
 3. Tap Inställningar (Settings) in the bottom navigation.
 4. Tap Premium.
 5. Tap Aktivera Premium (View subscriptions in English).
-6. The subscription screen shows Premium Yearly and Premium Monthly with live prices from the App Store sandbox.
+6. The subscription screen shows Premium Yearly and Premium Monthly with live prices from the App Store sandbox (not static placeholder copy).
 7. Select either plan and tap Fortsätt (Continue) to open Apple's sandbox purchase sheet. Restore Purchases is on the same screen.
 
-No real charge is required during review. The Paid Apps Agreement is active and both subscriptions are included in this submission.
+No real charge is required during review. The Paid Apps Agreement is active and both subscriptions are included in this submission. <!-- pragma: allowlist secret -->
 
-Complimentary review account (routine parent/child testing only — no IAP):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COMPLIMENTARY DEMO ACCOUNT — PREMIUM ALREADY INCLUDED; DO NOT USE THIS ACCOUNT TO REVIEW IN-APP PURCHASES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Parent email: APP_REVIEW_EMAIL (secret store)
 Parent password: APP_REVIEW_PASSWORD (secret store)
 Child: Anna, PIN: APP_REVIEW_CHILD_PIN (secret store)
 
-This account has lifetime complimentary Premium and will not show Monthly/Yearly purchase options by design.
+This account has lifetime complimentary Premium and will not show Monthly/Yearly purchase options by design. Use it only for routine parent/child feature testing.
 
 Please let us know if you experience any difficulty accessing the subscription screen with the IAP review account.
 ```

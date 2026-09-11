@@ -11,12 +11,14 @@
 
 ## Two accounts — do not mix them up
 
-| Account | Secret names | Purpose |
-|---------|--------------|---------|
-| **Complimentary review** | `APP_REVIEW_EMAIL` / `APP_REVIEW_PASSWORD` | Full free Premium for routine parent/child testing. **No** Monthly/Yearly purchase UI — grandfathered family. |
-| **IAP review** | `APP_REVIEW_IAP_EMAIL` / `APP_REVIEW_IAP_PASSWORD` | **Only** account that can reach Premium Monthly + Premium Yearly in Apple's sandbox while public billing stays off. |
+Use these **exact labels** in App Store Connect Review Information:
 
-When Apple asks to locate In-App Purchases (Guideline 2.1(b)), give them the **IAP review** credentials and the navigation in [`app-store-review-notes.md`](app-store-review-notes.md) (Build 1.4.3 / 1160 section).
+| Label in ASC | Secret names | Purpose |
+|--------------|--------------|---------|
+| **IN-APP PURCHASE REVIEW ACCOUNT — USE THIS ACCOUNT TO REVIEW PREMIUM MONTHLY / PREMIUM YEARLY** | `APP_REVIEW_IAP_EMAIL` / `APP_REVIEW_IAP_PASSWORD` | **Only** account that can reach Premium Monthly + Premium Yearly in Apple's sandbox while public billing stays off. |
+| **COMPLIMENTARY DEMO ACCOUNT — PREMIUM ALREADY INCLUDED; DO NOT USE THIS ACCOUNT TO REVIEW IN-APP PURCHASES** | `APP_REVIEW_EMAIL` / `APP_REVIEW_PASSWORD` | Full free Premium for routine parent/child testing. **No** Monthly/Yearly purchase UI — grandfathered family. |
+
+When Apple asks to locate In-App Purchases (Guideline 2.1(b)), give them the **IAP review** credentials and the navigation in [`app-store-review-notes.md`](app-store-review-notes.md) (Build 1.4.3 / 1160 section). Complete the approval gate in [`runbooks/APP-REVIEW-IAP-FAMILY.md`](runbooks/APP-REVIEW-IAP-FAMILY.md) first — including **Paid Apps Agreement = Active**.
 
 ---
 

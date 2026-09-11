@@ -143,7 +143,30 @@ async function main() {
   const report = {
     base_url: BASE,
     ok: failed.length === 0,
+    scope: 'review_access_fix — does not enable public billing',
     checks: allChecks,
+    manual_checks_required: [
+      {
+        id: 'paid_apps_agreement',
+        description: 'App Store Connect → Business → Agreements → Paid Apps Agreement = Active',
+        evidence: 'FACT — confirm in ASC before Apple reply (cannot be verified by this script)',
+      },
+      {
+        id: 'physical_sandbox_e2e',
+        description: 'Physical iPhone + Sandbox Apple Account: IAP account → Inställningar → Premium → Aktivera Premium → Monthly + Yearly show live Apple prices → both open sandbox purchase sheet',
+        evidence: 'NOT_VERIFIED until founder/device QA completes',
+      },
+      {
+        id: 'deploy_sha',
+        description: 'Exact merge SHA of PR #1163 (or later) is deployed to prod',
+        evidence: 'Check deploy log / health endpoint',
+      },
+      {
+        id: 'asc_review_notes',
+        description: 'App Store Connect Review Information lists IAP account and complimentary account with explicit labels',
+        evidence: 'See docs/app-store-review-notes.md Build 1160 section',
+      },
+    ],
     navigation_for_apple: [
       'Launch the app on iPhone (build under review).',
       'Sign in with the IAP review parent account (APP_REVIEW_IAP_EMAIL — not the complimentary review account).',
