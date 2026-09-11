@@ -107,7 +107,7 @@
       <h3 class="font-heading font-bold text-navy text-lg mb-1">${spt('schedule.dnd.reorderTitle')}</h3>
       <p class="text-sm text-text-soft mb-5">${hideAllDays ? spt('schedule.dnd.reorderOnceBody') : spt('schedule.dnd.reorderBody', { plural: dayPlural })}</p>
       <div class="flex flex-col gap-2">
-        <button id="reorder-today-btn" class="w-full py-3 px-4 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm transition-colors">
+        <button id="reorder-today-btn" class="w-full py-3 px-4 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-semibold text-sm transition-colors">
           ${spt('schedule.dnd.reorderTodayBtn')}
         </button>
         ${hideAllDays ? '' : `<button id="reorder-all-btn" class="w-full py-3 px-4 bg-navy hover:bg-purple-900 text-white rounded-xl font-semibold text-sm transition-colors">

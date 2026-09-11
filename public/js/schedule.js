@@ -358,7 +358,7 @@ async function renderChildrenOverview() {
   const container = document.getElementById('childCardsContainer');
   if (!container) return;
   if (children.length === 0) {
-    container.innerHTML = `<div class="text-center py-16"><p class="text-5xl mb-4">👨‍👩‍👧</p><p class="font-semibold text-navy mb-1">${spt('schedule.empty.noChildrenTitle')}</p><a href="/dashboard" class="px-6 py-3 bg-gold text-white rounded-xl font-semibold inline-block mt-3">${spt('schedule.empty.goToDashboard')}</a></div>`;
+    container.innerHTML = `<div class="text-center py-16"><p class="text-5xl mb-4">👨‍👩‍👧</p><p class="font-semibold text-navy mb-1">${spt('schedule.empty.noChildrenTitle')}</p><a href="/dashboard" class="px-6 py-3 ${ScheduleCore.PLANNER_PRIMARY_BTN} rounded-xl font-semibold inline-block mt-3">${spt('schedule.empty.goToDashboard')}</a></div>`;
     return;
   }
   // Fetch schedules for each child
@@ -428,7 +428,7 @@ async function renderChildrenOverview() {
       ${hasDays ? `<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-3">${daySummaryHtml}</div>` : ''}
       <div class="flex items-center justify-between gap-2 flex-wrap">
         <button onclick="event.stopPropagation(); window.location.href='/family?child=${child.id}&tab=rewards'" class="px-3 py-2 bg-lavender hover:bg-purple-100 text-navy rounded-lg font-semibold text-sm transition-colors">🏆 ${spt('schedule.actions.rewards')}</button>
-        <button onclick="selectChild('${child.id}')" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-white rounded-lg font-semibold text-sm">✏️ ${spt('schedule.editor.editSchedule')} →</button>
+        <button onclick="selectChild('${child.id}')" class="px-4 py-2 ${ScheduleCore.PLANNER_PRIMARY_BTN} rounded-lg font-semibold text-sm">✏️ ${spt('schedule.editor.editSchedule')} →</button>
       </div>
     </div>`;
   }).join('');
@@ -547,7 +547,7 @@ function renderDayTabs() {
     return `<div class="flex-shrink-0 flex flex-col items-center gap-0.5">
       <button draggable="true" onclick="selectDay(${d})"
         class="day-tab px-2 md:px-4 py-1.5 rounded-xl border-2 font-semibold text-xs md:text-sm day-btn flex flex-col items-center leading-tight
-        ${currentDay===d?'bg-gold text-white border-gold':'border-lavender text-navy hover:border-navy'}"
+        ${currentDay===d?ScheduleCore.PLANNER_PRIMARY_DAY_TAB:'border-lavender text-navy hover:border-navy'}"
         data-day="${d}">
         <span>${dayShort(d)}</span>
         <span class="day-tab-date font-normal text-[10px]">${dateLabel}</span>
@@ -690,7 +690,7 @@ async function loadScheduleForDay() {
         <p class="text-5xl mb-4">📅</p>
         <p class="font-semibold text-navy mb-2">${spt('schedule.empty.noScheduleTitle', { name: childName })}</p>
         <p class="text-sm text-text-soft mb-6">${spt('schedule.empty.noScheduleBody')}</p>
-        <button onclick="openTemplateModal()" class="px-6 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold">+ ${spt('schedule.editor.createSchedule')}</button>
+        <button onclick="openTemplateModal()" class="px-6 py-3 ${ScheduleCore.PLANNER_PRIMARY_BTN} rounded-xl font-semibold">+ ${spt('schedule.editor.createSchedule')}</button>
       </div>`;
     return;
   }
@@ -741,7 +741,7 @@ function renderEmptyDay() {
     <div class="text-center py-16"><p class="text-5xl mb-4">📅</p>
       <p class="font-semibold text-navy mb-1">${spt('schedule.empty.noScheduleDayTitle', { day: dayName(currentDay), date: dl ? ` (${dl})` : '' })}</p>
       <p class="text-text-soft text-sm mb-6">${spt('schedule.empty.noScheduleDayBody', { name: child ? escHtml(child.name) : '' })}</p>
-      <button onclick="openTemplateModal()" class="px-6 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold">+ ${spt('schedule.empty.createForDay', { day: dayName(currentDay) })}</button>
+      <button onclick="openTemplateModal()" class="px-6 py-3 ${ScheduleCore.PLANNER_PRIMARY_BTN} rounded-xl font-semibold">+ ${spt('schedule.empty.createForDay', { day: dayName(currentDay) })}</button>
     </div>`;
 }
 

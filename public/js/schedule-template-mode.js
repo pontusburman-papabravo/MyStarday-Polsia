@@ -46,7 +46,7 @@ async function loadTemplate(templateId) {
           <p class="text-5xl mb-4">❌</p>
           <p class="font-semibold text-navy mb-1">${spt('schedule.template.notFound')}</p>
           <p class="text-text-soft text-sm">${escHtml(err.error || spt('schedule.validation.generic'))}</p>
-          <a href="/library" class="mt-6 inline-block px-6 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold">${spt('schedule.template.backToLibrary')}</a>
+          <a href="/library" class="mt-6 inline-block px-6 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-semibold">${spt('schedule.template.backToLibrary')}</a>
         </div>`;
       return;
     }
@@ -66,7 +66,7 @@ async function loadTemplate(templateId) {
         <p class="text-5xl mb-4">❌</p>
         <p class="font-semibold text-navy mb-1">${spt('schedule.template.loadFailed')}</p>
         <p class="text-text-soft text-sm mb-4">${escHtml(err.message)}</p>
-        <a href="/library" class="px-6 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold inline-block">${spt('schedule.template.backToLibrary')}</a>
+        <a href="/library" class="px-6 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-semibold inline-block">${spt('schedule.template.backToLibrary')}</a>
       </div>`;
   }
 }
@@ -116,7 +116,7 @@ function renderTemplate() {
     </div>
     ${sections}
     <div class="mt-6 text-center">
-      <a href="/library" class="px-6 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold transition-colors inline-block">
+      <a href="/library" class="px-6 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-semibold transition-colors inline-block">
         ✓ ${spt('schedule.template.doneBack')}
       </a>
     </div>`;
