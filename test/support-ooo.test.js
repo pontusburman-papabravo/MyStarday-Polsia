@@ -60,7 +60,7 @@ describe('support OOO window (Sept 2026)', () => {
     const doc = fs.readFileSync(path.join(ROOT, 'docs/support-ooo-sept-2026.md'), 'utf8');
     const agentDoc = fs.readFileSync(path.join(ROOT, 'docs/support-agent.md'), 'utf8');
     assert.match(doc, /support-agent\.md/);
-    assert.match(doc, /Schemat.*behålls/);
+    assert.match(doc, /support-daily\.md/);
     assert.match(agentDoc, /support-daily\.md/);
     const agent = require('../config/support-agent');
     assert.equal(agent.resolveSupportAgentMode(new Date('2026-09-11T12:00:00+02:00')), 'normal');
