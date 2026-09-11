@@ -6,7 +6,7 @@
   'use strict';
 
   var FROM_DATE = '2026-09-01';
-  var THROUGH_DATE = '2026-09-11';
+  var THROUGH_DATE = '2026-09-10';
   var TIMEZONE = 'Europe/Stockholm';
 
   var COPY = {
