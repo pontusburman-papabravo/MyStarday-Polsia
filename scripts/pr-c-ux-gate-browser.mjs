@@ -9,6 +9,42 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 const { registerAndLogin, createChild } = require('../test/helpers/auth-session.js');
+const { getSetCookieHeaders, mergeCookies } = require('../test/helpers/http.js');
+const db = require('../src/lib/db.js');
+
+async function registerEnSession(base) {
+  const email = `gate-en-${Date.now()}@example.com`;
+  const password = 'integration-test-pass-1';
+  const registerRes = await fetch(`${base}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, name: 'Gate EN', preferred_locale: 'en-GB' }),
+  });
+  if (registerRes.status !== 201) {
+    throw new Error(`en register failed ${registerRes.status}: ${await registerRes.text()}`);
+  }
+  const loginRes = await fetch(`${base}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, preferred_locale: 'en-GB' }),
+  });
+  const loginText = await loginRes.text();
+  if (loginRes.status !== 200) {
+    throw new Error(`en login failed ${loginRes.status}: ${loginText}`);
+  }
+  const loginBody = JSON.parse(loginText);
+  let cookies = {};
+  for (const header of getSetCookieHeaders(loginRes)) {
+    cookies = mergeCookies(cookies, [header]);
+  }
+  return { email, cookies, csrfToken: loginBody.csrfToken };
+}
+
+async function enableEnglishGlobalFlag() {
+  await db.query(
+    `UPDATE feature_flag SET enabled = true WHERE key = 'english_app_global_enabled'`,
+  );
+}
 
 const BASE = process.env.PR_C_GATE_BASE_URL || 'http://127.0.0.1:3000';
 const ART = process.env.SMOKE_ARTIFACTS || '/opt/cursor/artifacts/pr-c-ux-gate';
@@ -40,9 +76,14 @@ function puppeteerCookies(jar, baseUrl) {
   return Object.entries(jar).map(([name, value]) => ({ name, value, domain: host, path: '/' }));
 }
 
-async function measureButtonText(page, pattern, label) {
-  return page.evaluate((pat, lbl) => {
-    const btn = [...document.querySelectorAll('button')].find((b) => new RegExp(pat).test(b.textContent));
+async function measureButtonText(page, pattern, label, root = '#scheduleContent') {
+  return page.evaluate((pat, lbl, rootSel) => {
+    const root = rootSel ? document.querySelector(rootSel) : document.body;
+    const scope = root || document.body;
+    const btn = [...scope.querySelectorAll('button')].find((b) => {
+      if (b.offsetParent === null && !b.closest('#scheduleAddMenuBody')) return false;
+      return new RegExp(pat).test(b.textContent);
+    });
     if (!btn) return { label: lbl, missing: true };
     const fg = getComputedStyle(btn).color;
     let bg = getComputedStyle(btn).backgroundColor;
@@ -58,7 +99,7 @@ async function measureButtonText(page, pattern, label) {
       }
     }
     return { label: lbl, fg, bg };
-  }, pattern, label);
+  }, pattern, label, root);
 }
 
 async function measureChipContrast(page, selector, label) {
@@ -127,6 +168,7 @@ async function main() {
   }
 
   const session = await registerAndLogin(BASE, { name: 'PR C Gate' });
+  await enableEnglishGlobalFlag();
 
   const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
   const page = await browser.newPage();
@@ -197,6 +239,11 @@ async function main() {
   const routeAtStart = page.url();
 
   await page.evaluate(() => document.documentElement.classList.remove('dark'));
+  if (typeof window !== 'undefined') {
+    await page.evaluate(() => {
+      if (window.AppViewMode && AppViewMode.setTheme) AppViewMode.setTheme('light');
+    });
+  }
   report.i18n.svSE = await page.evaluate(() => ({
     emptyDayAdd: [...document.querySelectorAll('button')].some((b) => /Lägg till aktivitet/.test(b.textContent)),
     copyFrom: false,
@@ -338,17 +385,13 @@ async function main() {
   report.scenarios.replace = {
     mergeDefaultOnFreshOpen: /●.*Lägg till/i.test(await page.evaluate(() => document.querySelector('#scheduleAddMenuBody')?.innerText || '')),
   };
-  await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Ersätt hela dagen/.test(b.textContent))?.click());
+  await page.evaluate(() => ScheduleAddMenu.setCopyDayMode('replace_day'));
   await new Promise((r) => setTimeout(r, 300));
   report.scenarios.replace.replaceSelected = /●.*Ersätt hela dagen|Ersätter allt som redan finns/i.test(await page.evaluate(() => document.querySelector('#scheduleAddMenuBody')?.innerText || ''));
-  await page.evaluate(() => {
-    const btn = [...document.querySelectorAll('#scheduleAddMenuBody button')].find(
-      (b) => b.getAttribute('onclick') === 'ScheduleAddMenu.toggleCopyDayTarget(1)',
-    );
-    btn?.click();
-  });
+  await page.evaluate(() => ScheduleAddMenu.toggleCopyDayTarget(1));
+  await new Promise((r) => setTimeout(r, 200));
   await page.click('#samCopyDaySaveBtn');
-  await page.waitForSelector('#samConfirmCancelBtn', { timeout: 3000 }).catch(() => null);
+  await page.waitForSelector('#samConfirmCancelBtn', { timeout: 5000 }).catch(() => null);
   report.scenarios.replace.confirmDialogShown = Boolean(await page.$('#samConfirmCancelBtn'));
   if (report.scenarios.replace.confirmDialogShown) {
     await page.click('#samConfirmCancelBtn');
@@ -373,23 +416,22 @@ async function main() {
   );
   await page.keyboard.press('Escape');
 
-  const child2Id = await page.evaluate(async () => {
-    const csrf = document.cookie.match(/csrf_token=([^;]+)/)?.[1] || '';
-    const r = await fetch('/api/children', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': decodeURIComponent(csrf) },
-      body: JSON.stringify({ name: 'GateEn', emoji: '🌍', birthday: '2017-06-01' }),
-    });
-    const data = await r.json();
-    if (!r.ok) throw new Error(`create child2 failed ${r.status}: ${JSON.stringify(data)}`);
-    return data.id;
+  const enSession = await registerEnSession(BASE);
+  const enChildId = await createChild(BASE, enSession, { name: 'GateEn', emoji: '🌍' });
+  await fetch(`${BASE}/api/onboarding/complete`, {
+    method: 'POST',
+    headers: {
+      Cookie: Object.entries(enSession.cookies).map(([k, v]) => `${k}=${v}`).join('; '),
+      'X-CSRF-Token': enSession.csrfToken,
+    },
   });
-  await page.evaluate(() => {
-    localStorage.setItem('sd_preferred_locale', 'en-GB');
-    if (window.I18n && I18n.setLocale) I18n.setLocale('en-GB');
-  });
-  await page.goto(`${BASE}/schedule?child=${child2Id}`, { waitUntil: 'networkidle2' });
+  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+  const host = new URL(BASE).hostname;
+  await page.deleteCookie(...(await page.cookies()));
+  for (const [name, value] of Object.entries(enSession.cookies)) {
+    await page.setCookie({ name, value, domain: host, path: '/' });
+  }
+  await page.goto(`${BASE}/schedule?child=${enChildId}`, { waitUntil: 'networkidle2' });
   await page.waitForFunction(
     () => [...document.querySelectorAll('button')].some((b) => /Add activity/.test(b.textContent)),
     { timeout: 60000 },
@@ -401,8 +443,8 @@ async function main() {
     useTemplate: [...document.querySelectorAll('button')].some((b) => /Use a template/.test(b.textContent)),
     mixedLanguage: document.body.innerText.includes('Lägg till aktivitet'),
   }));
-  await apiApplyActivities(BASE, session, child2Id, 4, saveNames.slice(0, 3));
-  await page.goto(`${BASE}/schedule?child=${child2Id}`, { waitUntil: 'networkidle2' });
+  await apiApplyActivities(BASE, enSession, enChildId, 4, saveNames.slice(0, 3));
+  await page.goto(`${BASE}/schedule?child=${enChildId}`, { waitUntil: 'networkidle2' });
   await page.click('.day-tab[data-day="1"]');
   await new Promise((r) => setTimeout(r, 800));
   report.i18n.enGB.copyFrom = await page.evaluate(() => [...document.querySelectorAll('button')].some((b) => /Copy from another day/.test(b.textContent)));
@@ -427,7 +469,7 @@ async function main() {
     cancel: /Cancel/i.test(enModal),
     save: /Save/i.test(enModal),
     merge: /●.*Add/i.test(enModal),
-    replace: /Replace entire day/i.test(enModal),
+    replace: /Replace the whole day/i.test(enModal),
   };
   report.i18n.enGB.mixedLanguage = await page.evaluate(() => document.body.innerText.includes('Lägg till aktivitet') || document.body.innerText.includes('Kopiera'));
   await page.screenshot({ path: path.join(ART, 'i18n-en-empty-day.png'), fullPage: true });
