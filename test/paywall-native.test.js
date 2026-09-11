@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const Logic = require('../public/js/iap-native-client-logic');
+const { resolveLegalRoutes } = require('../src/lib/legal-routing');
 
 const ROOT = path.join(__dirname, '..');
 const paywallJs = fs.readFileSync(path.join(ROOT, 'public/js/paywall.js'), 'utf8');
@@ -78,28 +79,26 @@ describe('paywall native subscription screen', () => {
     assert.match(paywallHtml, /id="giftCardBtn"/);
   });
 
-  test('H: legal links use UI locale and in-app return params (not jurisdiction routing)', () => {
+  test('H: legal links use jurisdiction API + in-app return params (not registration sessionStorage)', () => {
     assert.doesNotMatch(paywallJs, /fetchLegalRoutes\(['"]SE['"]/);
     assert.doesNotMatch(paywallJs, /syncRegisterLegalLinks/);
     assert.doesNotMatch(paywallJs, /sd_country_code/);
     assert.doesNotMatch(paywallJs, /CountryChoice/);
-    assert.doesNotMatch(paywallJs, /LegalRoutes\.fetchLegalRoutes/);
+    assert.doesNotMatch(paywallJs, /resolveInAppLegalRoutes|resolvePaywallLegalRoutes/);
     assert.doesNotMatch(paywallHtml, /data-legal-terms-link/);
     assert.doesNotMatch(paywallHtml, /legal-routes\.js/);
-    assert.match(paywallJs, /function resolvePaywallLegalRoutes/);
+    assert.match(paywallJs, /\/api\/market\/legal-routes/);
+    assert.match(paywallJs, /applyPaywallLegalLinks\(paywallCountryCode\)/);
     assert.match(paywallJs, /params\.set\('returnTo', '\/paywall'\)/);
-    assert.match(paywallJs, /applyPaywallLegalLinks\(\)/);
     assert.match(paywallHtml, /id="paywallAutoRenew"/);
 
-    const { resolveInAppLegalRoutes } = require('../src/lib/legal-routing');
-    const svRoutes = resolveInAppLegalRoutes({ locale: 'sv-SE' });
-    assert.equal(svRoutes.terms, '/terms');
-    assert.equal(svRoutes.privacy, '/privacy');
+    const ieRoutes = resolveLegalRoutes({ countryCode: 'IE', marketRegion: 'EU', locale: 'en-GB' });
+    assert.equal(ieRoutes.terms, '/en/eea/terms');
+    assert.equal(ieRoutes.privacy, '/en/eea/privacy');
 
-    const enRoutes = resolveInAppLegalRoutes({ locale: 'en-GB' });
-    assert.equal(enRoutes.terms, '/en/terms');
-    assert.equal(enRoutes.privacy, '/en/privacy');
-    assert.notEqual(enRoutes.terms, '/en/eea/terms');
+    const seRoutes = resolveLegalRoutes({ countryCode: 'SE', marketRegion: 'EU', locale: 'sv-SE' });
+    assert.equal(seRoutes.terms, '/terms');
+    assert.equal(seRoutes.privacy, '/privacy');
   });
 
   test('I: purchase cannot double-submit', () => {

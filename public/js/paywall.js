@@ -6,6 +6,7 @@
   let selectedTier = 'yearly';
   let purchaseInProgress = false;
   let pricesReady = false;
+  let paywallCountryCode = null;
 
   function isPaywallPage() {
     const path = (window.location.pathname || '').replace(/\/$/, '') || '/';
@@ -62,12 +63,28 @@
     el.setAttribute('data-i18n', key);
   }
 
-  function resolvePaywallLegalRoutes() {
+  async function applyPaywallLegalLinks(countryCode) {
     const locale = (window.I18n && I18n.getCurrentLang && I18n.getCurrentLang()) || 'sv-SE';
-    if (locale === 'sv-SE') {
-      return { terms: '/terms', privacy: '/privacy' };
+    let routes = { terms: '/terms', privacy: '/privacy' };
+    if (countryCode) {
+      try {
+        const params = new URLSearchParams({ country_code: countryCode, locale: locale });
+        const res = await fetch(`/api/market/legal-routes?${params.toString()}`, { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          routes = { terms: data.terms, privacy: data.privacy };
+        }
+      } catch (_) { /* keep sv fallback */ }
     }
-    return { terms: '/en/terms', privacy: '/en/privacy' };
+    const termsLink = document.getElementById('paywallTermsLink');
+    const privacyLink = document.getElementById('paywallPrivacyLink');
+    if (termsLink && routes.terms) {
+      termsLink.href = buildLegalLinkHref(routes.terms);
+    }
+    if (privacyLink && routes.privacy) {
+      privacyLink.href = buildLegalLinkHref(routes.privacy);
+    }
+    return routes;
   }
 
   function buildLegalLinkHref(basePath) {
@@ -79,19 +96,6 @@
     }
     const sep = basePath.includes('?') ? '&' : '?';
     return `${basePath}${sep}${params.toString()}`;
-  }
-
-  function applyPaywallLegalLinks() {
-    const routes = resolvePaywallLegalRoutes();
-    const termsLink = document.getElementById('paywallTermsLink');
-    const privacyLink = document.getElementById('paywallPrivacyLink');
-    if (termsLink && routes.terms) {
-      termsLink.href = buildLegalLinkHref(routes.terms);
-    }
-    if (privacyLink && routes.privacy) {
-      privacyLink.href = buildLegalLinkHref(routes.privacy);
-    }
-    return routes;
   }
 
   function readTierFromUrl() {
@@ -174,7 +178,7 @@
         ? '<span class="text-white text-xs font-bold">✓</span>'
         : '';
     }
-    applyPaywallLegalLinks();
+    applyPaywallLegalLinks(paywallCountryCode);
   }
 
   function setPlanControlsDisabled(disabled) {
@@ -265,7 +269,8 @@
       return false;
     }
     const config = await configRes.json();
-    applyPaywallLegalLinks();
+    paywallCountryCode = config.country_code || null;
+    await applyPaywallLegalLinks(paywallCountryCode);
     const displays = Logic.resolveOfferingTierDisplays(offering, config.packages);
     if (!displays) {
       showLoadingPrices(false);
@@ -381,7 +386,8 @@
       const cfgRes = await fetch('/api/iap/config?platform=ios', { credentials: 'include' });
       if (!cfgRes.ok) return;
       const cfg = await cfgRes.json();
-      applyPaywallLegalLinks();
+      paywallCountryCode = cfg.country_code || null;
+      await applyPaywallLegalLinks(paywallCountryCode);
       if (cfg.storeLinks) {
         const apple = document.getElementById('paywallAppleLink');
         const play = document.getElementById('paywallPlayLink');

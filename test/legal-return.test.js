@@ -10,7 +10,6 @@ const {
   buildReturnUrl,
   buildLegalLinkHref,
 } = require('../src/lib/legal-return');
-const { resolveInAppLegalRoutes } = require('../src/lib/legal-routing');
 
 const ROOT = path.join(__dirname, '..');
 const clientSrc = fs.readFileSync(path.join(ROOT, 'public/js/legal-return-nav.js'), 'utf8');
@@ -55,17 +54,9 @@ describe('legal-return allowlist', () => {
   });
 });
 
-describe('resolveInAppLegalRoutes', () => {
-  it('sv-SE uses Swedish public legal pages', () => {
-    const routes = resolveInAppLegalRoutes({ locale: 'sv-SE' });
-    assert.equal(routes.terms, '/terms');
-    assert.equal(routes.privacy, '/privacy');
-  });
-
-  it('en-GB uses English mirror pages, not EEA jurisdiction marketing pages', () => {
-    const routes = resolveInAppLegalRoutes({ locale: 'en-GB' });
-    assert.equal(routes.terms, '/en/terms');
-    assert.equal(routes.privacy, '/en/privacy');
-    assert.notEqual(routes.terms, '/en/eea/terms');
+describe('paywall jurisdiction routing', () => {
+  it('resolveInAppLegalRoutes was removed — paywall uses resolveLegalRoutes', () => {
+    const legalRouting = require('../src/lib/legal-routing');
+    assert.equal(typeof legalRouting.resolveInAppLegalRoutes, 'undefined');
   });
 });

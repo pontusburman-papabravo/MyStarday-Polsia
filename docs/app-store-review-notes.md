@@ -33,7 +33,9 @@
 | Privacy Policy link | Bottom of paywall | ✓ `paywallPrivacyLink` → `/privacy` |
 | Terms of Use link | Bottom of paywall | ✓ `paywallTermsLink` → `/terms` (in-app; metadata uses Apple stdeula) |
 
-Record a short screen recording: **Inställningar → Premium → Aktivera Premium** → show Monthly/Yearly + prices → tap **Integritet** and **Villkor** links. Attach to the App Review reply.
+Record a short screen recording: **Inställningar → Premium → Aktivera Premium** → show Monthly/Yearly + prices → tap **Integritet** and **Villkor** links → tap **Tillbaka till Premium** (returns to paywall with same tier). Attach to the App Review reply.
+
+**In-app legal navigation (2026-09-11 web deploy):** Paywall legal links use jurisdiction routing (`resolveLegalRoutes` via `/api/market/legal-routes`) and append `?returnTo=/paywall&tier=…`. Legal pages show **Tillbaka till Premium** and hide the public Svenska/English switcher on that path. **No new iOS binary** — Capacitor loads the remote web app.
 
 **Paste into App Review reply:**
 

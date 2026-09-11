@@ -48,30 +48,6 @@ function resolveLegalRoutes(input = {}) {
   };
 }
 
-/**
- * Locale-only legal routes for in-app surfaces (paywall). Avoids jurisdiction
- * routing that would send Swedish UI users to EEA English marketing pages.
- *
- * @param {{ locale?: string|null }} input
- * @returns {{ privacy: string, terms: string, status: 'live' }}
- */
-function resolveInAppLegalRoutes(input = {}) {
-  const locale = normalizeLocale(input.locale) || 'sv-SE';
-  if (locale === 'sv-SE') {
-    return {
-      privacy: '/privacy',
-      terms: '/terms',
-      status: 'live',
-    };
-  }
-  return {
-    privacy: '/en/privacy',
-    terms: '/en/terms',
-    status: 'live',
-  };
-}
-
 module.exports = {
   resolveLegalRoutes,
-  resolveInAppLegalRoutes,
 };
