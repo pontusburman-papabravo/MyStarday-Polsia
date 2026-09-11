@@ -181,6 +181,22 @@ describe('growth handoff inline CTA — runtime contracts', () => {
     assert.equal(shown[0].metadata.help_type, SCHEMA_HELP.helpType);
   });
 
+  it('re-enrich refreshes copy after postSchema i18n overwrite without duplicate listeners', async () => {
+    const { GrowthSystemHelp, tracked } = loadGrowthSystemHelp();
+    const { root, titleEl, primaryBtn, children } = makeHandoffRoot('magic');
+
+    await GrowthSystemHelp.enrichHandoff(root);
+    titleEl.textContent = 'Låt barnet testa sin rutin';
+    primaryBtn.textContent = 'Öppna barnets vy';
+    await GrowthSystemHelp.enrichHandoff(root);
+
+    assert.equal(titleEl.textContent, SCHEMA_HELP.headline);
+    assert.equal(primaryBtn.textContent, SCHEMA_HELP.ctaLabel);
+    assert.equal(primaryBtn._listeners.length, 1);
+    assert.equal(children.filter((c) => c.className.includes('handoff-secondary')).length, 1);
+    assert.equal(tracked.filter((e) => e.eventType === 'handoff_inline_cta_shown').length, 1);
+  });
+
   it('maybeEnrichHandoff idempotent — no duplicate listeners, links, or shown events', async () => {
     const { GrowthSystemHelp, tracked } = loadGrowthSystemHelp();
     const { root, primaryBtn, children } = makeHandoffRoot('legacy');

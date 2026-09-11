@@ -293,13 +293,16 @@
    * Reuses DashboardChildHandoff.startChildLogin(); secondary link opens help panel.
    */
   async function enrichHandoffSchemaNoChildLogin(rootEl, data) {
-    if (!rootEl || rootEl.classList.contains(INLINE_ENRICHED_CLASS)) return;
+    if (!rootEl) return;
     const help = data.help;
     const parts = findHandoffParts(rootEl);
     if (!help || !parts.primaryBtn) return;
 
+    const firstEnrich = !rootEl.classList.contains(INLINE_ENRICHED_CLASS);
     rootEl.classList.add(INLINE_ENRICHED_CLASS);
 
+    // Re-apply on parent-i18n-ready / syncPostSchemaHandoffCard re-runs — postSchema
+    // copy can overwrite headline after first enrich.
     if (parts.titleEl) parts.titleEl.textContent = help.headline;
     if (parts.subEl) parts.subEl.textContent = help.body;
     parts.primaryBtn.textContent = help.ctaLabel;
@@ -307,7 +310,7 @@
     bindInlineCtaClick(parts, data, help);
     appendSecondaryHelpLink(rootEl, parts);
 
-    if (!wasInlineShownSession(data.blockingStep)) {
+    if (firstEnrich && !wasInlineShownSession(data.blockingStep)) {
       markInlineShownSession(data.blockingStep);
       await trackInlineEvent('handoff_inline_cta_shown', buildInlineEventMetadata(data, help));
       await recordShown(data);
