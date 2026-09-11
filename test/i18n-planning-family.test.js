@@ -219,11 +219,6 @@ describe('family-child parent i18n', () => {
     assert.doesNotMatch(js, /showToast\('[^']*[åäöÅÄÖ]/);
   });
 
-  it('founder-banner refreshes copy after parent-i18n-ready', () => {
-    const js = fs.readFileSync(path.join(__dirname, '../public/js/founder-banner.js'), 'utf8');
-    assert.match(js, /applyBannerCopy/);
-    assert.match(js, /parent-i18n-ready/);
-  });
 });
 
 describe('i18n merge domains', () => {

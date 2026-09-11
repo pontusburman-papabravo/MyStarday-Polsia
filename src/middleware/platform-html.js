@@ -331,7 +331,6 @@ const ANDROID_PLAY_REVIEW_SAFE_MODE_SCRIPTS = [
   'dashboard-star-history',
   'dashboard-copy-modals',
   'skeleton',
-  'founder-banner',
   'pwa-install',
   'push-manager',
   'feedback',
