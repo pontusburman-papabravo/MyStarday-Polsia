@@ -75,4 +75,15 @@ describe('legal-routing', () => {
     assert.equal(GATE_DEFAULTS.market_ie_open, false);
     assert.equal(GATE_DEFAULTS.market_fi_open, false);
   });
+
+  it('resolveInAppLegalRoutes uses locale only for paywall surfaces', () => {
+    const { resolveInAppLegalRoutes } = require('../src/lib/legal-routing');
+    const sv = resolveInAppLegalRoutes({ locale: 'sv-SE' });
+    assert.equal(sv.terms, '/terms');
+    assert.equal(sv.privacy, '/privacy');
+
+    const en = resolveInAppLegalRoutes({ locale: 'en-GB' });
+    assert.equal(en.terms, '/en/terms');
+    assert.equal(en.privacy, '/en/privacy');
+  });
 });

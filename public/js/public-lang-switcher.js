@@ -29,7 +29,18 @@
     return currentPath() === '/en' || currentPath().startsWith('/en/');
   }
 
+  function hasInAppReturnContext() {
+    if (document.documentElement.hasAttribute('data-legal-in-app-return')) return true;
+    var returnTo = new URLSearchParams(window.location.search || '').get('returnTo');
+    if (!returnTo || typeof returnTo !== 'string') return false;
+    var trimmed = returnTo.trim();
+    if (trimmed !== '/paywall') return false;
+    if (trimmed.indexOf('://') !== -1 || trimmed.indexOf('..') !== -1) return false;
+    return true;
+  }
+
   function inject() {
+    if (hasInAppReturnContext()) return;
     if (document.querySelector('[data-public-lang-switcher]')) return;
     const nav = document.querySelector('nav') || document.body;
     const wrap = document.createElement('div');

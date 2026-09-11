@@ -19,7 +19,7 @@
    Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
    ```
    Swedish equivalent: `Användarvillkor (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
-3. Confirm **Privacy Policy URL** field still resolves (see `docs/app-store-connect-metadata.md` — Privacy Policy URL field).
+3. Confirm the Privacy Policy URL metadata field still resolves.
 4. Keep **Standard Apple License Agreement** — do **not** create a Custom License Agreement.
 5. Resubmit the **same build** for review (metadata-only change).
 
