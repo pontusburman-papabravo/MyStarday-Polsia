@@ -264,19 +264,38 @@
     return '<span class="parent-quick-tile-icon" aria-hidden="true">' + emojiFallback + '</span>';
   }
 
+  function trackShortcutClick(shortcutId, slot) {
+    if (typeof window.analytics !== 'undefined' && analytics.track) {
+      analytics.track(null, 'home_shortcut_click', {
+        shortcut_id: shortcutId,
+        slot: slot,
+      });
+    }
+  }
+
+  function bindShortcutAnalytics(mount) {
+    mount.querySelectorAll('[data-shortcut-id]').forEach(function (el) {
+      if (el.dataset.shortcutTrackBound === '1') return;
+      el.dataset.shortcutTrackBound = '1';
+      el.addEventListener('click', function () {
+        trackShortcutClick(el.getAttribute('data-shortcut-id'), Number(el.getAttribute('data-shortcut-slot')));
+      });
+    });
+  }
+
   function renderQuickActions(children) {
     const logHref = escHtml(retroactiveLogHref(children));
     return '<div class="parent-quick-grid" role="group" aria-label="' + escHtml(pt('home.quickActions.aria')) + '">' +
-      '<a href="' + logHref + '" class="parent-quick-tile parent-quick-tile-link no-underline">' +
+      '<a href="' + logHref + '" class="parent-quick-tile parent-quick-tile-link no-underline" data-shortcut-id="retroactive" data-shortcut-slot="0">' +
       quickActionIcon('registrera-i-efterhand', '📝') +
       '<span class="parent-quick-tile-label">' + escHtml(pt('home.quickActions.retroactive')) + '</span></a>' +
-      '<button type="button" class="parent-quick-tile" data-action="once-task">' +
+      '<button type="button" class="parent-quick-tile" data-action="once-task" data-shortcut-id="once_task" data-shortcut-slot="1">' +
       quickActionIcon('engangsaktivitet', '📋') +
       '<span class="parent-quick-tile-label">' + escHtml(pt('home.quickActions.onceTask')) + '</span></button>' +
-      '<button type="button" class="parent-quick-tile" data-action="give-stars">' +
+      '<button type="button" class="parent-quick-tile" data-action="give-stars" data-shortcut-id="give_stars" data-shortcut-slot="2">' +
       quickActionIcon('extra-stjarnor', '⭐') +
       '<span class="parent-quick-tile-label">' + escHtml(pt('home.quickActions.extraStars')) + '</span></button>' +
-      '<button type="button" class="parent-quick-tile" data-action="ledig-dag">' +
+      '<button type="button" class="parent-quick-tile" data-action="ledig-dag" data-shortcut-id="day_off" data-shortcut-slot="3">' +
       quickActionIcon('ledig-dag', '🏠') +
       '<span class="parent-quick-tile-label">' + escHtml(pt('home.quickActions.dayOff')) + '</span></button>' +
       '</div>';
@@ -330,6 +349,9 @@
     handoff.classList.remove('hidden');
     if (typeof DashboardChildHandoff.applyMagicHandoffCopy === 'function') {
       DashboardChildHandoff.applyMagicHandoffCopy(handoff, postSchema);
+    }
+    if (typeof DashboardChildHandoff.maybeEnrichHandoff === 'function') {
+      DashboardChildHandoff.maybeEnrichHandoff(handoff);
     }
   }
 
@@ -426,6 +448,7 @@
     if (hubRoot) relocateMounts(hubRoot);
 
     bindActions(mount);
+    bindShortcutAnalytics(mount);
 
     void (async function refreshHemLadder() {
       if (window.JourneyContextClient) {

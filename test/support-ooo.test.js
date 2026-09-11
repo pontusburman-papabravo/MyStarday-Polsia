@@ -17,13 +17,13 @@ describe('support OOO window (Sept 2026)', () => {
     assert.equal(ooo.isOooActive(stockholmNoon('2026-08-31')), false);
   });
 
-  it('is active 1–11 September Stockholm time', () => {
+  it('is active 1–10 September Stockholm time', () => {
     assert.equal(ooo.isOooActive(stockholmNoon('2026-09-01')), true);
     assert.equal(ooo.isOooActive(stockholmNoon('2026-09-10')), true);
-    assert.equal(ooo.isOooActive(stockholmNoon('2026-09-11')), true);
   });
 
-  it('is inactive from 12 September', () => {
+  it('is inactive from 11 September', () => {
+    assert.equal(ooo.isOooActive(stockholmNoon('2026-09-11')), false);
     assert.equal(ooo.isOooActive(stockholmNoon('2026-09-12')), false);
   });
 
@@ -58,9 +58,12 @@ describe('support OOO window (Sept 2026)', () => {
 
   it('OOO playbook hands off to the permanent agent after the window', () => {
     const doc = fs.readFileSync(path.join(ROOT, 'docs/support-ooo-sept-2026.md'), 'utf8');
+    const agentDoc = fs.readFileSync(path.join(ROOT, 'docs/support-agent.md'), 'utf8');
     assert.match(doc, /support-agent\.md/);
-    assert.match(doc, /Stäng \*\*inte\*\* av schemat/);
+    assert.match(doc, /Schemat.*behålls/);
+    assert.match(agentDoc, /support-daily\.md/);
     const agent = require('../config/support-agent');
+    assert.equal(agent.resolveSupportAgentMode(new Date('2026-09-11T12:00:00+02:00')), 'normal');
     assert.equal(agent.resolveSupportAgentMode(new Date('2026-09-12T12:00:00+02:00')), 'normal');
   });
 

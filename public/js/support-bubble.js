@@ -20,7 +20,7 @@
 
   // Keep FROM/THROUGH in sync with config/support-ooo.js
   var SUPPORT_OOO_FROM = '2026-09-01';
-  var SUPPORT_OOO_THROUGH = '2026-09-11';
+  var SUPPORT_OOO_THROUGH = '2026-09-10';
 
   function supportOooPreviewForced() {
     try {

@@ -102,6 +102,7 @@ const ALLOWED_CLIENT_EVENTS = new Set([
   'cta_share_app_clicked',
   // In-app navigation + engagement
   'nav_hub_click',
+  'home_shortcut_click',
   'readiness_action_click',
   'child_profile_section',
   'child_world_view',
@@ -182,6 +183,8 @@ const ALLOWED_CLIENT_EVENTS = new Set([
   'system_help_support_requested',
   'system_help_progressed',
   'system_help_api_error',
+  'handoff_inline_cta_shown',
+  'handoff_inline_cta_clicked',
   'waitlist_signup',
   'waitlist_launch_invite',
   'waitlist_account_signup',
