@@ -9,7 +9,7 @@
 
 ## Schedule
 
-Daily Cloud Agent (~08:00 Europe/Stockholm). Idempotent: do not send a second external reply for the same user message; check events first.
+Cloud Agent **every 6 hours** (Europe/Stockholm — e.g. 00:00, 06:00, 12:00, 18:00). Idempotent: do not send a second external reply for the same user message; check events first.
 
 ## Prompt
 

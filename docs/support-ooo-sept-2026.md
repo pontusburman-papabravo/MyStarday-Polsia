@@ -1,6 +1,6 @@
 # Support under bortresa 1–10 september 2026
 
-> **Avslutad 11 september 2026** — grundaren är tillbaka. Använd [`docs/support-agent.md`](support-agent.md) (normal första linje + eskalering). Schemat för daglig Cloud Agent behålls.
+> **Avslutad 11 september 2026** — grundaren är tillbaka. Använd [`docs/support-agent.md`](support-agent.md) (normal första linje + eskalering). Cloud Agent körs var 6:e timme.
 
 **Permanent agent:** [`docs/support-agent.md`](support-agent.md). OOO var ett tidsbegränsat **läge**, inte agentens livstid.
 

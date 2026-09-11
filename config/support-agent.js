@@ -6,8 +6,10 @@
  * SUPPORT_AGENT_MODE=auto|ooo|normal
  *   auto (default): OOO while config/support-ooo.js is active, else normal.
  *
+ * Schedule: Cursor Cloud Agent every 6 hours (see docs/support-agent.md).
+ *
  * SUPPORT_ESCALATION_SLA_HOURS (default 72)
- *   Conservative ops safety net: daily agent + 3 days without progress → human.
+ *   Conservative ops safety net: agent runs + 3 days without progress → human.
  *   Not a published customer SLA. Configurable.
  */
 

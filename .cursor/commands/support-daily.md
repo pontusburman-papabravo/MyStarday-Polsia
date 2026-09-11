@@ -1,6 +1,6 @@
-# Daglig support-agent (live)
+# Support-agent (live, var 6:e timme)
 
-Kör mot produktion. Canonical playbook: `docs/support-agent.md`.
+Kör mot produktion var **6:e timme** (Europe/Stockholm). Canonical playbook: `docs/support-agent.md`.
 
 ---
 
