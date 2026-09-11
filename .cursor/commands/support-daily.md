@@ -1,19 +1,9 @@
-# Permanent first-line support agent
+# Daglig support-agent (live)
 
-**Canonical entity:** `contact_message`  
-**Audit log:** `contact_message_event`  
-**Mode:** `config/support-agent.js` (`SUPPORT_AGENT_MODE=auto|ooo|normal`)  
-**OOO window:** `config/support-ooo.js` — timed copy only (ended 10 September 2026). The agent continues in **normal** mode.
+Kör mot produktion. Canonical playbook: `docs/support-agent.md`.
 
-**Cursor automation:** paste the prompt below, or point the job at [`.cursor/commands/support-daily.md`](../.cursor/commands/support-daily.md).
+---
 
-## Schedule
-
-Daily Cloud Agent (~08:00 Europe/Stockholm). Idempotent: do not send a second external reply for the same user message; check events first.
-
-## Prompt
-
-```
 Läs docs/support-agent.md och följ den exakt.
 
 Mode: GET nothing — use config/support-agent.js mentally:
@@ -48,25 +38,3 @@ Mode: GET nothing — use config/support-agent.js mentally:
 9. Payment is not enabled unless current product docs say otherwise — do not invent billing steps.
 10. Summarize: id, type, action (note / reply / escalate / skip), why.
 11. No cases = say so and stop. Do not change product code unless a case requires it and the founder asked.
-```
-
-## APIs
-
-| Action | Endpoint |
-|---|---|
-| List | `GET /api/admin/contact-messages` |
-| Detail / events | `GET /api/admin/contact-messages/:id` · `/:id/events` |
-| Internal note | `POST /api/admin/contact-messages/:id/cursor-note` |
-| External reply | `POST /api/admin/contact-messages/:id/reply` `{ body, actor: "cursor" }` |
-| Escalate | `POST /api/admin/contact-messages/:id/escalate` |
-| Takeover (human) | `POST /api/admin/contact-messages/:id/takeover` |
-| Return to agent | `POST /api/admin/contact-messages/:id/return-to-agent` |
-
-## Reply links
-
-New links are opaque `sr1.*` tokens at `/support/svar/:token`.  
-Legacy `sf1.*` redirects until **2026-10-23**, then fail closed.
-
-## SLA
-
-`SUPPORT_ESCALATION_SLA_HOURS` default **72**. Midnight job auto-escalates stale open cases. This is an ops safety net, not a published customer SLA.

@@ -2,12 +2,12 @@
 
 /**
  * Temporary founder-away support window (1–10 September 2026).
- * User-facing copy is date-gated and turns itself off after 11 September.
+ * User-facing copy is date-gated (through 10 September 2026, Europe/Stockholm).
  */
 
 const TIMEZONE = 'Europe/Stockholm';
 const FROM_DATE = '2026-09-01';
-const THROUGH_DATE = '2026-09-11';
+const THROUGH_DATE = '2026-09-10';
 
 const COPY = {
   'sv-SE': {

@@ -1,8 +1,14 @@
 # Support under bortresa 1–10 september 2026
 
-**Permanent agent:** [`docs/support-agent.md`](support-agent.md). OOO is a timed **mode**, not the agent's lifetime. After 11 September the same daily job continues in `normal` mode (`config/support-agent.js`).
+> **Avslutad 11 september 2026** — grundaren är tillbaka. Använd [`docs/support-agent.md`](support-agent.md) (normal första linje + eskalering). Schemat för daglig Cloud Agent behålls.
 
-**Uppdrag (OOO-läge t.o.m. 2026-09-11):** Läs allt som kommer in i admin-inkorgen. Svara bara när svaret är verifierat. Hitta inte på. Kan du inte svara: säg att vi är bortresta och återkommer så snart vi kan, senast 11 september.
+**Permanent agent:** [`docs/support-agent.md`](support-agent.md). OOO var ett tidsbegränsat **läge**, inte agentens livstid.
+
+---
+
+Historisk playbook (1–10 september 2026). Sparas för referens.
+
+**Uppdrag (OOO-läge t.o.m. 2026-09-10):** Läs allt som kommer in i admin-inkorgen. Svara bara när svaret är verifierat. Hitta inte på. Kan du inte svara: säg att vi är bortresta och återkommer så snart vi kan, senast 11 september.
 
 Betalning är **inte påslagen**.
 
@@ -45,20 +51,6 @@ Engelska ärenden: motsvarande text i `config/support-ooo.js` (`replyFallback`).
 - Skriva under impersonation
 - Lova nya funktioner
 
-## Daglig automation (Cursor)
+## Daglig automation (Cursor) — **ersatt**
 
-Permanent daglig Cloud Agent ~08:00 Europe/Stockholm. Under OOO-fönstret: prompten nedan. Efter 11 september: byt till prompten i `docs/support-agent.md`. Stäng **inte** av schemat.
-
-```
-Läs docs/support-ooo-sept-2026.md och följ den exakt.
-
-1. Logga in mot den live sajten med ADMIN_EMAIL / ADMIN_PASSWORD.
-2. Hämta olästa och aktiva contact_messages (inbox=unread och inbox=active).
-3. För varje ärende: läs allt — detalj + events. Användarsvar via **Öppna konversationen** ligger i samma ärende (`--- Användarsvar ---` i message, event `user_reply`). Matcha först mot verifierade hur-till i docs/support-ooo-sept-2026.md. "Jag kan inte X" + känd funktion = skicka stegen, inte bara OOO.
-4. Bara det du inte kan verifiera får replyFallback från config/support-ooo.js. Hitta inte på.
-5. Betalning är inte påslagen.
-6. Sammanfatta i svaret: id, typ, vad du svarade eller varför OOO, ev. bugg att fixa.
-7. Inga ärenden = skriv det och sluta. Ändra inte produktkod om inget ärende kräver det.
-```
-
-Efter 11 september: behåll schemat, byt prompt till `docs/support-agent.md`. Datumstyrd OOO-copy släcks av sig själv.
+Använd prompten i [`docs/support-agent.md`](support-agent.md) eller [`.cursor/commands/support-daily.md`](../.cursor/commands/support-daily.md).
