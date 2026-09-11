@@ -411,5 +411,6 @@
     applyMagicHandoffCopy: applyMagicHandoffCopy,
     probeTrustedChildPath: probeTrustedChildPath,
     tryOpenTrustedChildView: tryOpenTrustedChildView,
+    maybeEnrichHandoff: maybeEnrichHandoff,
   };
 })();

@@ -182,6 +182,8 @@ const ALLOWED_CLIENT_EVENTS = new Set([
   'system_help_support_requested',
   'system_help_progressed',
   'system_help_api_error',
+  'handoff_inline_cta_shown',
+  'handoff_inline_cta_clicked',
   'waitlist_signup',
   'waitlist_launch_invite',
   'waitlist_account_signup',
