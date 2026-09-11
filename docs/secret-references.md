@@ -20,12 +20,14 @@ Canonical flow: [`founder-qa-test-account.md`](founder-qa-test-account.md)
 
 | Secret name | Purpose |
 |-------------|---------|
-| `APP_REVIEW_EMAIL` | Review parent email |
-| `APP_REVIEW_PASSWORD` | Review parent password |
+| `APP_REVIEW_EMAIL` | Complimentary review parent email (grandfathered Premium — no IAP path) |
+| `APP_REVIEW_PASSWORD` | Complimentary review parent password |
 | `APP_REVIEW_CHILD_PIN` | Child Anna PIN |
 | `APP_REVIEW_PARENT_PIN` | Parental gate PIN when configured |
+| `APP_REVIEW_IAP_EMAIL` | Dedicated IAP review parent email (sandbox purchase path) |
+| `APP_REVIEW_IAP_PASSWORD` | Dedicated IAP review parent password |
 
-Canonical flow: [`app-store-demo-konto.md`](app-store-demo-konto.md)
+Canonical flow: [`app-store-demo-konto.md`](app-store-demo-konto.md) · IAP setup: [`runbooks/APP-REVIEW-IAP-FAMILY.md`](runbooks/APP-REVIEW-IAP-FAMILY.md)
 
 ## RC-1 automation fixture (separate from founder/review)
 
