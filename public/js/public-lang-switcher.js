@@ -31,9 +31,9 @@
 
   function hasInAppReturnContext() {
     if (document.documentElement.hasAttribute('data-legal-in-app-return')) return true;
-    var returnTo = new URLSearchParams(window.location.search || '').get('returnTo');
+    const returnTo = new URLSearchParams(window.location.search || '').get('returnTo');
     if (!returnTo || typeof returnTo !== 'string') return false;
-    var trimmed = returnTo.trim();
+    const trimmed = returnTo.trim();
     if (trimmed !== '/paywall') return false;
     if (trimmed.indexOf('://') !== -1 || trimmed.indexOf('..') !== -1) return false;
     return true;
