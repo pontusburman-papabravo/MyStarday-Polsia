@@ -8,6 +8,8 @@
   const SHOWN_SESSION_PREFIX = 'msd_system_help_shown_';
   const INLINE_SHOWN_PREFIX = 'msd_handoff_inline_cta_shown_';
   const INLINE_ENRICHED_CLASS = 'growth-handoff-inline-enriched';
+  const INLINE_CLICK_BOUND_ATTR = 'data-handoff-inline-click-bound';
+  const PASSIVE_HINT_ENRICHED_CLASS = 'growth-handoff-passive-hint-enriched';
   const SCHEMA_NO_CHILD_LOGIN = 'schema_no_child_login';
 
   function locale() {
@@ -219,6 +221,17 @@
     };
   }
 
+  function buildInlineEventMetadata(data, help) {
+    return {
+      blocking_step: data.blockingStep,
+      cohort: data.blockingStep,
+      help_type: help && help.helpType,
+      surface: 'child_handoff',
+      cta_action: help && help.ctaAction,
+      handoff_variant: 'inline_schema_no_child_login',
+    };
+  }
+
   function trackInlineEvent(eventType, metadata) {
     const meta = metadata || {};
     if (typeof window.analytics !== 'undefined' && analytics.track) {
@@ -231,6 +244,15 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ event_type: eventType, metadata: meta }),
     }).catch(function () {});
+  }
+
+  function bindInlineCtaClick(parts, data, help) {
+    if (!parts.primaryBtn) return;
+    if (parts.primaryBtn.getAttribute(INLINE_CLICK_BOUND_ATTR) === '1') return;
+    parts.primaryBtn.setAttribute(INLINE_CLICK_BOUND_ATTR, '1');
+    parts.primaryBtn.addEventListener('click', function () {
+      trackInlineEvent('handoff_inline_cta_clicked', buildInlineEventMetadata(data, help));
+    }, { capture: true });
   }
 
   function wasInlineShownSession(blockingStep) {
@@ -276,30 +298,18 @@
     const parts = findHandoffParts(rootEl);
     if (!help || !parts.primaryBtn) return;
 
+    rootEl.classList.add(INLINE_ENRICHED_CLASS);
+
     if (parts.titleEl) parts.titleEl.textContent = help.headline;
     if (parts.subEl) parts.subEl.textContent = help.body;
     parts.primaryBtn.textContent = help.ctaLabel;
     parts.primaryBtn.setAttribute('data-handoff-inline-cta', '1');
-
-    parts.primaryBtn.addEventListener('click', function () {
-      trackInlineEvent('handoff_inline_cta_clicked', {
-        blocking_step: data.blockingStep,
-        surface: 'child_handoff',
-        cta_action: help.ctaAction,
-        handoff_variant: 'inline_schema_no_child_login',
-      });
-    }, { capture: true });
-
+    bindInlineCtaClick(parts, data, help);
     appendSecondaryHelpLink(rootEl, parts);
-    rootEl.classList.add(INLINE_ENRICHED_CLASS);
 
     if (!wasInlineShownSession(data.blockingStep)) {
       markInlineShownSession(data.blockingStep);
-      await trackInlineEvent('handoff_inline_cta_shown', {
-        blocking_step: data.blockingStep,
-        surface: 'child_handoff',
-        handoff_variant: 'inline_schema_no_child_login',
-      });
+      await trackInlineEvent('handoff_inline_cta_shown', buildInlineEventMetadata(data, help));
       await recordShown(data);
     }
   }
@@ -317,7 +327,12 @@
       return;
     }
 
-    if (rootEl.querySelector('.growth-system-help-inline')) return;
+    if (
+      rootEl.classList.contains(PASSIVE_HINT_ENRICHED_CLASS)
+      || rootEl.querySelector('.growth-system-help-inline')
+    ) {
+      return;
+    }
 
     const hint = document.createElement('button');
     hint.type = 'button';
@@ -329,6 +344,7 @@
       }
     });
     rootEl.appendChild(hint);
+    rootEl.classList.add(PASSIVE_HINT_ENRICHED_CLASS);
     await recordShown(data);
   }
 
