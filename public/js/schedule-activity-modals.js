@@ -140,7 +140,7 @@ function renderTemplateList(q) {
     const qSafe = (q||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     list.innerHTML=`<div class="text-center py-4">
       <p class="text-text-soft text-sm mb-3">${q ? spt('schedule.templates.noneFoundQuery', { query: qEsc }) : spt('schedule.templates.noneFound')}.</p>
-      <button type="button" onclick="openCreateActivityModal('${qSafe}')" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm">✨ ${spt('schedule.templates.createNew')}</button>
+      <button type="button" onclick="openCreateActivityModal('${qSafe}')" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-semibold text-sm">✨ ${spt('schedule.templates.createNew')}</button>
     </div>`;
     return;
   }
@@ -157,7 +157,7 @@ function renderTemplateList(q) {
       <div class="flex items-center gap-3 px-3 py-2 rounded-xl bg-sky/40 border border-blue-100 hover:border-gold transition-colors mb-1">
         <span class="text-2xl">${a.icon||'📌'}</span>
         <div class="flex-1 min-w-0"><div class="font-semibold text-sm text-navy truncate">${escHtml(a.name)}</div><div class="text-xs text-text-soft">${'⭐'.repeat(a.star_value||0)} · ${escHtml(a._groupName)}</div></div>
-        <button type="button" onclick='copyAndAddStdActivity(${JSON.stringify(a).replace(/'/g,"&#x27;")})' class="px-3 py-1.5 bg-gold hover:bg-yellow-500 text-white rounded-lg text-xs font-semibold flex-shrink-0 whitespace-nowrap">📥 Kopiera</button>
+        <button type="button" onclick='copyAndAddStdActivity(${JSON.stringify(a).replace(/'/g,"&#x27;")})' class="px-3 py-1.5 bg-gold hover:bg-yellow-500 text-navy rounded-lg text-xs font-semibold flex-shrink-0 whitespace-nowrap">📥 Kopiera</button>
       </div>`).join('');
   }
   // Always show "Skapa ny" at the bottom (matches dashboard.js behavior)

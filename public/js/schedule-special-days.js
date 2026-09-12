@@ -78,7 +78,7 @@ async function renderSpecialDaysCalendar() {
           <p class="text-xs text-text-soft mt-0.5">${spt('schedule.specialDays.headerHint')}</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap justify-end">
-          <button type="button" onclick="openSchedulePeriodModal()" class="min-h-[44px] px-4 py-2 bg-gold hover:bg-yellow-500 text-white rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">${spt('schedule.specialDays.holidayPeriodBtn')}</button>
+          <button type="button" onclick="openSchedulePeriodModal()" class="min-h-[44px] px-4 py-2 bg-gold hover:bg-yellow-500 text-navy rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">${spt('schedule.specialDays.holidayPeriodBtn')}</button>
           <button onclick="sdNavMonth(-1)" class="w-9 h-9 rounded-full border-2 border-lavender hover:border-gold flex items-center justify-center font-bold text-navy transition-colors">‹</button>
           <span class="font-heading font-bold text-navy min-w-[140px] text-center">${spt('schedule.months.' + sdCalMonth)} ${sdCalYear}</span>
           <button onclick="sdNavMonth(1)" class="w-9 h-9 rounded-full border-2 border-lavender hover:border-gold flex items-center justify-center font-bold text-navy transition-colors">›</button>

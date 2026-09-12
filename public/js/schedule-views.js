@@ -74,7 +74,7 @@ function renderListView() {
         <h3 class="text-lg font-heading font-bold text-navy">${DAYS[currentDay]}${dateLabel ? ` <span class="text-text-soft font-normal text-base">${dateLabel}</span>` : ''} — ${child ? escHtml(child.name) : ''} <span class="text-text-soft font-normal text-base">📝 ${spt('schedule.views.listMode')}</span></h3>
         <p class="text-sm text-text-soft">${spt('schedule.views.listCount', { count: sorted.length })}</p>
       </div>
-      <button onclick="openAddModal('dag')" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-white rounded-xl text-sm font-semibold">+ ${scheduleLabel('schedule.addActivity')}</button>
+      <button onclick="openAddModal('dag')" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-navy rounded-xl text-sm font-semibold">+ ${scheduleLabel('schedule.addActivity')}</button>
     </div>
     <div class="space-y-2">${itemsHtml}</div>`;
 }
@@ -188,7 +188,7 @@ function renderTimeline() {
         <h3 class="text-lg font-heading font-bold text-navy">${DAYS[currentDay]}${tlDateLabel ? ` <span class="text-text-soft font-normal text-base">${tlDateLabel}</span>` : ''} — ${child?escHtml(child.name):''} ⏱ ${spt('schedule.views.timelineMode')}</h3>
         <p class="text-xs text-text-soft">${spt('schedule.views.dragHint')}</p>
       </div>
-      <button onclick="openAddModal('dag')" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-white rounded-xl text-sm font-semibold">+ ${scheduleLabel('schedule.addActivity')}</button>
+      <button onclick="openAddModal('dag')" class="px-4 py-2 bg-gold hover:bg-yellow-500 text-navy rounded-xl text-sm font-semibold">+ ${scheduleLabel('schedule.addActivity')}</button>
     </div>
     <div class="border-2 border-lavender rounded-2xl overflow-hidden bg-white" id="timelineWrap" style="max-height:65vh;overflow-y:auto">
       ${slotsHtml}${unschHtml}

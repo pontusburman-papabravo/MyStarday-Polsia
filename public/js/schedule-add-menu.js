@@ -416,7 +416,7 @@
           <p id="samActivityError" class="text-sm text-red-600 mb-2 hidden"></p>
           <div class="flex gap-3">
             <button type="button" onclick="ScheduleAddMenu.close()" class="${TOUCH_BTN} flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold text-sm text-navy">${t('schedule.addMenu.cancel')}</button>
-            <button type="button" id="samActivitySaveBtn" onclick="ScheduleAddMenu.submitActivity()" class="${TOUCH_BTN} flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm">${t('schedule.addMenu.save')}</button>
+            <button type="button" id="samActivitySaveBtn" onclick="ScheduleAddMenu.submitActivity()" class="${TOUCH_BTN} flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-semibold text-sm">${t('schedule.addMenu.save')}</button>
           </div>
         </div>
       </div>`;
@@ -697,7 +697,7 @@
       <p id="samTemplateError" class="text-sm text-red-600 mb-2 hidden"></p>
       <div class="flex gap-3">
         <button type="button" onclick="ScheduleAddMenu.close()" class="${TOUCH_BTN} flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold text-sm">${t('schedule.addMenu.cancel')}</button>
-        <button type="button" id="samTemplateSaveBtn" onclick="ScheduleAddMenu.submitTemplate()" class="${TOUCH_BTN} flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm">${t('schedule.addMenu.save')}</button>
+        <button type="button" id="samTemplateSaveBtn" onclick="ScheduleAddMenu.submitTemplate()" class="${TOUCH_BTN} flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-semibold text-sm">${t('schedule.addMenu.save')}</button>
       </div>`;
   }
 
@@ -801,7 +801,7 @@
       <p id="samCopyDayError" class="text-sm text-red-600 mb-2 hidden"></p>
       <div class="flex gap-3">
         <button type="button" onclick="ScheduleAddMenu.close()" class="${TOUCH_BTN} flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold text-sm">${t('schedule.addMenu.cancel')}</button>
-        <button type="button" id="samCopyDaySaveBtn" onclick="ScheduleAddMenu.submitCopyDay()" class="${TOUCH_BTN} flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm">${t('schedule.addMenu.save')}</button>
+        <button type="button" id="samCopyDaySaveBtn" onclick="ScheduleAddMenu.submitCopyDay()" class="${TOUCH_BTN} flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-semibold text-sm">${t('schedule.addMenu.save')}</button>
       </div>`;
   }
 
@@ -876,7 +876,7 @@
       <p id="samSaveTemplateError" class="text-sm text-red-600 mb-2 hidden"></p>
       <div class="flex gap-3">
         <button type="button" onclick="ScheduleAddMenu.close()" class="${TOUCH_BTN} flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold text-sm">${t('schedule.addMenu.cancel')}</button>
-        <button type="button" id="samSaveTemplateBtn" onclick="ScheduleAddMenu.submitSaveAsTemplate()" class="${TOUCH_BTN} flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-white rounded-xl font-semibold text-sm">${t('schedule.addMenu.save')}</button>
+        <button type="button" id="samSaveTemplateBtn" onclick="ScheduleAddMenu.submitSaveAsTemplate()" class="${TOUCH_BTN} flex-1 px-4 py-3 bg-gold hover:bg-yellow-500 text-navy rounded-xl font-semibold text-sm">${t('schedule.addMenu.save')}</button>
       </div>`;
     showModal();
     setTimeout(() => document.getElementById('samTemplateNameInput')?.focus(), 50);
