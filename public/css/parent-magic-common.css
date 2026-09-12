@@ -872,10 +872,26 @@ body.parent-magic-view:not(.parent-theme-light) .for-dig-modal {
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+/* Schedule hub hero is NOT the scroll end. Padding the shell by nav height
+   pushed the first activity row under the fixed .native-tab-bar on 375×812
+   (prod: Vakna 711–845 vs nav top 756). Last-row clearance lives on main. */
 body.parent-magic-view.parent-magic-page-schedule:not(.parent-theme-light) .magic-page-shell,
 body.parent-magic-view.parent-theme-light.parent-magic-page-schedule .magic-page-shell,
 body.parent-magic-page-schedule .magic-page-shell {
-  padding-bottom: calc(var(--parent-bottom-nav-height, 56px) + 12px);
+  padding-bottom: 0;
+}
+
+@media (max-width: 767px) {
+  /* Hub stats (barn/dagar) are redundant once the day editor is open and
+     occupy ~80–90px that the first row needs above the fixed tab bar. */
+  body.parent-magic-page-schedule.has-native-tab-bar .magic-page-stats {
+    display: none;
+  }
+
+  body.parent-magic-page-schedule.has-native-tab-bar,
+  html:has(body.parent-magic-page-schedule.has-native-tab-bar) {
+    scroll-padding-bottom: var(--parent-bottom-nav-height, 56px);
+  }
 }
 
 body.parent-magic-page-schedule main > .bg-sky {
