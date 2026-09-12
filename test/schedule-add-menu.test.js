@@ -269,6 +269,7 @@ describe('Phase 1B — "+ Lägg till" primary menu', () => {
     const createGuard = submit.slice(0, submit.indexOf('createFamilyActivity'));
     assert.match(createGuard, /snapshot\.createdUnappliedId \|\| snapshot\.templateId/);
     assert.match(createGuard, /findExactActivityMatch\(allTemplates, stagedName\)/);
+    assert.match(createGuard, /await loadTemplates\(\)/);
     assert.match(createGuard, /if \(!templateId && shouldShowCreateRow\(stagedName/);
   });
 
@@ -910,6 +911,25 @@ describe('Rapid Entry — overlapping Save contract', () => {
     assert.equal(harness.modalHidden(), false);
     assert.equal(harness.sandbox.document.getElementById('samActivitySearch').value, '');
     assert.equal(harness.sandbox.document.activeElement.id, 'samActivitySearch');
+  });
+
+  it('reuses a seed-name template after refreshing an empty catalog — no duplicate create', async () => {
+    const harness = createRapidEntrySandbox({ templates: [] });
+    let loads = 0;
+    harness.sandbox.loadTemplates = async () => {
+      loads += 1;
+      if (loads >= 2) {
+        harness.sandbox.allTemplates = [{ id: 'tpl-brush', name: 'Borsta tänderna' }];
+      }
+    };
+    harness.sandbox.window.loadTemplates = harness.sandbox.loadTemplates;
+    const { ScheduleAddMenu } = harness.sandbox;
+    await ScheduleAddMenu.openActivityForDay(1, 'morgon');
+    await submitNamedCreate(ScheduleAddMenu, 'Borsta tänderna');
+    assert.equal(loads >= 2, true);
+    assert.equal(harness.activityPosts.length, 0, 'zero duplicate activity_templates');
+    assert.equal(harness.applyCalls.length, 1);
+    assert.equal(harness.applyCalls[0].payload.activityTemplateId, 'tpl-brush');
   });
 
   it('reuses an existing template with zero create requests', async () => {

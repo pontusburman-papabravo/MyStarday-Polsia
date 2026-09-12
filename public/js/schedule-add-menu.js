@@ -616,8 +616,16 @@
     const stagedName = stagedNameFromSnapshot(snapshot);
 
     if (!templateId) {
-      const exact = findExactActivityMatch(allTemplates, stagedName);
-      if (exact) templateId = exact.id;
+      let exact = findExactActivityMatch(allTemplates, stagedName);
+      if (!exact && typeof window.loadTemplates === 'function') {
+        try { await loadTemplates(); } catch (_refreshErr) { /* match check still proceeds */ }
+        exact = findExactActivityMatch(allTemplates, stagedName);
+      }
+      if (exact) {
+        templateId = exact.id;
+        snapshot.templateId = exact.id;
+        snapshot.pendingNewName = '';
+      }
     }
 
     if (!templateId && shouldShowCreateRow(stagedName, allTemplates)) {

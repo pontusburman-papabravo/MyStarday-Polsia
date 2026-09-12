@@ -26,6 +26,11 @@ describe('Weekly Schedule 375×812 bottom-nav clearance', () => {
     assert.doesNotMatch(block, /padding-bottom:\s*0/);
   });
 
+  it('375×812 native-style tab bar uses the same height token as the web dock', () => {
+    const css = read('public/css/parent-tab-bar.css');
+    assert.match(css, /height:\s*var\(--parent-bottom-nav-height/);
+  });
+
   it('does not change non-schedule magic-page-shell padding to the nav token', () => {
     const css = read('public/css/parent-magic-common.css');
     const generic = css.slice(css.indexOf('.magic-page-shell {'), css.indexOf('.magic-page-hero'));
