@@ -193,12 +193,15 @@
         "public/js/for-dig*.js",
         "public/js/reports*.js",
         "public/js/planning*.js",
-        "public/js/print-schema*.js"
+        "public/js/print-schema*.js",
+        "public/css/parent-magic-common.css",
+        "public/css/parent-tab-bar.css"
       ],
       "l1Tests": [
         "test/schedule-core.test.js",
         "test/daily-logs-authz-contract.test.js",
-        "test/schedule-apply-routes.test.js"
+        "test/schedule-apply-routes.test.js",
+        "test/schedule-bottom-nav-clearance.test.js"
       ],
       "testGlobs": [
         "test/schedule*.test.js",
