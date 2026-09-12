@@ -705,6 +705,14 @@ async function loadScheduleForDay() {
   if (!ir.ok) { document.getElementById('scheduleContent').innerHTML = '<p class="text-red-500">' + spt('schedule.loadActivitiesError') + '</p>'; return; }
   const data = await ir.json();
   scheduleItems = data.items || []; sectionTimes = data.section_times || {};
+  if (scheduleItems.length === 0) {
+    if (currentViewMode === 'timeline') renderTimeline();
+    else if (currentViewMode === 'sbs') renderSbsView();
+    else if (currentViewMode === 'list') renderListView();
+    else renderEmptyDay();
+    checkIfDayPaused();
+    return;
+  }
   if (currentViewMode === 'timeline') renderTimeline();
   else if (currentViewMode === 'sbs') renderSbsView();
   else if (currentViewMode === 'list') renderListView();
@@ -738,7 +746,9 @@ async function checkIfDayPaused() {
 }
 
 function otherDaysHaveSchedule(excludeDay) {
-  return childWeekSchedules.some((s) => s.day_of_week !== excludeDay);
+  return childWeekSchedules.some(
+    (s) => s.day_of_week !== excludeDay && Number(s.item_count) > 0
+  );
 }
 
 function emptyStateActionsHtml({ showCopyFromDay }) {
