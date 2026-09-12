@@ -7,6 +7,10 @@
   const DAYS_SHORT_FALLBACK = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
   const SECTION_LABEL_FALLBACK = { morgon: 'Morgon', dag: 'Dag', kvall: 'Kväll', natt: 'Natt' };
 
+  /** Navy on gold — WCAG AA normal text (~7.6:1 on #F5A623; white on gold ≈2:1). */
+  const PLANNER_PRIMARY_BTN = 'bg-gold hover:bg-yellow-500 text-navy';
+  const PLANNER_PRIMARY_DAY_TAB = 'bg-gold text-navy border-gold';
+
   function localizedString(key, params) {
     if (window.ScheduleI18n) return ScheduleI18n.t(key, params);
     if (typeof window.pt === 'function') return window.pt(key, params);
@@ -168,6 +172,8 @@
     dayShort,
     sectionName,
     label: localizedString,
+    PLANNER_PRIMARY_BTN,
+    PLANNER_PRIMARY_DAY_TAB,
     SECTIONS,
     updateBirthdayHidden,
     fmtTime,

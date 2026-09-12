@@ -6,6 +6,7 @@
   let selectedTier = 'yearly';
   let purchaseInProgress = false;
   let pricesReady = false;
+  let paywallCountryCode = null;
 
   function isPaywallPage() {
     const path = (window.location.pathname || '').replace(/\/$/, '') || '/';
@@ -63,16 +64,45 @@
   }
 
   async function applyPaywallLegalLinks(countryCode) {
-    if (!window.LegalRoutes || !LegalRoutes.fetchLegalRoutes || !countryCode) return null;
     const locale = (window.I18n && I18n.getCurrentLang && I18n.getCurrentLang()) || 'sv-SE';
-    try {
-      const routes = await LegalRoutes.fetchLegalRoutes(countryCode, locale);
-      if (LegalRoutes.applyToRegisterLinks) {
-        LegalRoutes.applyToRegisterLinks(routes);
-      }
-      return routes;
-    } catch (_) {
-      return null;
+    let routes = { terms: '/terms', privacy: '/privacy' };
+    if (countryCode) {
+      try {
+        const params = new URLSearchParams({ country_code: countryCode, locale: locale });
+        const res = await fetch(`/api/market/legal-routes?${params.toString()}`, { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          routes = { terms: data.terms, privacy: data.privacy };
+        }
+      } catch (_) { /* keep sv fallback */ }
+    }
+    const termsLink = document.getElementById('paywallTermsLink');
+    const privacyLink = document.getElementById('paywallPrivacyLink');
+    if (termsLink && routes.terms) {
+      termsLink.href = buildLegalLinkHref(routes.terms);
+    }
+    if (privacyLink && routes.privacy) {
+      privacyLink.href = buildLegalLinkHref(routes.privacy);
+    }
+    return routes;
+  }
+
+  function buildLegalLinkHref(basePath) {
+    if (!basePath || typeof basePath !== 'string' || !basePath.startsWith('/')) return basePath;
+    const params = new URLSearchParams();
+    params.set('returnTo', '/paywall');
+    if (selectedTier === 'monthly' || selectedTier === 'yearly') {
+      params.set('tier', selectedTier);
+    }
+    const sep = basePath.includes('?') ? '&' : '?';
+    return `${basePath}${sep}${params.toString()}`;
+  }
+
+  function readTierFromUrl() {
+    const params = new URLSearchParams(window.location.search || '');
+    const tier = params.get('tier');
+    if (tier === 'monthly' || tier === 'yearly') {
+      selectedTier = tier;
     }
   }
 
@@ -148,6 +178,7 @@
         ? '<span class="text-white text-xs font-bold">✓</span>'
         : '';
     }
+    applyPaywallLegalLinks(paywallCountryCode);
   }
 
   function setPlanControlsDisabled(disabled) {
@@ -238,7 +269,8 @@
       return false;
     }
     const config = await configRes.json();
-    await applyPaywallLegalLinks(config.country_code);
+    paywallCountryCode = config.country_code || null;
+    await applyPaywallLegalLinks(paywallCountryCode);
     const displays = Logic.resolveOfferingTierDisplays(offering, config.packages);
     if (!displays) {
       showLoadingPrices(false);
@@ -354,7 +386,8 @@
       const cfgRes = await fetch('/api/iap/config?platform=ios', { credentials: 'include' });
       if (!cfgRes.ok) return;
       const cfg = await cfgRes.json();
-      await applyPaywallLegalLinks(cfg.country_code);
+      paywallCountryCode = cfg.country_code || null;
+      await applyPaywallLegalLinks(paywallCountryCode);
       if (cfg.storeLinks) {
         const apple = document.getElementById('paywallAppleLink');
         const play = document.getElementById('paywallPlayLink');
@@ -377,6 +410,7 @@
     }
 
     applyAutoRenewCopy();
+    readTierFromUrl();
 
     try {
       const status = await Auth.api('/api/subscription/status');

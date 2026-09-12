@@ -24,7 +24,6 @@ describe('limited-account paywall isolation (P1 navigation loop)', () => {
     assert.match(paywallHtml, /iap-native-client-logic\.js/i);
     assert.match(paywallHtml, /iap-manager\.js/i);
     assert.match(paywallHtml, /paywall\.js/i);
-    assert.match(paywallHtml, /legal-routes\.js/i);
     assert.match(paywallHtml, /i18n\.js/i);
   });
 

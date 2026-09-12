@@ -18,14 +18,27 @@ const { LEGACY_TOKEN_SUNSET, NEW_TOKEN_EXPIRY_DAYS } = require('../config/suppor
 const ROOT = path.join(__dirname, '..');
 
 describe('support opaque reply token — unit', () => {
-  it('generates opaque sr1 tokens without message id', () => {
+  it('generates opaque sr1 tokens without an all-digit message-id body', () => {
     const raw = generateRawToken();
+    assert.match(raw, /^sr1\.[A-Za-z0-9_-]{40,}$/);
     assert.equal(isOpaqueToken(raw), true);
     assert.equal(containsMessageId(raw), false);
-    assert.equal(raw.includes('51'), false);
     assert.equal(hashRaw(raw).length, 64);
     assert.equal(NEW_TOKEN_EXPIRY_DAYS, 30);
     assert.equal(LEGACY_TOKEN_SUNSET, '2026-10-23');
+  });
+
+  it('containsMessageId is true only for all-digit opaque bodies', () => {
+    const allDigitOpaque = `sr1.${'9'.repeat(40)}`;
+    const substring51 = `sr1.${'A'.repeat(20)}51${'B'.repeat(20)}`;
+    const shortDigits = 'sr1.51';
+    const legacy = 'sf1.51.signaturehere';
+    assert.equal(isOpaqueToken(allDigitOpaque), true);
+    assert.equal(containsMessageId(allDigitOpaque), true);
+    assert.equal(isOpaqueToken(substring51), true);
+    assert.equal(containsMessageId(substring51), false);
+    assert.equal(containsMessageId(shortDigits), false);
+    assert.equal(containsMessageId(legacy), false);
   });
 
   it('redacts opaque and legacy tokens in logs', () => {

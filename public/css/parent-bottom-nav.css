@@ -1,6 +1,10 @@
 /**
  * parent-bottom-nav.css — Bottom tab bar for parent dashboard (PWA mobile).
  */
+:root {
+  --parent-bottom-nav-height: calc(56px + env(safe-area-inset-bottom, 0px));
+}
+
 .parent-bottom-nav {
   position: fixed;
   bottom: 0;
@@ -11,7 +15,7 @@
   display: none;
   justify-content: space-around;
   align-items: center;
-  height: calc(56px + env(safe-area-inset-bottom, 0px));
+  height: var(--parent-bottom-nav-height);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   background: rgba(12, 12, 36, 0.92);
   -webkit-backdrop-filter: blur(20px);

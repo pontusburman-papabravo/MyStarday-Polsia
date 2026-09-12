@@ -1,7 +1,75 @@
 # App Store Review Notes — Min Stjärndag
 
 > English — paste this directly into the App Store Connect "Review Notes" field.
-> Last updated: 2026-09-11 | Guideline 2.1(b) IAP locate path for build 1160
+> Last updated: 2026-09-11 | Guideline 3.1.2(c) EULA metadata + Build 1160 IAP locate path
+
+---
+
+## Build 1.4.3 (1160) — Guideline 3.1.2(c) Subscription metadata / EULA (2026-09-11)
+
+**Rejection:** *"The submission did not include all the required information for apps offering auto-renewable subscriptions… a functional link to the Terms of Use (EULA)… in the App Store metadata."*
+
+**Root cause (verified):** App Store Connect **Description** is missing Apple's Standard EULA URL. We use **Apple's Standard EULA** (no custom License Agreement). The in-app Premium screen already shows subscription title, duration, StoreKit price, and functional Privacy + Terms links — this rejection is **metadata-first**, not a binary defect.
+
+**Fix — App Store Connect only, no new build:**
+
+1. Open the **current iOS app version** (not the app-level *App Information* tab).
+2. For **every active localization** (min. Swedish + English UK), append to **Description** on its own line:
+   ```
+   Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+   ```
+   Swedish equivalent: `Användarvillkor (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
+3. Confirm the Privacy Policy URL metadata field still resolves.
+4. Keep **Standard Apple License Agreement** — do **not** create a Custom License Agreement.
+5. Resubmit the **same build** for review (metadata-only change).
+
+**In-app verification before reply (physical iPhone, IAP review account — see § Build 1160 2.1(b) below):**
+
+| Requirement | Where | Status in code |
+|---|---|---|
+| Subscription title | `/paywall` — "My Starday Premium" + plan cards | ✓ `paywall.title`, StoreKit offering |
+| Duration | Plan terms text (`/år`, `/mån`, auto-renew) | ✓ `paywall.yearlyTerms*`, `paywall.monthlyTerms*` |
+| App Store price | Live StoreKit `priceString` | ✓ `renderTierPrices()` |
+| Privacy Policy link | Bottom of paywall | ✓ `paywallPrivacyLink` → `/privacy` |
+| Terms of Use link | Bottom of paywall | ✓ `paywallTermsLink` → `/terms` (in-app; metadata uses Apple stdeula) |
+
+Record a short screen recording: **Inställningar → Premium → Aktivera Premium** → show Monthly/Yearly + prices → tap **Integritet** and **Villkor** links → tap **Tillbaka till Premium** (returns to paywall with same tier). Attach to the App Review reply.
+
+**In-app legal navigation (2026-09-11 web deploy):** Paywall legal links use jurisdiction routing (`resolveLegalRoutes` via `/api/market/legal-routes`) and append `?returnTo=/paywall&tier=…`. Legal pages show **Tillbaka till Premium** and hide the public Svenska/English switcher on that path. **No new iOS binary** — Capacitor loads the remote web app.
+
+**Paste into App Review reply:**
+
+```
+Hello,
+
+Thank you for the clarification.
+
+We use Apple's Standard Terms of Use (EULA). We have now added the functional Standard EULA link to the App Store Description:
+
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+The subscription purchase screen also provides the required subscription information, including:
+
+* Subscription title
+* Subscription duration
+* Current App Store price
+* Functional Privacy Policy link
+* Functional Terms of Use (EULA) link
+
+We have attached a screen recording showing the subscription purchase flow and the required information and links.
+
+We have also added this information to the App Review Notes for future submissions.
+
+Thank you.
+```
+
+**Add to App Review Information → Notes** (append to the Build 1160 IAP block below):
+
+```
+The Terms of Use link uses Apple's Standard EULA and is also included in the App Store Description.
+```
+
+See also: `docs/app-store-connect-metadata.md` / `docs/app-store-connect-metadata-en-GB.md` for full Description text with EULA line.
 
 ---
 
@@ -50,6 +118,8 @@ Child: Anna, PIN: APP_REVIEW_CHILD_PIN (secret store)
 This account has lifetime complimentary Premium and will not show Monthly/Yearly purchase options by design. Use it only for routine parent/child feature testing.
 
 Please let us know if you experience any difficulty accessing the subscription screen with the IAP review account.
+
+The Terms of Use link uses Apple's Standard EULA and is also included in the App Store Description.
 ```
 
 ---

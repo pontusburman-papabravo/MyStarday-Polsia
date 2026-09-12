@@ -494,7 +494,8 @@ describe('analytics behavior parity (sv-SE vs en-GB)', () => {
 
   it('Home hub render path does not emit analytics on locale init', () => {
     const hub = fs.readFileSync(path.join(__dirname, '../public/js/dashboard-home-hub.js'), 'utf8');
-    assert.doesNotMatch(hub, /analytics\.track/);
+    const withoutShortcutClick = hub.replace(/function trackShortcutClick[\s\S]*?\n  \}/, '');
+    assert.doesNotMatch(withoutShortcutClick, /analytics\.track/);
   });
 });
 
