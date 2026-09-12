@@ -5,9 +5,12 @@
  * Planner inline create v1 + Rapid Entry: Aktivitet can select an existing family activity
  * or stage a new name (`+ Skapa "<namn>"`). Creation is delayed until final Save
  * (`POST /api/activities`), then the existing apply-activity path runs. Retry after
- * apply-failure reuses the created id. After a successful apply the Activity modal stays
- * open so the next name can be typed immediately (days/section/time preserved). Template
- * and Copy Day still close on success — do not change closeAddMenu() globally.
+ * apply-failure reuses the created id. Overlapping Save taps never silently drop: a
+ * duplicate tap coalesces, a distinct next name is queued and persisted, Save stays
+ * visibly disabled while in flight, and failures stay explicit. After a successful apply
+ * the Activity modal stays open so the next name can be typed immediately (days/section/time
+ * preserved). Template and Copy Day still close on success — do not change closeAddMenu()
+ * globally.
  *
  * Reads globals from schedule.js (currentChildId, currentDay, allTemplates, loadTemplates,
  * loadScheduleForDay) the same way schedule-special-days.js / schedule-activity-modals.js do —
@@ -58,8 +61,16 @@
 
   const opTracker = window.ScheduleApplyClient ? ScheduleApplyClient.createOperationTracker() : null;
   let activitySubmitInFlight = false;
+  let inFlightSnapshot = null;
+  const activitySubmitQueue = [];
   let activityContextChildId = null;
   let nextEntryFocusGuard = null;
+
+  function clearActivitySubmitQueue() {
+    activitySubmitQueue.length = 0;
+    inFlightSnapshot = null;
+    activitySubmitInFlight = false;
+  }
 
   function stopNextEntryFocusGuard() {
     if (!nextEntryFocusGuard) return;
@@ -124,7 +135,7 @@
     stopNextEntryFocusGuard();
     const modal = document.getElementById('scheduleAddMenuModal');
     if (modal) modal.classList.add('hidden');
-    activitySubmitInFlight = false;
+    clearActivitySubmitQueue();
     activityContextChildId = null;
     if (opTracker) opTracker.reset();
   }
@@ -255,6 +266,8 @@
     const btn = document.getElementById(btnId);
     if (!btn) return;
     btn.disabled = pending;
+    btn.setAttribute('aria-busy', pending ? 'true' : 'false');
+    btn.setAttribute('aria-disabled', pending ? 'true' : 'false');
     btn.textContent = pending ? t('schedule.addMenu.saving') : t('schedule.addMenu.save');
   }
 
@@ -297,14 +310,13 @@
     activityState.section = section;
     activityState.startTime = startTime;
     activityState.endTime = endTime;
-    activitySubmitInFlight = false;
     if (opTracker) opTracker.reset();
   }
 
   async function openActivity() {
     if (!currentChildId) return;
     activityContextChildId = currentChildId;
-    activitySubmitInFlight = false;
+    clearActivitySubmitQueue();
     resetActivityCreateState();
     activityState.days = new Set([currentDay || 1]);
     activityState.section = 'dag';
@@ -413,6 +425,7 @@
         </div>
         <div class="sam-activity-footer border-t border-lavender" id="samActivityFooter">
           <p id="samActivityStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+          <p id="samActivityQueueNote" class="text-sm text-navy font-semibold mb-2 hidden" role="status"></p>
           <p id="samActivityError" class="text-sm text-red-600 mb-2 hidden"></p>
           <div class="flex gap-3">
             <button type="button" onclick="ScheduleAddMenu.close()" class="${TOUCH_BTN} flex-1 px-4 py-3 border-2 border-lavender rounded-xl font-semibold text-sm text-navy">${t('schedule.addMenu.cancel')}</button>
@@ -420,6 +433,7 @@
           </div>
         </div>
       </div>`;
+    syncActivitySavePending();
   }
 
   function restoreSearchFocus() {
@@ -489,7 +503,7 @@
     renderActivityStep();
   }
 
-  async function createFamilyActivity(name) {
+  async function createFamilyActivity(name, section) {
     const res = await window.apiFetch('/api/activities', {
       method: 'POST',
       body: JSON.stringify({
@@ -498,15 +512,245 @@
         star_value: 1,
         is_favorite: false,
         feedback_for: 'both',
-        time_group: timeGroupFromSection(activityState.section),
+        time_group: timeGroupFromSection(section != null ? section : activityState.section),
       }),
     });
     const data = await res.json().catch(() => ({}));
     return { ok: res.ok, data };
   }
 
+  function stagedNameFromSnapshot(snapshot) {
+    if (!snapshot) return '';
+    return snapshot.pendingNewName || normalizeActivityName(snapshot.query);
+  }
+
+  function captureActivitySnapshot() {
+    return {
+      query: activityState.query,
+      templateId: activityState.templateId,
+      pendingNewName: activityState.pendingNewName,
+      createdUnappliedId: activityState.createdUnappliedId,
+      createdUnappliedName: activityState.createdUnappliedName,
+      days: new Set(activityState.days),
+      section: activityState.section,
+      startTime: activityState.startTime,
+      endTime: activityState.endTime,
+    };
+  }
+
+  function activityIntentKey(snapshot) {
+    const days = [...(snapshot.days || [])].map(Number).sort((a, b) => a - b).join(',');
+    return [
+      activityNameKey(stagedNameFromSnapshot(snapshot)),
+      days,
+      snapshot.section || '',
+      snapshot.startTime || '',
+      snapshot.endTime || '',
+    ].join('|');
+  }
+
+  function snapshotsMatch(a, b) {
+    return Boolean(a && b && activityIntentKey(a) === activityIntentKey(b));
+  }
+
+  function restoreSnapshotToForm(snapshot) {
+    activityState.query = snapshot.query;
+    activityState.templateId = snapshot.templateId;
+    activityState.pendingNewName = snapshot.pendingNewName;
+    activityState.createdUnappliedId = snapshot.createdUnappliedId;
+    activityState.createdUnappliedName = snapshot.createdUnappliedName;
+    activityState.days = new Set(snapshot.days);
+    activityState.section = snapshot.section;
+    activityState.startTime = snapshot.startTime;
+    activityState.endTime = snapshot.endTime;
+  }
+
+  function isDuplicateSubmit(snapshot) {
+    if (inFlightSnapshot && snapshotsMatch(snapshot, inFlightSnapshot)) return true;
+    return activitySubmitQueue.some((queued) => snapshotsMatch(snapshot, queued));
+  }
+
+  function syncActivitySavePending() {
+    setPending('samActivitySaveBtn', activitySubmitInFlight);
+    const note = document.getElementById('samActivityQueueNote');
+    if (!note) return;
+    if (activitySubmitInFlight && activitySubmitQueue.length > 0) {
+      const next = activitySubmitQueue[activitySubmitQueue.length - 1];
+      const name = stagedNameFromSnapshot(next) || stagedNameFromSnapshot(inFlightSnapshot);
+      note.textContent = t('schedule.addMenu.activity.queued', {
+        name: name || '…',
+        count: activitySubmitQueue.length,
+      });
+      note.classList.remove('hidden');
+    } else {
+      note.textContent = '';
+      note.classList.add('hidden');
+    }
+  }
+
+  /**
+   * Persist one captured Save. Uses the snapshot, not live form fields, so a queued
+   * next name cannot mutate an in-flight create/apply. Create-then-apply is retryable:
+   * a successful create stores createdUnappliedId on the snapshot so attach retry
+   * never duplicates the template.
+   */
+  async function persistActivitySnapshot(snapshot) {
+    const errEl = document.getElementById('samActivityError');
+    if (errEl) errEl.classList.add('hidden');
+    if (!currentChildId || currentChildId !== activityContextChildId) {
+      closeAddMenu();
+      showToast(t('schedule.addMenu.activity.childChanged'), true);
+      return { ok: false, childChanged: true };
+    }
+    if (!snapshot.days || snapshot.days.size === 0) {
+      if (errEl) {
+        errEl.textContent = t('schedule.addMenu.selectAtLeastOneDay');
+        errEl.classList.remove('hidden');
+      }
+      return { ok: false };
+    }
+
+    let templateId = snapshot.createdUnappliedId || snapshot.templateId;
+    let displayName = snapshot.createdUnappliedName || '';
+    let createdThisSave = false;
+    const stagedName = stagedNameFromSnapshot(snapshot);
+
+    if (!templateId) {
+      let exact = findExactActivityMatch(allTemplates, stagedName);
+      if (!exact && typeof window.loadTemplates === 'function') {
+        try { await loadTemplates(); } catch (_refreshErr) { /* match check still proceeds */ }
+        exact = findExactActivityMatch(allTemplates, stagedName);
+      }
+      if (exact) {
+        templateId = exact.id;
+        snapshot.templateId = exact.id;
+        snapshot.pendingNewName = '';
+      }
+    }
+
+    if (!templateId && shouldShowCreateRow(stagedName, allTemplates)) {
+      let created;
+      try {
+        created = await createFamilyActivity(stagedName, snapshot.section);
+      } catch (_err) {
+        if (errEl) {
+          errEl.textContent = t('schedule.addMenu.activity.createFailed');
+          errEl.classList.remove('hidden');
+        }
+        return { ok: false };
+      }
+      if (!created.ok || !created.data.id) {
+        if (errEl) {
+          errEl.textContent = (created.data && created.data.error) || t('schedule.addMenu.activity.createFailed');
+          errEl.classList.remove('hidden');
+        }
+        return { ok: false };
+      }
+      templateId = created.data.id;
+      displayName = created.data.name || stagedName;
+      createdThisSave = true;
+      snapshot.createdUnappliedId = templateId;
+      snapshot.createdUnappliedName = displayName;
+      snapshot.templateId = templateId;
+      snapshot.pendingNewName = '';
+      if (typeof window.loadTemplates === 'function') {
+        try { await loadTemplates(); } catch (_refreshErr) { /* apply still uses created id */ }
+      }
+    }
+
+    if (!templateId) {
+      if (errEl) {
+        errEl.textContent = t('schedule.addMenu.activity.selectActivityFirst');
+        errEl.classList.remove('hidden');
+      }
+      return { ok: false };
+    }
+
+    if (!currentChildId || currentChildId !== activityContextChildId) {
+      closeAddMenu();
+      showToast(t('schedule.addMenu.activity.childChanged'), true);
+      return { ok: false, childChanged: true };
+    }
+
+    const days = [...snapshot.days];
+    const custodyHomeId = activeCustodyHomeId();
+    const operationId = opTracker ? opTracker.forCommand({
+      cmd: 'apply-activity', childId: currentChildId, activityTemplateId: templateId,
+      days: [...days].sort(), section: snapshot.section, startTime: snapshot.startTime, endTime: snapshot.endTime,
+      custodyHomeId,
+    }) : null;
+
+    const { ok, data } = await ScheduleApplyClient.applyActivity(currentChildId, {
+      activityTemplateId: templateId, days, section: snapshot.section,
+      startTime: snapshot.startTime || null, endTime: snapshot.endTime || null, operationId, custodyHomeId,
+    });
+
+    if (!ok) {
+      if (errEl) {
+        errEl.textContent = (data && data.error) || t('schedule.addMenu.activity.applyFailed');
+        errEl.classList.remove('hidden');
+      }
+      return { ok: false };
+    }
+
+    const tpl = (allTemplates || []).find((x) => x.id === templateId);
+    const name = displayName || (tpl ? tpl.name : '');
+    const toastKey = createdThisSave ? 'schedule.addMenu.activity.createdAndAdded' : 'schedule.addMenu.activity.added';
+    const successMsg = t(toastKey, { name, count: days.length });
+    showToast(successMsg);
+    const statusEl = document.getElementById('samActivityStatus');
+    if (statusEl) statusEl.textContent = successMsg;
+    return { ok: true, successMsg };
+  }
+
+  async function drainActivitySubmitQueue() {
+    if (activitySubmitInFlight) return Promise.resolve();
+    activitySubmitInFlight = true;
+    syncActivitySavePending();
+    let restoreNextEntryFocus = false;
+    let lastOk = false;
+    try {
+      while (activitySubmitQueue.length) {
+        const snapshot = activitySubmitQueue.shift();
+        inFlightSnapshot = snapshot;
+        syncActivitySavePending();
+        const result = await persistActivitySnapshot(snapshot);
+        if (result.childChanged) {
+          activitySubmitQueue.length = 0;
+          lastOk = false;
+          restoreNextEntryFocus = false;
+          return;
+        }
+        if (!result.ok) {
+          activitySubmitQueue.unshift(snapshot);
+          restoreSnapshotToForm(snapshot);
+          renderActivityStep();
+          lastOk = false;
+          break;
+        }
+        lastOk = true;
+        restoreNextEntryFocus = true;
+      }
+      if (lastOk && activitySubmitQueue.length === 0) {
+        resetActivityForNextEntry();
+        renderActivityStep();
+        startNextEntryFocusGuard();
+        try {
+          await afterSuccessfulMutation();
+        } catch (_refreshErr) {
+          /* schedule refresh must not block the next name */
+        }
+      }
+    } finally {
+      inFlightSnapshot = null;
+      activitySubmitInFlight = false;
+      setPending('samActivitySaveBtn', false);
+      syncActivitySavePending();
+      if (restoreNextEntryFocus && activitySubmitQueue.length === 0) restoreSearchFocus();
+    }
+  }
+
   async function submitActivity() {
-    if (activitySubmitInFlight) return;
     const errEl = document.getElementById('samActivityError');
     if (errEl) errEl.classList.add('hidden');
     if (!currentChildId || currentChildId !== activityContextChildId) {
@@ -522,105 +766,28 @@
       return;
     }
 
-    activitySubmitInFlight = true;
-    setPending('samActivitySaveBtn', true);
-    let restoreNextEntryFocus = false;
-    try {
-      let templateId = activityState.createdUnappliedId || activityState.templateId;
-      let displayName = activityState.createdUnappliedName || '';
-      let createdThisSave = false;
-      const stagedName = activityState.pendingNewName || normalizeActivityName(activityState.query);
+    const snapshot = captureActivitySnapshot();
 
-      if (!templateId) {
-        const exact = findExactActivityMatch(allTemplates, stagedName);
-        if (exact) templateId = exact.id;
-      }
-
-      if (!templateId && shouldShowCreateRow(stagedName, allTemplates)) {
-        let created;
-        try {
-          created = await createFamilyActivity(stagedName);
-        } catch (_err) {
-          if (errEl) {
-            errEl.textContent = t('schedule.addMenu.activity.createFailed');
-            errEl.classList.remove('hidden');
-          }
-          return;
-        }
-        if (!created.ok || !created.data.id) {
-          if (errEl) {
-            errEl.textContent = (created.data && created.data.error) || t('schedule.addMenu.activity.createFailed');
-            errEl.classList.remove('hidden');
-          }
-          return;
-        }
-        templateId = created.data.id;
-        displayName = created.data.name || stagedName;
-        createdThisSave = true;
-        activityState.createdUnappliedId = templateId;
-        activityState.createdUnappliedName = displayName;
-        activityState.templateId = templateId;
-        activityState.pendingNewName = '';
-        if (typeof window.loadTemplates === 'function') {
-          try { await loadTemplates(); } catch (_refreshErr) { /* apply still uses created id */ }
-        }
-      }
-
-      if (!templateId) {
-        if (errEl) {
-          errEl.textContent = t('schedule.addMenu.activity.selectActivityFirst');
-          errEl.classList.remove('hidden');
-        }
+    if (activitySubmitInFlight) {
+      if (isDuplicateSubmit(snapshot)) {
+        syncActivitySavePending();
         return;
       }
-
-      if (!currentChildId || currentChildId !== activityContextChildId) {
-        closeAddMenu();
-        showToast(t('schedule.addMenu.activity.childChanged'), true);
-        return;
-      }
-
-      const days = [...activityState.days];
-      const custodyHomeId = activeCustodyHomeId();
-      const operationId = opTracker ? opTracker.forCommand({
-        cmd: 'apply-activity', childId: currentChildId, activityTemplateId: templateId,
-        days: [...days].sort(), section: activityState.section, startTime: activityState.startTime, endTime: activityState.endTime,
-        custodyHomeId,
-      }) : null;
-
-      const { ok, data } = await ScheduleApplyClient.applyActivity(currentChildId, {
-        activityTemplateId: templateId, days, section: activityState.section,
-        startTime: activityState.startTime || null, endTime: activityState.endTime || null, operationId, custodyHomeId,
-      });
-
-      if (!ok) {
-        if (errEl) {
-          errEl.textContent = (data && data.error) || t('schedule.addMenu.activity.applyFailed');
-          errEl.classList.remove('hidden');
-        }
-        return;
-      }
-      const tpl = (allTemplates || []).find((x) => x.id === templateId);
-      const name = displayName || (tpl ? tpl.name : '');
-      const toastKey = createdThisSave ? 'schedule.addMenu.activity.createdAndAdded' : 'schedule.addMenu.activity.added';
-      const successMsg = t(toastKey, { name, count: days.length });
-      showToast(successMsg);
-      resetActivityForNextEntry();
-      renderActivityStep();
-      const statusEl = document.getElementById('samActivityStatus');
-      if (statusEl) statusEl.textContent = successMsg;
-      restoreNextEntryFocus = true;
-      startNextEntryFocusGuard();
-      try {
-        await afterSuccessfulMutation();
-      } catch (_refreshErr) {
-        /* schedule refresh must not block the next name */
-      }
-    } finally {
-      activitySubmitInFlight = false;
-      setPending('samActivitySaveBtn', false);
-      if (restoreNextEntryFocus) restoreSearchFocus();
+      activitySubmitQueue.push(snapshot);
+      syncActivitySavePending();
+      return;
     }
+
+    if (activitySubmitQueue.length) {
+      if (!snapshotsMatch(snapshot, activitySubmitQueue[0])) {
+        activitySubmitQueue[0] = snapshot;
+      }
+      await drainActivitySubmitQueue();
+      return;
+    }
+
+    activitySubmitQueue.push(snapshot);
+    await drainActivitySubmitQueue();
   }
 
   // ── 2) Från mall ─────────────────────────────────────────────────────────
