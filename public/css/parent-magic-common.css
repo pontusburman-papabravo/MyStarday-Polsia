@@ -872,6 +872,8 @@ body.parent-magic-view:not(.parent-theme-light) .for-dig-modal {
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+body.parent-magic-view.parent-magic-page-schedule:not(.parent-theme-light) .magic-page-shell,
+body.parent-magic-view.parent-theme-light.parent-magic-page-schedule .magic-page-shell,
 body.parent-magic-page-schedule .magic-page-shell {
   padding-bottom: calc(var(--parent-bottom-nav-height, 56px) + 12px);
 }

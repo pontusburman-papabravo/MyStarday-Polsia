@@ -19,7 +19,9 @@ describe('Weekly Schedule 375×812 bottom-nav clearance', () => {
     const css = read('public/css/parent-magic-common.css');
     const blockStart = css.indexOf('body.parent-magic-page-schedule .magic-page-shell');
     assert.ok(blockStart > -1, 'schedule magic-page-shell rule must exist');
-    const block = css.slice(blockStart, blockStart + 280);
+    const block = css.slice(blockStart, blockStart + 420);
+    assert.match(css, /body\.parent-magic-view\.parent-magic-page-schedule:not\(\.parent-theme-light\) \.magic-page-shell/);
+    assert.match(css, /body\.parent-magic-view\.parent-theme-light\.parent-magic-page-schedule \.magic-page-shell/);
     assert.match(block, /padding-bottom:\s*calc\(var\(--parent-bottom-nav-height/);
     assert.doesNotMatch(block, /padding-bottom:\s*0/);
   });
