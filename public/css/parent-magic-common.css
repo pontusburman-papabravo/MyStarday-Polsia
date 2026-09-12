@@ -873,7 +873,7 @@ body.parent-magic-view:not(.parent-theme-light) .for-dig-modal {
 }
 
 body.parent-magic-page-schedule .magic-page-shell {
-  padding-bottom: 0;
+  padding-bottom: calc(var(--parent-bottom-nav-height, 56px) + 12px);
 }
 
 body.parent-magic-page-schedule main > .bg-sky {

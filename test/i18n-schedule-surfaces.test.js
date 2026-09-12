@@ -94,6 +94,14 @@ describe('schedule/planning i18n surfaces', () => {
       t('en-GB', 'schedule.addMenu.activity.childChanged'),
       'The child changed. Open Add again for the child you want to edit.'
     );
+    assert.equal(
+      t('sv-SE', 'schedule.addMenu.activity.queued', { name: 'Vakna', count: 2 }),
+      'Sparar… sedan "Vakna" (2 väntar)'
+    );
+    assert.equal(
+      t('en-GB', 'schedule.addMenu.activity.queued', { name: 'Wake up', count: 2 }),
+      'Saving… then "Wake up" (2 waiting)'
+    );
   });
 
   it('schedule fragment keys have full sv-SE / en-GB parity', () => {
