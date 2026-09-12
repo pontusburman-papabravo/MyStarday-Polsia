@@ -65,10 +65,15 @@ function contrastRatio(fg, bg) {
   return L1 > L2 ? L1 / L2 : L2 / L1;
 }
 
+function parseRgba(str) {
+  const m = String(str).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+  if (!m) return null;
+  return [Number(m[1]), Number(m[2]), Number(m[3]), m[4] == null ? 1 : Number(m[4])];
+}
+
 function parseRgb(str) {
-  const m = String(str).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!m) return [255, 255, 255];
-  return [Number(m[1]), Number(m[2]), Number(m[3])];
+  const rgba = parseRgba(str);
+  return rgba ? rgba.slice(0, 3) : [255, 255, 255];
 }
 
 function puppeteerCookies(jar, baseUrl) {
@@ -85,20 +90,46 @@ async function measureButtonText(page, pattern, label, root = '#scheduleContent'
       return new RegExp(pat).test(b.textContent);
     });
     if (!btn) return { label: lbl, missing: true };
-    const fg = getComputedStyle(btn).color;
-    let bg = getComputedStyle(btn).backgroundColor;
-    if (!bg || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') {
-      let n2 = btn.parentElement;
-      while (n2) {
-        const bgc = getComputedStyle(n2).backgroundColor;
-        if (bgc && bgc !== 'rgba(0, 0, 0, 0)' && bgc !== 'transparent') {
-          bg = bgc;
-          break;
-        }
-        n2 = n2.parentElement;
+    const parse = (str) => {
+      const m = String(str).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+      return m ? [Number(m[1]), Number(m[2]), Number(m[3]), m[4] == null ? 1 : Number(m[4])] : null;
+    };
+    const opaqueAncestor = (el) => {
+      let n = el.parentElement;
+      while (n) {
+        const c = parse(getComputedStyle(n).backgroundColor);
+        if (c && c[3] >= 0.99) return c.slice(0, 3);
+        n = n.parentElement;
       }
-    }
-    return { label: lbl, fg, bg };
+      return [7, 7, 26];
+    };
+    const cs = getComputedStyle(btn);
+    const img = cs.backgroundImage || '';
+    const hexes = [...img.matchAll(/#([0-9a-fA-F]{3,8})/g)].map((m) => {
+      const h = m[1].length === 3 ? m[1].split('').map((c) => c + c).join('') : m[1].slice(0, 6);
+      return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+    });
+    const rgbStops = [...img.matchAll(/rgba?\((\d+),\s*(\d+),\s*(\d+)/g)].map((m) => [
+      Number(m[1]), Number(m[2]), Number(m[3]),
+    ]);
+    const stops = hexes.concat(rgbStops);
+    const raw = parse(cs.backgroundColor) || [0, 0, 0, 0];
+    const under = opaqueAncestor(btn);
+    const composited = raw[3] >= 0.99 ? raw.slice(0, 3) : [
+      Math.round(raw[0] * raw[3] + under[0] * (1 - raw[3])),
+      Math.round(raw[1] * raw[3] + under[1] * (1 - raw[3])),
+      Math.round(raw[2] * raw[3] + under[2] * (1 - raw[3])),
+    ];
+    const worst = stops.length ? stops[stops.length - 1] : composited;
+    return {
+      label: lbl,
+      fg: cs.color,
+      bg: `rgb(${worst[0]}, ${worst[1]}, ${worst[2]})`,
+      backgroundColor: cs.backgroundColor,
+      backgroundImage: img === 'none' ? '' : img,
+      gradientStops: stops,
+      className: btn.className,
+    };
   }, pattern, label, root);
 }
 
@@ -106,19 +137,70 @@ async function measureChipContrast(page, selector, label) {
   return page.evaluate((sel, lbl) => {
     const el = document.querySelector(sel);
     if (!el) return { label: lbl, missing: true };
-    const fg = getComputedStyle(el).color;
-    let bg = getComputedStyle(el).backgroundColor;
-    if (!bg || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') {
-      bg = getComputedStyle(document.body).backgroundColor;
-    }
-    return { label: lbl, fg, bg };
+    const parse = (str) => {
+      const m = String(str).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+      return m ? [Number(m[1]), Number(m[2]), Number(m[3]), m[4] == null ? 1 : Number(m[4])] : null;
+    };
+    const opaqueAncestor = (node) => {
+      let n = node.parentElement;
+      while (n) {
+        const c = parse(getComputedStyle(n).backgroundColor);
+        if (c && c[3] >= 0.99) return c.slice(0, 3);
+        n = n.parentElement;
+      }
+      return [7, 7, 26];
+    };
+    const cs = getComputedStyle(el);
+    const raw = parse(cs.backgroundColor) || [0, 0, 0, 0];
+    const under = opaqueAncestor(el);
+    const composited = raw[3] >= 0.99 ? raw.slice(0, 3) : [
+      Math.round(raw[0] * raw[3] + under[0] * (1 - raw[3])),
+      Math.round(raw[1] * raw[3] + under[1] * (1 - raw[3])),
+      Math.round(raw[2] * raw[3] + under[2] * (1 - raw[3])),
+    ];
+    return {
+      label: lbl,
+      fg: cs.color,
+      bg: `rgb(${composited[0]}, ${composited[1]}, ${composited[2]})`,
+      className: el.className,
+      ariaPressed: el.getAttribute('aria-pressed'),
+      ariaChecked: el.getAttribute('aria-checked'),
+    };
   }, selector, label);
 }
 
 function ratioFromMeasure(m) {
   if (m.missing) return m;
-  const ratio = Number(contrastRatio(parseRgb(m.fg), parseRgb(m.bg)).toFixed(2));
-  return { label: m.label, ratio, passNormal: ratio >= 4.5, fg: m.fg, bg: m.bg };
+  const fg = parseRgb(m.fg);
+  const bg = parseRgb(m.bg);
+  const ratio = Number(contrastRatio(fg, bg).toFixed(2));
+  const ratios = (m.gradientStops || []).map((stop) => Number(contrastRatio(fg, stop).toFixed(2)));
+  const worst = ratios.length ? Math.min(ratio, ...ratios) : ratio;
+  return {
+    label: m.label,
+    ratio: worst,
+    passNormal: worst >= 4.5,
+    passUi: worst >= 3,
+    fg: m.fg,
+    bg: m.bg,
+    className: m.className,
+    gradientStops: m.gradientStops,
+    whiteOnGold: /\bbg-gold\b/.test(m.className || '') && /\btext-white\b/.test(m.className || ''),
+  };
+}
+
+async function forceTheme(page, theme) {
+  await page.evaluate((t) => {
+    if (window.AppViewMode && AppViewMode.setTheme) AppViewMode.setTheme(t);
+    const light = t === 'light';
+    document.body.classList.toggle('parent-theme-light', light);
+    document.body.classList.toggle('parent-theme-dark', !light);
+    document.documentElement.classList.toggle('parent-theme-light', light);
+    document.documentElement.classList.toggle('parent-theme-dark', !light);
+    document.documentElement.classList.toggle('dark', !light);
+    document.body.classList.toggle('dark', !light);
+  }, theme);
+  await new Promise((r) => setTimeout(r, 250));
 }
 
 async function apiApplyActivities(base, session, childId, day, names) {
@@ -209,6 +291,7 @@ async function main() {
     scenarios: {},
     contrast: { light: [], dark: [] },
     i18n: {},
+    a11y: {},
     taps: {},
     regression: {},
     routes: [],
@@ -238,12 +321,12 @@ async function main() {
   }
   const routeAtStart = page.url();
 
-  await page.evaluate(() => document.documentElement.classList.remove('dark'));
-  if (typeof window !== 'undefined') {
-    await page.evaluate(() => {
-      if (window.AppViewMode && AppViewMode.setTheme) AppViewMode.setTheme('light');
-    });
-  }
+  await forceTheme(page, 'light');
+  report.themeLight = await page.evaluate(() => ({
+    body: document.body.className,
+    html: document.documentElement.className,
+    theme: window.AppViewMode && AppViewMode.getTheme ? AppViewMode.getTheme() : null,
+  }));
   report.i18n.svSE = await page.evaluate(() => ({
     emptyDayAdd: [...document.querySelectorAll('button')].some((b) => /Lägg till aktivitet/.test(b.textContent)),
     copyFrom: false,
@@ -282,6 +365,24 @@ async function main() {
     };
   });
   await page.screenshot({ path: path.join(ART, 'A-empty-week-sv.png'), fullPage: true });
+  report.a11y.emptyWeek = await page.evaluate(() => {
+    const measure = (btn) => {
+      if (!btn) return null;
+      const r = btn.getBoundingClientRect();
+      return {
+        text: btn.textContent.trim().slice(0, 48),
+        w: Math.round(r.width),
+        h: Math.round(r.height),
+        min44: r.height >= 44,
+        aria: btn.getAttribute('aria-label'),
+      };
+    };
+    const btns = [...document.querySelectorAll('#scheduleContent button')];
+    return {
+      primaryAdd: measure(btns.find((b) => /Lägg till aktivitet/.test(b.textContent))),
+      useTemplate: measure(btns.find((b) => /Använd mall/.test(b.textContent))),
+    };
+  });
 
   let taps = 0;
   await page.click('.day-tab[data-day="2"]');
@@ -347,12 +448,28 @@ async function main() {
   await page.screenshot({ path: path.join(ART, 'A-after-six-saves-sv.png'), fullPage: true });
   await page.keyboard.press('Escape');
 
-  await apiApplyActivities(BASE, session, childId, 4, saveNames.slice(0, 4));
-  await page.goto(`${BASE}/schedule?child=${childId}`, { waitUntil: 'networkidle2' });
+  const cChildId = await page.evaluate(async () => {
+    const csrf = document.cookie.match(/csrf_token=([^;]+)/)?.[1] || '';
+    const r = await fetch('/api/children', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': decodeURIComponent(csrf) },
+      body: JSON.stringify({ name: 'CopyBarn', emoji: '🌙', birthday: '2017-06-01' }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(`create copy child failed ${r.status}: ${JSON.stringify(data)}`);
+    return data.id;
+  });
+  await apiApplyActivities(BASE, session, cChildId, 4, ['Middag', 'Läkemedel', 'Pyjamas', 'Borsta tänderna']);
+  await page.goto(`${BASE}/schedule?child=${cChildId}`, { waitUntil: 'networkidle2' });
+  await forceTheme(page, 'light');
   await page.click('.day-tab[data-day="1"]');
   await new Promise((r) => setTimeout(r, 800));
 
-  report.scenarios.C = { copyFromVisible: await page.evaluate(() => [...document.querySelectorAll('button')].some((b) => /Kopiera från annan dag/.test(b.textContent))) };
+  report.scenarios.C = {
+    childId: cChildId,
+    copyFromVisible: await page.evaluate(() => [...document.querySelectorAll('button')].some((b) => /Kopiera från annan dag/.test(b.textContent))),
+  };
   if (report.scenarios.C.copyFromVisible) {
     report.i18n.svSE = report.i18n.svSE || {};
     report.i18n.svSE.copyFrom = true;
@@ -371,11 +488,21 @@ async function main() {
     report.scenarios.C.hasTargetSection = /Kopiera till/i.test(body);
     report.scenarios.C.mergeDefault = /●.*Lägg till/i.test(body);
     report.scenarios.C.targetMondaySelected = /✓\s*Mån/i.test(body);
-    report.scenarios.C.sourceVisible = await page.evaluate(() => [...document.querySelectorAll('#scheduleAddMenuBody button')].some((b) => /Tor|Torsdag/i.test(b.textContent) && b.className.includes('bg-navy')));
-    const mondayBefore = await countMondayItems(BASE, session, childId);
+    report.scenarios.C.sourceSelected = await page.evaluate(() => {
+      const selected = [...document.querySelectorAll('#scheduleAddMenuBody button[aria-pressed="true"], #scheduleAddMenuBody button.bg-navy')];
+      const source = selected.find((b) => /Mån|Tis|Ons|Tor|Fre|Lör|Sön/.test(b.textContent) && !/✓/.test(b.textContent));
+      return {
+        text: source ? source.textContent.trim() : null,
+        ariaPressed: source ? source.getAttribute('aria-pressed') : null,
+        thursday: Boolean(source && /Tor/.test(source.textContent)),
+      };
+    });
+    report.scenarios.C.sourceVisible = Boolean(report.scenarios.C.sourceSelected?.thursday || report.scenarios.C.sourceSelected?.text);
+    await page.screenshot({ path: path.join(ART, 'C-copy-from-day-modal-sv.png'), fullPage: true });
+    const mondayBefore = await countMondayItems(BASE, session, cChildId);
     await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Avbryt')?.click());
     await new Promise((r) => setTimeout(r, 400));
-    report.scenarios.C.cancelZeroMutation = (await countMondayItems(BASE, session, childId)) === mondayBefore;
+    report.scenarios.C.cancelZeroMutation = (await countMondayItems(BASE, session, cChildId)) === mondayBefore;
     await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Kopiera från annan dag/.test(b.textContent)).click());
     await new Promise((r) => setTimeout(r, 400));
     report.i18n.svSE = report.i18n.svSE || {};
@@ -394,7 +521,7 @@ async function main() {
     });
     report.contrast.light.push(ratioFromMeasure(await measureButtonText(page, '^Spara$', 'saveLight', '#scheduleAddMenuBody')));
     report.contrast.light.push(ratioFromMeasure(await measureButtonText(page, '^Avbryt$', 'cancelLight', '#scheduleAddMenuBody')));
-    await page.screenshot({ path: path.join(ART, 'C-copy-from-day-modal-sv.png'), fullPage: true });
+    await page.screenshot({ path: path.join(ART, 'C-copy-source-changed-sv.png'), fullPage: true });
     await page.keyboard.press('Escape');
   }
 
@@ -435,11 +562,7 @@ async function main() {
   await new Promise((r) => setTimeout(r, 400));
   report.contrast.light.push(ratioFromMeasure(await measureButtonText(page, 'Kopiera dag', 'promotedCopyDay')));
 
-  await page.evaluate(() => {
-    if (window.AppViewMode && AppViewMode.setTheme) AppViewMode.setTheme('dark');
-    document.documentElement.classList.add('dark');
-    document.body.classList.add('dark');
-  });
+  await forceTheme(page, 'dark');
   await new Promise((r) => setTimeout(r, 400));
   await page.click('.day-tab[data-day="4"]');
   await new Promise((r) => setTimeout(r, 400));
@@ -481,6 +604,7 @@ async function main() {
     useTemplate: [...document.querySelectorAll('button')].some((b) => /Use a template/.test(b.textContent)),
     mixedLanguage: document.body.innerText.includes('Lägg till aktivitet'),
   }));
+  await page.screenshot({ path: path.join(ART, 'i18n-en-empty-day.png'), fullPage: true });
   await apiApplyActivities(BASE, enSession, enChildId, 4, saveNames.slice(0, 3));
   await page.goto(`${BASE}/schedule?child=${enChildId}`, { waitUntil: 'networkidle2' });
   await page.click('.day-tab[data-day="1"]');
@@ -510,7 +634,6 @@ async function main() {
     replace: /Replace the whole day/i.test(enModal),
   };
   report.i18n.enGB.mixedLanguage = await page.evaluate(() => document.body.innerText.includes('Lägg till aktivitet') || document.body.innerText.includes('Kopiera'));
-  await page.screenshot({ path: path.join(ART, 'i18n-en-empty-day.png'), fullPage: true });
   await page.screenshot({ path: path.join(ART, 'i18n-en-copy-modal.png'), fullPage: true });
 
   report.regression = await page.evaluate(() => ({
@@ -521,7 +644,7 @@ async function main() {
     rapidEntryFn: typeof window.ScheduleAddMenu?.openActivityForDay === 'function',
   }));
 
-  report.a11y = await page.evaluate(() => {
+  Object.assign(report.a11y, await page.evaluate(() => {
     const measure = (btn) => {
       if (!btn) return null;
       const r = btn.getBoundingClientRect();
@@ -539,7 +662,7 @@ async function main() {
       primaryAdd: measure(btns.find((b) => /Add activity|Lägg till aktivitet/.test(b.textContent))),
       copyDay: measure(btns.find((b) => /Copy day|Kopiera dag/.test(b.textContent) && !/another/.test(b.textContent))),
     };
-  });
+  }));
 
   report.routesSummary = {
     start: routeAtStart,
