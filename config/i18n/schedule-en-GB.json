@@ -31,8 +31,7 @@
     "createForDay": "+ Create schedule for {{day}}",
     "addActivity": "Add activity",
     "useTemplate": "Use a template",
-    "copyFromDay": "Copy from another day",
-    "copyDayPromo": "Day done? Copy it to more weekdays below."
+    "copyFromDay": "Copy from another day"
   },
   "custody": {
     "otherParent": "Child is with the other parent {{date}}",

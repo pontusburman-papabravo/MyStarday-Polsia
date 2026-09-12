@@ -788,7 +788,6 @@ function renderSchedule() {
       <div>
         <h3 class="text-lg font-heading font-bold text-navy">${dayName(currentDay)}${dateLabel ? ` <span class="text-text-soft font-normal text-base">${dateLabel}</span>` : ''} — ${child?escHtml(child.name):''}</h3>
         <p class="text-sm text-text-soft">${window.ScheduleI18n ? ScheduleI18n.activityCount(scheduleItems.length) : spt('schedule.activityCount.other', { count: scheduleItems.length })}</p>
-        ${scheduleItems.length > 0 ? `<p class="text-xs text-text-soft mt-1">${spt('schedule.empty.copyDayPromo')}</p>` : ''}
       </div>
       <div class="flex gap-2 flex-wrap items-start">
         <button type="button" onclick="${window.ScheduleAddMenu ? 'ScheduleAddMenu.openCopyDay()' : 'openCopyDayModal()'}" class="min-h-[44px] px-4 py-2 bg-white border-2 border-gold hover:bg-gold-light text-navy rounded-xl text-sm font-semibold" aria-label="${escHtml(copyDayLabel)}">📋 ${escHtml(copyDayLabel)}</button>

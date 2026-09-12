@@ -167,6 +167,7 @@ describe('PR C gate — replace UI safety (source)', () => {
     const submit = src.slice(src.indexOf('async function submitCopyDay'), src.indexOf('async function doSubmitCopyDay'));
     assert.match(submit, /copyDayState\.mode === 'replace_day'/);
     assert.match(submit, /confirmReplaceDay\(/);
+    assert.match(submit, /if \(confirmed\) doSubmitCopyDay\(targetDays\);\s*else renderCopyDayStep\(\)/);
     assert.doesNotMatch(submit, /doSubmitCopyDay\(targetDays\)[\s\S]*replace_day[\s\S]*without[\s\S]*confirm/i);
   });
 

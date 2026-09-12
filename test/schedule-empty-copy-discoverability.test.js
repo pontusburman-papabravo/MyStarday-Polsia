@@ -54,7 +54,7 @@ describe('Planner PR C — empty day + copy discoverability', () => {
     const render = src.slice(src.indexOf('function renderSchedule()'), src.indexOf('function renderItem'));
     assert.match(render, /ScheduleAddMenu\.openCopyDay\(\)/);
     assert.match(render, /schedule\.editor\.copyDay/);
-    assert.match(render, /schedule\.empty\.copyDayPromo/);
+    assert.doesNotMatch(render, /copyDayPromo/);
   });
 
   it('6 Copy Day uses existing canonical merge semantics (ScheduleApplyClient)', () => {
@@ -107,7 +107,7 @@ describe('Planner PR C — empty day + copy discoverability', () => {
   it('17–18 sv-SE and en-GB empty/copy keys exist', () => {
     for (const loc of ['config/i18n/schedule-sv-SE.json', 'config/i18n/schedule-en-GB.json']) {
       const json = JSON.parse(read(loc));
-      for (const key of ['addActivity', 'useTemplate', 'copyFromDay', 'copyDayPromo']) {
+      for (const key of ['addActivity', 'useTemplate', 'copyFromDay']) {
         assert.ok(json.empty[key], `${loc} missing empty.${key}`);
         assert.ok(String(json.empty[key]).length > 2);
       }
@@ -141,6 +141,7 @@ describe('Planner PR C — empty day + copy discoverability', () => {
     assert.match(src, /copyDayState\.targetDays = new Set\(\[targetDay\]\)/);
     assert.match(src, /copyDayState\.mode = 'merge'/);
     assert.match(src, /openCopyDayToCurrentDay,/);
+    assert.match(src, /setCopyDaySource\(\$\{dow\}\)[\s\S]{0,80}aria-pressed=/);
   });
 
   it('vm: findDefaultCopySourceDay picks first other populated weekday', () => {
