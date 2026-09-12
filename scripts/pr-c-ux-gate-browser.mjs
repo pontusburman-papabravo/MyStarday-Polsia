@@ -253,6 +253,18 @@ async function main() {
     ratioFromMeasure(await measureButtonText(page, 'Lägg till aktivitet', 'primaryAdd')),
     ratioFromMeasure(await measureButtonText(page, 'Använd mall', 'useTemplate')),
   ];
+  report.contrast.lightWhiteOnGold = await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('button')].find((b) => /Lägg till aktivitet/.test(b.textContent));
+    if (!btn) return { missing: true };
+    const cls = btn.className;
+    const color = getComputedStyle(btn).color;
+    return {
+      className: cls,
+      color,
+      usesPlannerPrimary: cls.includes('bg-gold') && cls.includes('text-navy'),
+      whiteOnGold: cls.includes('text-white') && cls.includes('bg-gold'),
+    };
+  });
   await page.screenshot({ path: path.join(ART, 'contrast-empty-day-sv.png'), fullPage: true });
 
   report.scenarios.A = await page.evaluate(() => {
@@ -285,17 +297,28 @@ async function main() {
   const familyActivities = await fetch(`${BASE}/api/activities`, {
     headers: { Cookie: Object.entries(session.cookies).map(([k, v]) => `${k}=${v}`).join('; ') },
   }).then((r) => r.json());
-  const saveNames = familyActivities.slice(0, 6).map((a) => a.name);
+  const saveNames = ['Middag', 'Läkemedel', 'Kroppssmörjning', 'Borsta tänderna', 'Pyjamas', 'Läsa bok'];
+  report.scenarios.A.requestedActivities = saveNames;
+  report.scenarios.A.familyLibraryCount = familyActivities.length;
   const sequential = [];
   for (let i = 0; i < 6; i++) {
     const name = saveNames[i];
+    await page.click('#samActivitySearch');
+    taps += 1;
     await page.type('#samActivitySearch', name, { delay: 10 });
     await new Promise((r) => setTimeout(r, 250));
     const picked = await page.evaluate((n) => {
-      const btn = [...document.querySelectorAll('#samActivityList button')].find((b) => b.textContent.includes(n));
-      if (btn) {
-        btn.click();
-        return true;
+      const listBtn = [...document.querySelectorAll('#samActivityList button')].find((b) => b.textContent.includes(n));
+      if (listBtn) {
+        listBtn.click();
+        return 'existing';
+      }
+      const createBtn = [...document.querySelectorAll('#scheduleAddMenuBody button')].find(
+        (b) => /Skapa|"/.test(b.textContent) && b.textContent.includes(n)
+      );
+      if (createBtn) {
+        createBtn.click();
+        return 'create';
       }
       return false;
     }, name);
@@ -303,11 +326,13 @@ async function main() {
     await page.click('#samActivitySaveBtn');
     taps += 1;
     await new Promise((r) => setTimeout(r, 700));
-    sequential.push(await page.evaluate(() => ({
+    sequential.push(await page.evaluate((n, pickKind) => ({
+      name: n,
+      pickKind,
       modalStillOpen: Boolean(document.querySelector('#scheduleAddMenuBody h3')),
       stillOnSchedule: location.pathname.includes('/schedule'),
       noLibrary: !location.pathname.includes('/library'),
-    })));
+    }), name, picked));
     await page.evaluate(() => {
       const input = document.querySelector('#samActivitySearch');
       if (input) {
@@ -367,6 +392,8 @@ async function main() {
       );
       return Boolean(btn && btn.className.includes('bg-navy'));
     });
+    report.contrast.light.push(ratioFromMeasure(await measureButtonText(page, '^Spara$', 'saveLight', '#scheduleAddMenuBody')));
+    report.contrast.light.push(ratioFromMeasure(await measureButtonText(page, '^Avbryt$', 'cancelLight', '#scheduleAddMenuBody')));
     await page.screenshot({ path: path.join(ART, 'C-copy-from-day-modal-sv.png'), fullPage: true });
     await page.keyboard.press('Escape');
   }
@@ -375,7 +402,11 @@ async function main() {
   await new Promise((r) => setTimeout(r, 800));
   report.scenarios.B = await page.evaluate(() => ({
     copyDayVisible: [...document.querySelectorAll('button')].some((b) => /Kopiera dag/.test(b.textContent)),
-    promoTextPresent: document.body.innerText.includes('Klar dag'),
+    promoTextPresent: /Klar dag|Kopiera en färdig dag/i.test(document.body.innerText),
+    timeControls: document.querySelectorAll('[data-action="edit-time"], .action-btn-time, [aria-label*="tid" i]').length,
+    removeControls: document.querySelectorAll('.action-btn-remove').length,
+    sectionControls: typeof window.ScheduleSectionEdit === 'object',
+    reorderHandles: document.querySelectorAll('[aria-label*="ordning" i], .drag-handle, [data-dnd-handle]').length,
     verdict: 'promo removed — promoted button only',
   }));
   await page.screenshot({ path: path.join(ART, 'B-populated-day-header-sv.png'), fullPage: true });
@@ -404,8 +435,12 @@ async function main() {
   await new Promise((r) => setTimeout(r, 400));
   report.contrast.light.push(ratioFromMeasure(await measureButtonText(page, 'Kopiera dag', 'promotedCopyDay')));
 
-  await page.evaluate(() => document.documentElement.classList.add('dark'));
-  await new Promise((r) => setTimeout(r, 300));
+  await page.evaluate(() => {
+    if (window.AppViewMode && AppViewMode.setTheme) AppViewMode.setTheme('dark');
+    document.documentElement.classList.add('dark');
+    document.body.classList.add('dark');
+  });
+  await new Promise((r) => setTimeout(r, 400));
   await page.click('.day-tab[data-day="4"]');
   await new Promise((r) => setTimeout(r, 400));
   report.contrast.dark.push(ratioFromMeasure(await measureButtonText(page, 'Kopiera dag', 'promotedCopyDayDark')));
@@ -414,6 +449,9 @@ async function main() {
   report.contrast.dark.push(
     ratioFromMeasure(await measureChipContrast(page, '#scheduleAddMenuBody button.bg-navy.text-white', 'sourceDaySelectedDark')),
   );
+  report.contrast.dark.push(ratioFromMeasure(await measureButtonText(page, '^Spara$', 'saveDark', '#scheduleAddMenuBody')));
+  report.contrast.dark.push(ratioFromMeasure(await measureButtonText(page, '^Avbryt$', 'cancelDark', '#scheduleAddMenuBody')));
+  await page.screenshot({ path: path.join(ART, 'contrast-copy-modal-magic-dark.png'), fullPage: true });
   await page.keyboard.press('Escape');
 
   const enSession = await registerEnSession(BASE);
@@ -482,6 +520,26 @@ async function main() {
     sectionEdit: typeof window.ScheduleSectionEdit === 'object',
     rapidEntryFn: typeof window.ScheduleAddMenu?.openActivityForDay === 'function',
   }));
+
+  report.a11y = await page.evaluate(() => {
+    const measure = (btn) => {
+      if (!btn) return null;
+      const r = btn.getBoundingClientRect();
+      return {
+        text: btn.textContent.trim().slice(0, 40),
+        w: Math.round(r.width),
+        h: Math.round(r.height),
+        min44: r.height >= 44 && r.width >= 44,
+        aria: btn.getAttribute('aria-label') || btn.getAttribute('aria-pressed') || btn.getAttribute('aria-checked') || null,
+        role: btn.getAttribute('role'),
+      };
+    };
+    const btns = [...document.querySelectorAll('button')];
+    return {
+      primaryAdd: measure(btns.find((b) => /Add activity|Lägg till aktivitet/.test(b.textContent))),
+      copyDay: measure(btns.find((b) => /Copy day|Kopiera dag/.test(b.textContent) && !/another/.test(b.textContent))),
+    };
+  });
 
   report.routesSummary = {
     start: routeAtStart,
