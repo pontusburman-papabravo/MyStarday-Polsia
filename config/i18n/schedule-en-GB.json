@@ -25,10 +25,13 @@
     "noChildrenTitle": "No children added yet",
     "goToDashboard": "Go to Home",
     "noScheduleTitle": "{{name}} has no weekly schedule yet",
-    "noScheduleBody": "Create a schedule to start planning the day",
+    "noScheduleBody": "Add activities here directly — one day at a time.",
     "noScheduleDayTitle": "No schedule for {{day}}{{date}}",
-    "noScheduleDayBody": "Create a schedule to start planning {{name}}'s day",
-    "createForDay": "+ Create schedule for {{day}}"
+    "noScheduleDayBody": "Add activities for {{name}}'s day, or copy from another weekday.",
+    "createForDay": "+ Create schedule for {{day}}",
+    "addActivity": "Add activity",
+    "useTemplate": "Use a template",
+    "copyFromDay": "Copy from another day"
   },
   "custody": {
     "otherParent": "Child is with the other parent {{date}}",

@@ -106,6 +106,8 @@ let addSectionsMulti = new Set(['dag']); // multi-section selection state
 let editSectionVal = 'dag';
 let copyDaySelections = [];
 let copyTargetChildId = null;
+let childWeekSchedules = [];
+window.getChildWeekSchedules = () => childWeekSchedules;
 
 // Recurrence dialog state — set when submitAddActivity succeeds, before showing the prompt
 let _pendingRecurrenceTemplateId = null;
@@ -680,17 +682,18 @@ async function loadScheduleForDay() {
   const res = await window.apiFetch(`/api/children/${currentChildId}/schedules${q}`);
   if (!res.ok) { document.getElementById('scheduleContent').innerHTML = '<p class="text-red-500">' + spt('schedule.loadError') + '</p>'; return; }
   const schedules = await res.json();
+  childWeekSchedules = schedules;
   // Check if schedules array is empty and child might be paused
   if (schedules.length === 0) {
     const child = children.find(c => c.id === currentChildId);
     const childName = child ? escHtml(child.name) : 'Barnet';
     currentScheduleId = null; scheduleItems = [];
     document.getElementById('scheduleContent').innerHTML = `
-      <div class="text-center py-16">
-        <p class="text-5xl mb-4">📅</p>
+      <div class="text-center py-16 px-4">
+        <p class="text-5xl mb-4" aria-hidden="true">📅</p>
         <p class="font-semibold text-navy mb-2">${spt('schedule.empty.noScheduleTitle', { name: childName })}</p>
-        <p class="text-sm text-text-soft mb-6">${spt('schedule.empty.noScheduleBody')}</p>
-        <button onclick="openTemplateModal()" class="px-6 py-3 ${ScheduleCore.PLANNER_PRIMARY_BTN} rounded-xl font-semibold">+ ${spt('schedule.editor.createSchedule')}</button>
+        <p class="text-sm text-text-soft mb-6 max-w-sm mx-auto">${spt('schedule.empty.noScheduleBody')}</p>
+        ${emptyStateActionsHtml({ showCopyFromDay: false })}
       </div>`;
     return;
   }
@@ -734,14 +737,36 @@ async function checkIfDayPaused() {
   } catch (_e) { /* non-critical — ignore */ }
 }
 
+function otherDaysHaveSchedule(excludeDay) {
+  return childWeekSchedules.some((s) => s.day_of_week !== excludeDay);
+}
+
+function emptyStateActionsHtml({ showCopyFromDay }) {
+  const sam = window.ScheduleAddMenu;
+  const day = currentDay;
+  const primaryClick = sam
+    ? `ScheduleAddMenu.openActivityForDay(${day})`
+    : `openInsertDayModal(${day})`;
+  const buttons = [
+    `<button type="button" onclick="${primaryClick}" class="min-h-[44px] w-full max-w-xs px-6 py-3 ${ScheduleCore.PLANNER_PRIMARY_BTN} rounded-xl font-semibold transition-colors" aria-label="${spt('schedule.empty.addActivity')}">+ ${spt('schedule.empty.addActivity')}</button>`,
+  ];
+  if (showCopyFromDay && sam) {
+    buttons.push(`<button type="button" onclick="ScheduleAddMenu.openCopyDayToCurrentDay()" class="min-h-[44px] w-full max-w-xs px-6 py-3 bg-white border-2 border-lavender hover:border-gold text-navy rounded-xl font-semibold transition-colors" aria-label="${spt('schedule.empty.copyFromDay')}">${spt('schedule.empty.copyFromDay')}</button>`);
+  }
+  const secondaryClick = sam ? 'ScheduleAddMenu.openTemplate()' : 'openTemplateModal()';
+  buttons.push(`<button type="button" onclick="${secondaryClick}" class="min-h-[44px] px-4 py-2 text-sm font-semibold text-navy hover:text-navy underline decoration-lavender underline-offset-4" aria-label="${spt('schedule.empty.useTemplate')}">${spt('schedule.empty.useTemplate')}</button>`);
+  return `<div class="flex flex-col items-center gap-3 w-full">${buttons.join('')}</div>`;
+}
+
 function renderEmptyDay() {
   const child = children.find(c => c.id === currentChildId);
   const dl = getDayDateLabel();
+  const showCopyFromDay = otherDaysHaveSchedule(currentDay);
   document.getElementById('scheduleContent').innerHTML = `
-    <div class="text-center py-16"><p class="text-5xl mb-4">📅</p>
+    <div class="text-center py-16 px-4"><p class="text-5xl mb-4" aria-hidden="true">📅</p>
       <p class="font-semibold text-navy mb-1">${spt('schedule.empty.noScheduleDayTitle', { day: dayName(currentDay), date: dl ? ` (${dl})` : '' })}</p>
-      <p class="text-text-soft text-sm mb-6">${spt('schedule.empty.noScheduleDayBody', { name: child ? escHtml(child.name) : '' })}</p>
-      <button onclick="openTemplateModal()" class="px-6 py-3 ${ScheduleCore.PLANNER_PRIMARY_BTN} rounded-xl font-semibold">+ ${spt('schedule.empty.createForDay', { day: dayName(currentDay) })}</button>
+      <p class="text-text-soft text-sm mb-6 max-w-sm mx-auto">${spt('schedule.empty.noScheduleDayBody', { name: child ? escHtml(child.name) : '' })}</p>
+      ${emptyStateActionsHtml({ showCopyFromDay })}
     </div>`;
 }
 
@@ -755,6 +780,7 @@ function renderEmptyDay() {
 function renderSchedule() {
   const child = children.find(c => c.id === currentChildId);
   const sHtml = buildSectionCardsHtml(scheduleItems, renderItem);
+  const copyDayLabel = spt('schedule.editor.copyDay');
 
   const dateLabel = getDayDateLabel();
   document.getElementById('scheduleContent').innerHTML = `
@@ -764,7 +790,7 @@ function renderSchedule() {
         <p class="text-sm text-text-soft">${window.ScheduleI18n ? ScheduleI18n.activityCount(scheduleItems.length) : spt('schedule.activityCount.other', { count: scheduleItems.length })}</p>
       </div>
       <div class="flex gap-2 flex-wrap items-start">
-        <button onclick="${window.ScheduleAddMenu ? 'ScheduleAddMenu.openCopyDay()' : 'openCopyDayModal()'}" class="min-h-[44px] px-4 py-2 bg-lavender hover:bg-purple-100 text-navy rounded-xl text-sm font-semibold">📋 ${spt('schedule.editor.copyDay')}</button>
+        <button type="button" onclick="${window.ScheduleAddMenu ? 'ScheduleAddMenu.openCopyDay()' : 'openCopyDayModal()'}" class="min-h-[44px] px-4 py-2 bg-white border-2 border-gold hover:bg-gold-light text-navy rounded-xl text-sm font-semibold" aria-label="${escHtml(copyDayLabel)}">📋 ${escHtml(copyDayLabel)}</button>
         ${window.ScheduleAddMenu ? `<button onclick="ScheduleAddMenu.openSaveAsTemplate()" class="min-h-[44px] px-4 py-2 bg-white border-2 border-lavender hover:border-gold text-navy rounded-xl text-sm font-semibold">${spt('schedule.addMenu.saveAsTemplate.menuLabel')}</button>` : ''}
         <button onclick="confirmDeleteSchedule()" class="min-h-[44px] px-4 py-2 bg-coral hover:bg-red-200 text-navy rounded-xl text-sm font-semibold">🗑️ ${spt('schedule.editor.deleteDay')}</button>
         <details class="relative">

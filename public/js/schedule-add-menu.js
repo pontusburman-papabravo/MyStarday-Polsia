@@ -777,6 +777,27 @@
     showModal();
   }
 
+  function findDefaultCopySourceDay(excludeDay) {
+    const schedules = typeof window.getChildWeekSchedules === 'function'
+      ? window.getChildWeekSchedules()
+      : [];
+    for (const dow of WEEKDAYS) {
+      if (dow === excludeDay) continue;
+      if (schedules.some((row) => row.day_of_week === dow)) return dow;
+    }
+    return excludeDay;
+  }
+
+  /** Empty selected day — preselect copy FROM another populated day TO currentDay. */
+  function openCopyDayToCurrentDay() {
+    const targetDay = typeof currentDay === 'number' ? currentDay : 1;
+    copyDayState.sourceDay = findDefaultCopySourceDay(targetDay);
+    copyDayState.targetDays = new Set([targetDay]);
+    copyDayState.mode = 'merge';
+    renderCopyDayStep();
+    showModal();
+  }
+
   function renderCopyDayStep() {
     bodyEl().innerHTML = `
       <div class="flex items-center justify-between mb-4">
@@ -788,6 +809,7 @@
       <p class="text-xs font-semibold text-navy uppercase tracking-wide mb-2">${t('schedule.addMenu.copyDay.pickSourceDay')}</p>
       <div class="flex gap-2 flex-wrap mb-4">
         ${WEEKDAYS.map((dow) => `<button type="button" onclick="ScheduleAddMenu.setCopyDaySource(${dow})"
+          aria-pressed="${copyDayState.sourceDay === dow}"
           class="${TOUCH_BTN} px-3 py-2 rounded-xl text-sm font-semibold border-2 ${copyDayState.sourceDay === dow ? 'bg-navy text-white border-navy' : 'border-lavender text-navy'}">${dayLabel(dow)}</button>`).join('')}
       </div>
 
@@ -934,6 +956,7 @@
     setTemplateMode,
     submitTemplate,
     openCopyDay,
+    openCopyDayToCurrentDay,
     setCopyDaySource,
     setCopyDayMode,
     toggleCopyDayTarget,
